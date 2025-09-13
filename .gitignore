@@ -1,0 +1,33 @@
+# Backend
+backend/MomentRank/MomentRank/bin/
+backend/MomentRank/MomentRank/obj/
+
+# NuGet
+**/[Pp]ackages/
+*.nupkg
+*.snupkg
+
+# Frontend
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node modules
+frontend/moment-rank/node_modules/
+
+# Expo
+frontend/moment-rank/.expo/
+frontend/moment-rank/dist/
+frontend/moment-rank/build/
+
+# Environment variables
+frontend/moment-rank/.env
+frontend/moment-rank/.env.local
+frontend/moment-rank/.env.*.local
+
+# IDE and editor directories
+frontend/moment-rank/.idea/
+frontend/moment-rank/.vscode/
+frontend/moment-rank/.cursor

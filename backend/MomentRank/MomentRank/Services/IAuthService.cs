@@ -1,0 +1,11 @@
+﻿using MomentRank.DTOs;
+using MomentRank.Models;
+
+namespace MomentRank.Services
+{
+    public interface IAuthService
+    {
+        Task<User?> RegisterAsync(RegisterRequest request);
+        Task<string?> LoginAsync(LoginRequest request);
+    }
+}

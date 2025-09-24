@@ -3,16 +3,36 @@
   "WorkspaceRootPath": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\services\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\services\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\momentrank.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\momentrank.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|c:\\users\\rokas\\documents\\github\\momentrank\\backend\\momentrank\\momentrank\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{76E947DA-952A-4660-91C9-337B905C0B77}|MomentRank\\MomentRank.csproj|solutionrelative:momentrank\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,49 +42,111 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "WeatherForecastController.cs",
-              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Controllers\\WeatherForecastController.cs",
-              "RelativeDocumentMoniker": "MomentRank\\Controllers\\WeatherForecastController.cs",
-              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Controllers\\WeatherForecastController.cs",
-              "RelativeToolTip": "MomentRank\\Controllers\\WeatherForecastController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-12T19:25:37.049Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "WeatherForecast.cs",
-              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\WeatherForecast.cs",
-              "RelativeDocumentMoniker": "MomentRank\\WeatherForecast.cs",
-              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\WeatherForecast.cs",
-              "RelativeToolTip": "MomentRank\\WeatherForecast.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-12T19:24:37.212Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Program.cs",
               "RelativeDocumentMoniker": "MomentRank\\Program.cs",
               "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Program.cs",
               "RelativeToolTip": "MomentRank\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAAAC4AAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-12T19:24:30.359Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "MomentRank\\Services\\AuthService.cs",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Services\\AuthService.cs",
+              "RelativeToolTip": "MomentRank\\Services\\AuthService.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAowB8AAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-24T12:11:46.85Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "MomentRank\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "MomentRank\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADIAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-24T12:04:05.445Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MomentRank",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\MomentRank.csproj",
+              "RelativeDocumentMoniker": "MomentRank\\MomentRank.csproj",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\MomentRank.csproj",
+              "RelativeToolTip": "MomentRank\\MomentRank.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-24T11:56:39.292Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthDtos.cs",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\DTOs\\AuthDtos.cs",
+              "RelativeDocumentMoniker": "MomentRank\\DTOs\\AuthDtos.cs",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\DTOs\\AuthDtos.cs",
+              "RelativeToolTip": "MomentRank\\DTOs\\AuthDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-24T11:52:58.337Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Models\\User.cs",
+              "RelativeDocumentMoniker": "MomentRank\\Models\\User.cs",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Models\\User.cs",
+              "RelativeToolTip": "MomentRank\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-24T11:49:55.887Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Services\\IAuthService.cs",
+              "RelativeDocumentMoniker": "MomentRank\\Services\\IAuthService.cs",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\Services\\IAuthService.cs",
+              "RelativeToolTip": "MomentRank\\Services\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-24T11:46:08.157Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\appsettings.json",
+              "RelativeDocumentMoniker": "MomentRank\\appsettings.json",
+              "ToolTip": "C:\\Users\\Rokas\\Documents\\GitHub\\MomentRank\\backend\\MomentRank\\MomentRank\\appsettings.json",
+              "RelativeToolTip": "MomentRank\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-24T11:35:22.915Z",
               "EditorCaption": ""
             }
           ]

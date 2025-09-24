@@ -7,5 +7,6 @@ namespace MomentRank.Services
     {
         Task<User?> RegisterAsync(RegisterRequest request);
         Task<string?> LoginAsync(LoginRequest request);
+        Task<User?> GetUserByIdAsync(int userId);
     }
 }

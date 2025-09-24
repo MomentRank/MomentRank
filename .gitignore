@@ -2,6 +2,9 @@
 backend/MomentRank/MomentRank/bin/
 backend/MomentRank/MomentRank/obj/
 backend/MomentRank/.vs
+*.db
+*.db-shm
+*.db-wal
 
 # NuGet
 **/[Pp]ackages/

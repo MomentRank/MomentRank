@@ -83,6 +83,38 @@ namespace MomentRank.Services
             }
         }
 
+        public async Task<string?> FacebookLoginAsync(LoginRequest request)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
+                if (user == null)
+                {
+                    var registerRequest = new RegisterRequest
+                    {
+                        Email = request.Email.ToLower(),
+                        Username = request.Email.ToLower(),
+                        Password = "LabaiSlaptasRaktas123!"
+                    };
+                    user = await RegisterAsync(registerRequest);
+                }
+
+                if (user == null)
+                {
+                    return null;
+                }
+
+                var token = GenerateJwtToken(user);
+                return token;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
         public async Task<User?> GetUserByIdAsync(int userId)
         {
             try

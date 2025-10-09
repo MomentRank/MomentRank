@@ -81,24 +81,17 @@ namespace MomentRank.Controllers
             var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "";
             var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
 
-            // generate JWT
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_config["JwtSettings:Key"] ?? "LabaiSlaptasRaktasKurioNiekasNezino!");
-            var tokenDescriptor = new SecurityTokenDescriptor
+            var request = new LoginRequest
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.Name, name),
-                    new Claim(ClaimTypes.Email, email)
-                }),
-                Expires = DateTime.UtcNow.AddDays(7),
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256Signature)
+                Email = email
             };
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var jwt = tokenHandler.WriteToken(token);
+            String? jwt = await _authService.FacebookLoginAsync(request);
+
+            if (jwt == null)
+            {
+                return Unauthorized();
+            }
 
             // return same format as normal login
             return Ok(new LoginResponse { Access_token = jwt });

@@ -30,5 +30,21 @@ namespace MomentRank.Controllers
 
             return Ok();
         }
+        [HttpPost("delete")]
+        public async Task<IActionResult> Delete([FromBody] DeleteEventRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest();
+            }
+
+            var deleted = await _eventService.DeleteEventAsync(request);
+            if (deleted != null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok();
+        }
     }
 }

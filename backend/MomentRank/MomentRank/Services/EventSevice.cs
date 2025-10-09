@@ -62,11 +62,11 @@ namespace MomentRank.Services
                 if (parsedId == null) return null;
 
                 // Check if event already exists
-                var existingUser = await _context.Events
+                var existingEvent = await _context.Events
                     .FirstOrDefaultAsync(u => u.Name == request.Name ||
                                             u.OwnerId == parsedId.Value);
 
-                if (existingUser != null)
+                if (existingEvent != null)
                 {
                     return null; // Event already exists for this user
                 }
@@ -90,6 +90,31 @@ namespace MomentRank.Services
                 return null;
             }
         }
+        public async Task<Event?> DeleteEventAsync(DeleteEventRequest request)
+        {
+            try
+            {
+                //Get Id from token
+                var parsedId = GetUserIdFromToken();
+                if (parsedId == null) return null;
 
+                // Check if event exists, and if the user is the owner
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(u => u.Name == request.Name ||
+                                            u.OwnerId == parsedId.Value);
+
+                if (existingEvent == null)
+                {
+                    return null; // Event doesnt exist
+                }
+
+                _context.Events.Remove(existingEvent);
+
+                return existingEvent;
+            }
+            catch(Exception ex) {
+                return null;
+            }
+        }
     }
 }

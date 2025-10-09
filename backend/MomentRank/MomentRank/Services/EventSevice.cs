@@ -116,5 +116,30 @@ namespace MomentRank.Services
                 return null;
             }
         }
+
+        public async Task<Event?> ReadEventAsync(ReadEventRequest request)
+        {
+            try
+            {
+                //Get Id from token
+                var parsedId = GetUserIdFromToken();
+                if (parsedId == null) return null;
+
+                // Check if event exists, and if the user is the owner
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(u => u.Name == request.Name ||
+                                            u.OwnerId == parsedId.Value);
+
+                if (existingEvent == null)
+                {
+                    return null; // Event doesnt exist
+                }
+                return existingEvent;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
     }
 }

@@ -46,5 +46,22 @@ namespace MomentRank.Controllers
 
             return Ok();
         }
+
+        [HttpPost("read")]
+        public async Task<IActionResult> Read([FromBody] ReadEventRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest();
+            }
+
+            var read = await _eventService.ReadEventAsync(request);
+            if (read != null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(read);
+        }
     }
 }

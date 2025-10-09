@@ -17,7 +17,7 @@ namespace MomentRank.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name) || string.IsNullOrEmpty(request.OwnerToken))
+            if (string.IsNullOrEmpty(request.Name))
             {
                 return BadRequest();
             }

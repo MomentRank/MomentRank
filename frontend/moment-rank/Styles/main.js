@@ -2,16 +2,17 @@ import {Button, StyleSheet} from "react-native"
 
 export default StyleSheet.create({
   container: {
-    backgroundColor: "#EEEEEE",
+    backgroundColor: "#FFD280",
     padding: 20,
     justifyContent: 'center',
     flex:1,
   },
   containerTitle: {
     alignSelf: "center",
-    justifyContent: "flex-end",
-    marginTop: 50,
-    flex: 1,
+    justifyContent: "center",
+    marginTop: '12%',
+    marginBottom:'6%',
+    flex: 0,
   },
   containerHor: {
     flexDirection: "row",
@@ -25,21 +26,22 @@ export default StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    padding: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
     marginBottom: 10,
     borderRadius: 8,
     width: "100%",
     alignSelf: "center",
-    fontFamily: "Petrona_700Bold",
-    backgroundColor: "#3C3C434A",
-    opacity: 0.3,
+    fontFamily: "Roboto_400Regular",
+    backgroundColor: "rgba(60, 60, 67, 0.15)",
+    color: "#000000",
   },
   h2: {
     color: "#4C4C4C",
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 10,
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
 
     alignSelf: "center",
     justifyContent: "center",
@@ -49,6 +51,7 @@ export default StyleSheet.create({
     fontSize: 50,
     letterSpacing: 3,
     fontFamily: "JacquesFrancoisShadow_400Regular",
+    color: "#4C4C4C",
   },
   buttonBig: {
     backgroundColor: "#FF9500",
@@ -64,7 +67,7 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
     fontSize: 20,
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
   },
 
   buttonAuth: {
@@ -72,6 +75,7 @@ export default StyleSheet.create({
     borderRadius: 30,
     paddingVertical: 8,
     alignItems: "center",
+    justifyContent: "center",
     marginVertical: 10,
     flexDirection: "row",
   },
@@ -84,12 +88,12 @@ export default StyleSheet.create({
   buttonSmallText: {
     color: "#FF9500",
     fontSize: 15,
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
   },
   buttonAuthText: {
     fontSize: 20,
     fontWeight: "bold",
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
   },
   logoImage: {
     width: 30,
@@ -111,7 +115,7 @@ export default StyleSheet.create({
     marginHorizontal: 10,
     fontSize: 20,
     color: "#333",
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
   },
   buttonCreate: {
     textAlign: "center",
@@ -121,17 +125,140 @@ export default StyleSheet.create({
   buttonCreateText: {
     fontSize: 20,
     fontWeight: "bold",
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
   },
   buttonInfo: {
 
   },
   buttonInfoText: {
     textAlign: "center",
-    fontFamily: "Petrona_700Bold",
+    fontFamily: "Roboto_400Regular",
   },
   text: {
-    fontFamily: "Petrona_700Bold",
-    fontSize: 17,
+    fontFamily: "Roboto_400Regular",
+    fontSize: 15,
+    marginBottom: 7,
+  },
+  passwordRequirements: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  requirementText: {
+    fontFamily: "Roboto_700Bold",
+    fontSize: 14,
+    color: "#000000",
+    marginBottom: 3,
+  },
+  profilePictureContainer: {
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  profilePicture: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 5,
+    borderColor: "#FFD280",
+  },
+  bioInput: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  backgroundWhiteBox: {
+    position: 'absolute',
+    top: '1.8%',
+    left: '1.6%',
+    right: '1.6%',
+    bottom: '1.8%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 70,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5, // Android shadow
+  },
+  scrollContainer: {
+    flex: 1,
+    paddingTop: '5%',
+    borderRadius: 50,
+    marginVertical: '5%',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderTopColor: "#000000",
+    borderBottomColor: "#000000",
+  },
+  contentCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 25,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 0,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#000000",
+  },
+  stockImage: {
+    width: "100%",
+    height: 200,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25
+  },
+  descriptionLabelContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  descriptionLabel: {
+    fontFamily: "Roboto_400Regular",
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000000",
+  },
+  descriptionTextContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  descriptionText: {
+    fontFamily: "Roboto_400Regular",
+    fontSize: 15,
+    color: "#000000",
+    lineHeight: 22,
+  },
+  openButtonContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  openButton: {
+    backgroundColor: "#FF9500",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  openButtonText: {
+    color: "#FFFFFF",
+    fontFamily: "Roboto_400Regular",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  bottomNavigation: {
+    borderTopWidth: 2,
+    borderTopColor: "#000000",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingVertical: '4%',
+    paddingBottom: '5%',
+    paddingHorizontal: '12%',
+    marginHorizontal: '-2%',
+  },
+  navIcon: {
+    fontSize: 32,
   },
 });

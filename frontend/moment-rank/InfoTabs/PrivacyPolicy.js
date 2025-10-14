@@ -108,16 +108,16 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'center' },
-  headerText: { fontSize: 20, fontWeight: 'bold', fontFamily: "Petrona_700Bold"},
+  headerText: { fontSize: 20, fontWeight: 'bold', fontFamily: "Roboto_400Regular"},
   closeButton: {
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeText: { fontSize: 22, color: '#2196F3', fontWeight: 'bold', fontFamily: "Petrona_700Bold",},
+  closeText: { fontSize: 22, color: '#2196F3', fontWeight: 'bold', fontFamily: "Roboto_400Regular",},
   content: { flex: 1 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 15, marginBottom: 5, fontFamily: "Petrona_700Bold", },
-  text: { fontSize: 14, lineHeight: 22, fontFamily: "Petrona_700Bold", },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 15, marginBottom: 5, fontFamily: "Roboto_400Regular", },
+  text: { fontSize: 14, lineHeight: 22, fontFamily: "Roboto_400Regular", },
 });
 
 export default PrivacyPolicyPopUp;

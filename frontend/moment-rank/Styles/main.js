@@ -48,7 +48,7 @@ export default StyleSheet.create({
     display: "flex",
   },
   title: {
-    fontSize: 50,
+    fontSize: 44,
     letterSpacing: 3,
     fontFamily: "JacquesFrancoisShadow_400Regular",
     color: "#4C4C4C",
@@ -165,6 +165,7 @@ export default StyleSheet.create({
     textAlignVertical: "top",
   },
   backgroundWhiteBox: {
+    flex: 1,
     position: 'absolute',
     top: '1.8%',
     left: '1.6%',
@@ -183,13 +184,13 @@ export default StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    paddingTop: '5%',
-    borderRadius: 50,
-    marginVertical: '5%',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderTopColor: "#000000",
-    borderBottomColor: "#000000",
+    width: '100%',
+    marginBottom: 30,
+  },
+  scrollContentContainer: {
+    paddingTop: 20,
+    paddingBottom: 30,
+    flexGrow: 1,
   },
   contentCard: {
     backgroundColor: "#FFFFFF",

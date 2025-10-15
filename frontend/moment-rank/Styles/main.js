@@ -170,7 +170,7 @@ export default StyleSheet.create({
     top: '1.8%',
     left: '1.6%',
     right: '1.6%',
-    bottom: '1.8%',
+    bottom: '5%',
     backgroundColor: '#FFFFFF',
     borderRadius: 70,
     shadowColor: '#000',
@@ -185,7 +185,7 @@ export default StyleSheet.create({
   scrollContainer: {
     flex: 1,
     width: '100%',
-    marginBottom: 30,
+    marginBottom: '20%'
   },
   scrollContentContainer: {
     paddingTop: 20,

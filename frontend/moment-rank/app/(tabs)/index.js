@@ -49,6 +49,11 @@ export default function HomeScreen() {
             id: 3,
             imageSource: require('../../assets/stock-photo.png'),
             description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's"
+        },
+        {
+            id: 4,
+            imageSource: require('../../assets/stock-photo.png'),
+            description: "Lorem ipsum dolor sit amet, quodsi quaeque sit et, ut eros interesset pri. Primis labores repudiare nam id, at eum facete delectus contentiones. Ne lobortis aliquando per. Eum saperet mediocritatem no, sea admodum signiferumque ut, an utamur dolorum adversarium pro. Per ad mazim consulatu complectitur, elit mazim et nec."
         }
     ];
 

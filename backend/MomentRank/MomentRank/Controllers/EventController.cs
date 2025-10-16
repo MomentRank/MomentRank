@@ -75,5 +75,22 @@ namespace MomentRank.Controllers
 
             return Ok(events);
         }
+
+        [HttpPost("join")]
+        public async Task<IActionResult> Join([FromBody] JoinEventRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest();
+            }
+
+            var joined = await _eventService.JoinEventAsync(request);
+            if (joined == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(joined);
+        }
     }
 }

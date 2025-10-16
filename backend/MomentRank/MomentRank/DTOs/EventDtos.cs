@@ -17,4 +17,9 @@
     {
         public string Name { get; set; } = string.Empty;
     }
+
+    public class JoinEventRequest
+    {
+        public string Name { get; set; } = string.Empty;
+    }
 }

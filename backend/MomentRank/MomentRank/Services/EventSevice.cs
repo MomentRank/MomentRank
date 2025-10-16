@@ -32,7 +32,7 @@ namespace MomentRank.Services
         {
             var token = GetUserToken();
             if (string.IsNullOrEmpty(token))
-                return null;
+ç                return null;
 
             var handler = new JwtSecurityTokenHandler();
             var jwt = handler.ReadJwtToken(token);
@@ -63,7 +63,7 @@ namespace MomentRank.Services
 
                 // Check if event already exists
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(u => u.Name == request.Name ||
+                    .FirstOrDefaultAsync(u => u.Name == request.Name &&
                                             u.OwnerId == parsedId.Value);
 
                 if (existingEvent != null)
@@ -100,7 +100,7 @@ namespace MomentRank.Services
 
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(u => u.Name == request.Name ||
+                    .FirstOrDefaultAsync(u => u.Name == request.Name &&
                                             u.OwnerId == parsedId.Value);
 
                 if (existingEvent == null)
@@ -109,6 +109,7 @@ namespace MomentRank.Services
                 }
 
                 _context.Events.Remove(existingEvent);
+                await _context.SaveChangesAsync();
 
                 return existingEvent;
             }
@@ -127,7 +128,7 @@ namespace MomentRank.Services
 
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(u => u.Name == request.Name ||
+                    .FirstOrDefaultAsync(u => u.Name == request.Name &&
                                             u.OwnerId == parsedId.Value);
 
                 if (existingEvent == null)

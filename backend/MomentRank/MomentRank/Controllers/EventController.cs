@@ -23,12 +23,12 @@ namespace MomentRank.Controllers
             }
 
             var created = await _eventService.CreateEventAsync(request);
-            if (created != null)
+            if (created == null)
             {
                 return Unauthorized();
             }
 
-            return Ok();
+            return Ok(created);
         }
         [HttpPost("delete")]
         public async Task<IActionResult> Delete([FromBody] DeleteEventRequest request)
@@ -39,12 +39,12 @@ namespace MomentRank.Controllers
             }
 
             var deleted = await _eventService.DeleteEventAsync(request);
-            if (deleted != null)
+            if (deleted == null)
             {
                 return Unauthorized();
             }
 
-            return Ok();
+            return Ok(deleted);
         }
 
         [HttpPost("read")]
@@ -56,7 +56,7 @@ namespace MomentRank.Controllers
             }
 
             var read = await _eventService.ReadEventAsync(request);
-            if (read != null)
+            if (read == null)
             {
                 return Unauthorized();
             }

@@ -63,5 +63,17 @@ namespace MomentRank.Controllers
 
             return Ok(read);
         }
+
+        [HttpPost("list")]
+        public async Task<IActionResult> List()
+        {
+            var events = await _eventService.ListEventsAsync();
+            if (events == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(events);
+        }
     }
 }

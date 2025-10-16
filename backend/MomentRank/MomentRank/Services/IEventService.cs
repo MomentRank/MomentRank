@@ -8,5 +8,6 @@ namespace MomentRank.Services
         Task<Event?> CreateEventAsync(CreateEventRequest request);
         Task<Event?> DeleteEventAsync(DeleteEventRequest request);
         Task<Event?> ReadEventAsync(ReadEventRequest request);
+        Task<List<Event>?> ListEventsAsync();
     }
 }

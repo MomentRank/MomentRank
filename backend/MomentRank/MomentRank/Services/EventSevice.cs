@@ -151,12 +151,54 @@ namespace MomentRank.Services
                 var parsedId = GetUserIdFromToken();
                 if (parsedId == null) return null;
 
-                // Get all events owned by this user
+                // Get all public events
                 var events = await _context.Events
-                    .Where(e => e.OwnerId == parsedId.Value)
+                    .Where(e => e.Public == true)
                     .ToListAsync();
 
                 return events;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<Event?> JoinEventAsync(JoinEventRequest request)
+        {
+            try
+            {
+                //Get Id from token
+                var parsedId = GetUserIdFromToken();
+                if (parsedId == null) return null;
+
+                // Find the event by name
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Name == request.Name);
+
+                if (existingEvent == null)
+                {
+                    return null; // Event doesn't exist
+                }
+
+                // Check if user is already the owner
+                if (existingEvent.OwnerId == parsedId.Value)
+                {
+                    return null; // Can't join your own event
+                }
+
+                // Check if user is already a member
+                var userIdString = parsedId.Value.ToString();
+                if (existingEvent.MemberIds.Contains(userIdString))
+                {
+                    return null; // Already a member
+                }
+
+                // Add user to members list
+                existingEvent.MemberIds.Add(userIdString);
+                await _context.SaveChangesAsync();
+
+                return existingEvent;
             }
             catch (Exception ex)
             {

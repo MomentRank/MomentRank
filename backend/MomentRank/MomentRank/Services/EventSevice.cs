@@ -142,5 +142,26 @@ namespace MomentRank.Services
                 return null;
             }
         }
+
+        public async Task<List<Event>?> ListEventsAsync()
+        {
+            try
+            {
+                //Get Id from token
+                var parsedId = GetUserIdFromToken();
+                if (parsedId == null) return null;
+
+                // Get all events owned by this user
+                var events = await _context.Events
+                    .Where(e => e.OwnerId == parsedId.Value)
+                    .ToListAsync();
+
+                return events;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
     }
 }

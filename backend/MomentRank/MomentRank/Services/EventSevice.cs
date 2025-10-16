@@ -32,7 +32,7 @@ namespace MomentRank.Services
         {
             var token = GetUserToken();
             if (string.IsNullOrEmpty(token))
-ç                return null;
+                return null;
 
             var handler = new JwtSecurityTokenHandler();
             var jwt = handler.ReadJwtToken(token);

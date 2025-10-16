@@ -25,7 +25,8 @@ namespace MomentRank.Controllers
             {
                 return Unauthorized("Invalid user token");
             }
-            var user = await _authService.GetUserByIdAsync(userId);
+            
+            User? user = await _authService.GetUserByIdAsync(userId);
 
             return Ok(new {Username = user?.Username});
         }

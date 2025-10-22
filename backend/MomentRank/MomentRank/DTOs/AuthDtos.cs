@@ -16,5 +16,6 @@
     public class LoginResponse
     {
         public string Access_token { get; set; } = string.Empty;
+        public bool First_time_login { get; set; } = false;
     }
 }

@@ -15,7 +15,7 @@ export default function TabsLayout() {
           borderBottomRightRadius: 70,
           height: 70,
           paddingBottom: 20,
-          paddingTop: 10,
+          paddingTop: 20,
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
@@ -28,6 +28,7 @@ export default function TabsLayout() {
         },
         tabBarActiveTintColor: 'rgba(255, 149, 0, 0.8)',
         tabBarInactiveTintColor: '#4C4C4C',
+        tabBarShowLabel: false,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',

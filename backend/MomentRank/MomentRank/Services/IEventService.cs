@@ -5,10 +5,10 @@ namespace MomentRank.Services
 {
     public interface IEventService
     {
-        Task<Event?> CreateEventAsync(CreateEventRequest request);
-        Task<Event?> DeleteEventAsync(DeleteEventRequest request);
-        Task<Event?> ReadEventAsync(ReadEventRequest request);
-        Task<List<Event>?> ListEventsAsync();
-        Task<Event?> JoinEventAsync(JoinEventRequest request);
+        Task<Event?> CreateEventAsync(User user, CreateEventRequest request);
+        Task<Event?> DeleteEventAsync(User user, DeleteEventRequest request);
+        Task<Event?> ReadEventAsync(User user, ReadEventRequest request);
+        Task<List<Event>?> ListEventsAsync(User user);
+        Task<Event?> JoinEventAsync(User user, JoinEventRequest request);
     }
 }

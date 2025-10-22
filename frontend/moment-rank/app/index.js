@@ -5,6 +5,7 @@ import styles from "../Styles/main";
 import AppHeader from "../components/AppHeader";
 import InfoFooter from "../components/InfoFooter";
 import { login } from "../services/authService";
+import { loginWithFacebook } from "../services/facebookAuthService";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -21,6 +22,19 @@ export default function LoginScreen() {
     }
     // For testing purposes, navigate directly to MainApp
     // router.replace("/(tabs)");
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      const result = await loginWithFacebook();
+      if (result.success) {
+        // Check if this is the user's first login
+        // Navigate to appropriate screen
+        router.replace("/(tabs)");
+      }
+    } catch (err) {
+      Alert.alert("Facebook Login Error", err.message);
+    }
   };
 
   return (
@@ -68,7 +82,7 @@ export default function LoginScreen() {
       <View>
 
         <TouchableOpacity 
-          onPress={() => router.push("/first-time-login")} 
+          onPress={handleFacebookLogin} 
           style={styles.buttonAuth}>
           <Image source={require('../assets/icon_facebook.png')} style={styles.logoImage} />
           <Text style={styles.buttonAuthText}>Continue with Facebook</Text>

@@ -26,7 +26,7 @@ export default StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    paddingVertical: 20,
+    paddingVertical: 12,
     paddingHorizontal: 10,
     marginBottom: 10,
     borderRadius: 8,

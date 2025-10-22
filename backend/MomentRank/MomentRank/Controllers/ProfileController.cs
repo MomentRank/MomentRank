@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using MomentRank.Data;
 using MomentRank.DTOs;
 using MomentRank.Services;
+using MomentRank.Utils;
 
 namespace MomentRank.Controllers
 {
@@ -9,10 +11,12 @@ namespace MomentRank.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly IProfileService _profileService;
+        private readonly ApplicationDbContext _context;
 
-        public ProfileController(IProfileService profileService)
+        public ProfileController(IProfileService profileService, ApplicationDbContext context)
         {
             _profileService = profileService;
+            _context = context;
         }
 
         [HttpPost("create")]
@@ -20,13 +24,19 @@ namespace MomentRank.Controllers
         {
             if (string.IsNullOrEmpty(request.Name) && string.IsNullOrEmpty(request.Bio))
             {
-                return BadRequest();
+                return BadRequest("Name or Bio must be provided");
             }
 
-            var created = await _profileService.CreateProfileAsync(request);
-            if (created == null)
+            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            if (user == null)
             {
                 return Unauthorized();
+            }
+
+            var created = await _profileService.CreateProfileAsync(user, request);
+            if (created == null)
+            {
+                return StatusCode(500, "Failed to create profile");
             }
 
             return Ok(created);
@@ -35,10 +45,16 @@ namespace MomentRank.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> Update([FromBody] UpdateProfileRequest request)
         {
-            var updated = await _profileService.UpdateProfileAsync(request);
-            if (updated == null)
+            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            if (user == null)
             {
                 return Unauthorized();
+            }
+
+            var updated = await _profileService.UpdateProfileAsync(user, request);
+            if (updated == null)
+            {
+                return StatusCode(500, "Failed to update profile");
             }
 
             return Ok(updated);
@@ -47,10 +63,16 @@ namespace MomentRank.Controllers
         [HttpPost("get")]
         public async Task<IActionResult> Get()
         {
-            var profile = await _profileService.GetProfileAsync();
-            if (profile == null)
+            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            if (user == null)
             {
                 return Unauthorized();
+            }
+
+            var profile = await _profileService.GetProfileAsync(user);
+            if (profile == null)
+            {
+                return StatusCode(500, "Failed to retrieve profile");
             }
 
             return Ok(profile);

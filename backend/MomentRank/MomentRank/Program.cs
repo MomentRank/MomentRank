@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 
@@ -26,7 +27,8 @@ builder.Services.AddCors(options =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .SetPreflightMaxAge(TimeSpan.FromSeconds(2520));
     });
 });
 
@@ -101,6 +103,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable serving static files (for uploaded photos)
+app.UseStaticFiles();
 
 app.UseCors("AllowAll");
 

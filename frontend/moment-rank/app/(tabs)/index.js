@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
 
@@ -29,9 +30,14 @@ const ContentCard = ({ imageSource, description, onPress }) => (
 );
 
 export default function HomeScreen() {
-    const handleOpen = (index) => {
-        // Handle open action
-        console.log(`Open button pressed for card ${index}`);
+    const router = useRouter();
+    
+    const handleOpen = (cardId) => {
+        // Navigate to PhotoUploadScreen with the card ID as eventId
+        router.push({
+            pathname: '/photo-upload',
+            params: { eventId: cardId.toString() }
+        });
     };
 
     const cardData = [

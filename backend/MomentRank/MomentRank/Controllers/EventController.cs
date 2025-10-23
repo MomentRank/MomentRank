@@ -11,11 +11,13 @@ namespace MomentRank.Controllers
     public class EventController : ControllerBase
     {
         private readonly IEventService _eventService;
+        private readonly IPhotoService _photoService;
         private readonly ApplicationDbContext _context;
 
-        public EventController(IEventService eventService, ApplicationDbContext context)
+        public EventController(IEventService eventService, IPhotoService photoService, ApplicationDbContext context)
         {
             _eventService = eventService;
+            _photoService = photoService;
             _context = context;
         }
 
@@ -127,6 +129,66 @@ namespace MomentRank.Controllers
             }
 
             return Ok(joined);
+        }
+
+        [HttpPost("photos/upload-base64")]
+        public async Task<IActionResult> UploadPhotoBase64([FromBody] Base64UploadRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.FileData))
+                {
+                    return BadRequest("No file data provided");
+                }
+
+                var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+                if (user == null)
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _photoService.UploadPhotoBase64Async(user, request);
+                if (result == null)
+                {
+                    return BadRequest("Failed to upload photo. Check file size and type.");
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Upload failed: {ex.Message}");
+            }
+        }
+
+        [HttpPost("photos/list")]
+        public async Task<IActionResult> ListPhotos([FromBody] ListPhotosRequest request)
+        {
+            var photos = await _photoService.ListPhotosAsync(request.EventId);
+            if (photos == null)
+            {
+                return StatusCode(500, "Failed to retrieve photos");
+            }
+
+            return Ok(photos);
+        }
+
+        [HttpPost("photos/delete")]
+        public async Task<IActionResult> DeletePhoto([FromBody] DeletePhotoRequest request)
+        {
+            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var success = await _photoService.DeletePhotoAsync(user, request.PhotoId);
+            if (!success)
+            {
+                return NotFound("Photo not found or you don't have permission to delete it");
+            }
+
+            return Ok(new { message = "Photo deleted successfully" });
         }
     }
 }

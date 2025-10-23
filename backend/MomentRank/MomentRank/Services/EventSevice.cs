@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MomentRank.Data;
 using MomentRank.DTOs;
+using MomentRank.Enums;
 using MomentRank.Models;
 
 namespace MomentRank.Services
@@ -93,14 +94,32 @@ namespace MomentRank.Services
             }
         }
 
-        public async Task<List<Event>?> ListEventsAsync(User user)
+        public async Task<List<Event>?> ListEventsAsync(User user, bool includeOwned = false, EventStatus? filterByStatus = null)
         {
             try
             {
-                // Get all public events
-                var events = await _context.Events
-                    .Where(e => e.Public == true)
-                    .ToListAsync();
+                // Start with public events query
+                var query = _context.Events.AsQueryable();
+
+                // Apply public filter (always include public events)
+                if (includeOwned)
+                {
+                    // Include both public events and events owned by the user
+                    query = query.Where(e => e.Public == true || e.OwnerId == user.Id);
+                }
+                else
+                {
+                    // Only public events
+                    query = query.Where(e => e.Public == true);
+                }
+
+                // Apply status filter if provided
+                if (filterByStatus.HasValue)
+                {
+                    query = query.Where(e => e.Status == filterByStatus.Value);
+                }
+
+                var events = await query.ToListAsync();
 
                 return events;
             }

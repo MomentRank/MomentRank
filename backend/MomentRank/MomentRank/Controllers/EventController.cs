@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
 using MomentRank.Data;
 using MomentRank.DTOs;
 using MomentRank.Services;
@@ -15,12 +17,14 @@ namespace MomentRank.Controllers
         private readonly IEventService _eventService;
         private readonly IPhotoService _photoService;
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public EventController(IEventService eventService, IPhotoService photoService, ApplicationDbContext context)
+        public EventController(IEventService eventService, IPhotoService photoService, ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _eventService = eventService;
             _photoService = photoService;
             _context = context;
+            _environment = environment;
         }
 
         [HttpPost("create")]
@@ -166,6 +170,18 @@ namespace MomentRank.Controllers
         [HttpPost("photos/list")]
         public async Task<IActionResult> ListPhotos([FromBody] ListPhotosRequest request)
         {
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Check if user has access to the event
+            if (!await _photoService.IsUserEventMemberAsync(user, request.EventId))
+            {
+                return Forbid("You don't have access to this event");
+            }
+
             var photos = await _photoService.ListPhotosAsync(request.EventId);
             if (photos == null)
             {
@@ -184,13 +200,49 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            var success = await _photoService.DeletePhotoAsync(user, request.PhotoId);
-            if (!success)
+            try
             {
-                return NotFound("Photo not found or you don't have permission to delete it");
-            }
+                var photo = await _context.Photos
+                    .FirstOrDefaultAsync(p => p.Id == request.PhotoId);
 
-            return Ok(new { message = "Photo deleted successfully" });
+                if (photo == null)
+                {
+                    return NotFound($"Photo with ID {request.PhotoId} not found");
+                }
+
+                // Get the event separately to avoid schema issues
+                var eventEntity = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == photo.EventId);
+
+                if (eventEntity == null)
+                {
+                    return NotFound($"Event with ID {photo.EventId} not found");
+                }
+
+                // Check if user is the uploader or event owner
+                if (photo.UploadedById != user.Id && eventEntity.OwnerId != user.Id)
+                {
+                    return Forbid($"User {user.Id} is not uploader ({photo.UploadedById}) or event owner ({eventEntity.OwnerId})");
+                }
+
+                // Delete physical file
+                var fullPath = Path.Combine(_environment.WebRootPath, photo.FilePath);
+                if (System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+
+                // Delete database record
+                _context.Photos.Remove(photo);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Photo deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Delete failed: {ex.Message}");
+            }
         }
+
     }
 }

@@ -158,14 +158,20 @@ namespace MomentRank.Services
             try
             {
                 var photo = await _context.Photos
-                    .Include(p => p.Event)
                     .FirstOrDefaultAsync(p => p.Id == photoId);
 
                 if (photo == null)
                     return false;
 
+                // Get the event separately to avoid schema issues
+                var eventEntity = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == photo.EventId);
+
+                if (eventEntity == null)
+                    return false;
+
                 // Check if user is the uploader or event owner
-                if (photo.UploadedById != user.Id && photo.Event.OwnerId != user.Id)
+                if (photo.UploadedById != user.Id && eventEntity.OwnerId != user.Id)
                     return false;
 
                 // Delete physical file
@@ -191,15 +197,18 @@ namespace MomentRank.Services
         {
             try
             {
-                var eventEntity = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Id == eventId);
+                // Query only the columns we need to avoid schema issues
+                var eventOwnerId = await _context.Events
+                    .Where(e => e.Id == eventId)
+                    .Select(e => e.OwnerId)
+                    .FirstOrDefaultAsync();
 
-                if (eventEntity == null)
+                if (eventOwnerId == 0)
                     return false;
 
                 // For now, allow photo uploads for event owners only
                 // TODO: Implement proper member checking when EventMember table is used
-                return eventEntity.OwnerId == user.Id;
+                return eventOwnerId == user.Id;
             }
             catch (Exception)
             {

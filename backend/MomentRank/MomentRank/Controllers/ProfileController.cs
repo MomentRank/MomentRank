@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MomentRank.Data;
 using MomentRank.DTOs;
@@ -8,6 +9,7 @@ namespace MomentRank.Controllers
 {
     [ApiController]
     [Route("profile")]
+    [Authorize]
     public class ProfileController : ControllerBase
     {
         private readonly IProfileService _profileService;
@@ -27,7 +29,7 @@ namespace MomentRank.Controllers
                 return BadRequest("Name or Bio must be provided");
             }
 
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -45,7 +47,7 @@ namespace MomentRank.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> Update([FromBody] UpdateProfileRequest request)
         {
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -63,7 +65,7 @@ namespace MomentRank.Controllers
         [HttpPost("get")]
         public async Task<IActionResult> Get()
         {
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();

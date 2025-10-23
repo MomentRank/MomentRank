@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MomentRank.Data;
 using MomentRank.DTOs;
 using MomentRank.Services;
@@ -7,7 +8,8 @@ using MomentRank.Utils;
 namespace MomentRank.Controllers
 {
     [ApiController]
-    [Route ("event")]
+    [Route("event")]
+    [Authorize]
     public class EventController : ControllerBase
     {
         private readonly IEventService _eventService;
@@ -29,7 +31,7 @@ namespace MomentRank.Controllers
                 return BadRequest();
             }
 
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -52,7 +54,7 @@ namespace MomentRank.Controllers
                 return BadRequest();
             }
 
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -75,7 +77,7 @@ namespace MomentRank.Controllers
                 return BadRequest();
             }
 
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -93,7 +95,7 @@ namespace MomentRank.Controllers
         [HttpPost("list")]
         public async Task<IActionResult> List()
         {
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -116,7 +118,7 @@ namespace MomentRank.Controllers
                 return BadRequest();
             }
 
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();
@@ -141,7 +143,7 @@ namespace MomentRank.Controllers
                     return BadRequest("No file data provided");
                 }
 
-                var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+                var user = await this.GetCurrentUserAsync(_context);
                 if (user == null)
                 {
                     return Unauthorized();
@@ -176,7 +178,7 @@ namespace MomentRank.Controllers
         [HttpPost("photos/delete")]
         public async Task<IActionResult> DeletePhoto([FromBody] DeletePhotoRequest request)
         {
-            var user = await JwtUtils.GetUserFromRequestAsync(Request, _context);
+            var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
             {
                 return Unauthorized();

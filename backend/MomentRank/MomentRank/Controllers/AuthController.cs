@@ -84,7 +84,8 @@ namespace MomentRank.Controllers
 
             var request = new LoginRequest
             {
-                Email = email
+                Email = email,
+                Password = ""
             };
 
             String? jwt = await _authService.FacebookLoginAsync(request);

@@ -1,24 +1,24 @@
 namespace MomentRank.DTOs
 {
-    public class CreateProfileRequest
+    public record CreateProfileRequest
     {
-        public string Name { get; set; } = string.Empty;
-        public string Bio { get; set; } = string.Empty;
+        public required string Name { get; init; }
+        public required string Bio { get; init; }
     }
 
-    public class UpdateProfileRequest
+    public record UpdateProfileRequest
     {
-        public string? Name { get; set; } // null or empty = delete
-        public string? Bio { get; set; } // null or empty = delete
+        public string? Name { get; init; } // null or empty = delete
+        public string? Bio { get; init; }   // null or empty = delete
     }
 
-    public class ProfileResponse
+    public record ProfileResponse
     {
-        public int Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string? Name { get; set; }
-        public string? Bio { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public int Id { get; init; }
+        public required string Username { get; init; }
+        public required string Email { get; init; }
+        public string? Name { get; init; }
+        public string? Bio { get; init; }
+        public DateTime CreatedAt { get; init; }
     }
 }

@@ -1,25 +1,25 @@
 ﻿namespace MomentRank.DTOs
 {
-    public class CreateEventRequest
+    public record CreateEventRequest
     {
-        public string Name { get; set; } = string.Empty;
-        public bool Public { get; set; } = false;
-        public DateTime CreatedAt { get; set; }
-        public DateTime EndsAt { get; set; }
+        public required string Name { get; init; }
+        public bool Public { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public DateTime EndsAt { get; init; }
     }
 
-    public class DeleteEventRequest
+    public record DeleteEventRequest
     {
-        public string Name { get; set; } = string.Empty;
+        public required string Name { get; init; }
     }
 
-    public class ReadEventRequest
+    public record ReadEventRequest
     {
-        public string Name { get; set; } = string.Empty;
+        public required string Name { get; init; }
     }
 
-    public class JoinEventRequest
+    public record JoinEventRequest
     {
-        public string Name { get; set; } = string.Empty;
+        public required string Name { get; init; }
     }
 }

@@ -6,6 +6,7 @@ import AppHeader from "../components/AppHeader";
 import InfoFooter from "../components/InfoFooter";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BASE_URL from "../Config";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function RegisterScreen() {
   const [emailValid, setEmailValid] = useState(false);
   const [usernameValid, setUsernameValid] = useState(false);
 
-  const API_URL = "http://localhost:5121";
+  const API_URL = BASE_URL;
 
   useEffect(() => {
     fetchValidationRequirements();

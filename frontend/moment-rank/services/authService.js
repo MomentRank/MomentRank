@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = "http://localhost:5121"; // adjust port if needed
+import BASE_URL from "../Config";
+const API_URL = BASE_URL; // adjust port if needed
 
 export const register = async (username, email, password) => {
   try {

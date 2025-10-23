@@ -2,10 +2,11 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import BASE_URL from "../Config";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = "http://localhost:5121";
+const API_URL = BASE_URL;
 
 // Facebook OAuth Configuration
 const FACEBOOK_APP_ID = '1509885020039998';

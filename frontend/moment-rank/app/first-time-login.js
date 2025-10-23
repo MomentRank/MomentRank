@@ -6,8 +6,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../Styles/main";
 import AppHeader from "../components/AppHeader";
 import InfoFooter from "../components/InfoFooter";
-
-const API_URL = "http://localhost:5121";
+import BASE_URL from "../Config";
+const API_URL = BASE_URL;
 
 export default function FirstTimeLoginScreen() {
   const router = useRouter();

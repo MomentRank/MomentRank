@@ -1,0 +1,15 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\backend",
+    "\\backend\\MomentRank",
+    "\\backend\\MomentRank\\MomentRank\\Controllers",
+    "\\backend\\MomentRank\\MomentRank\\Data",
+    "\\backend\\MomentRank\\MomentRank\\DTOs",
+    "\\backend\\MomentRank\\MomentRank\\Models",
+    "\\backend\\MomentRank\\MomentRank\\Properties",
+    "\\backend\\MomentRank\\MomentRank\\Services"
+  ],
+  "SelectedNode": "\\backend\\MomentRank\\MomentRank.sln",
+  "PreviewInSolutionExplorer": false
+}

@@ -16,6 +16,7 @@ builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BASE_URL from '../Config';
+import Style from '../Styles/main';
 
 const API_URL = BASE_URL;
 
@@ -31,7 +32,7 @@ export default function PhotoUploadScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 1.0,
       });
 
       if (!result.canceled) {
@@ -68,7 +69,7 @@ export default function PhotoUploadScreen() {
             const uploadData = {
               eventId: parseInt(currentEventId),
               fileData: base64data,
-              fileName: imageAsset.fileName || 'photo.jpg',
+              fileName: imageAsset.fileName,
               contentType: 'image/jpeg',
               caption: ''
             };
@@ -181,31 +182,14 @@ export default function PhotoUploadScreen() {
   }, []);
 
   return (
-    <ScrollView style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
+    <View style={{backgroundColor:'#FFD280', overflow: 'hidden', flex: 1}}>
+    <View style={[Style.container, {backgroundColor:'#FFFFFF', borderRadius: 78, paddingTop:100, paddingBottom:50, margin:5, marginVertical:15, flex: 1}]}>
+      <Text style={[Style.h2, { marginBottom: 20, textAlign: 'center' }]}>
         Event Photos
       </Text>
 
-      {/* Upload Button */}
-      <TouchableOpacity
-        onPress={pickImage}
-        disabled={loading}
-        style={{
-          backgroundColor: '#007AFF',
-          padding: 15,
-          borderRadius: 8,
-          alignItems: 'center',
-          marginBottom: 20,
-          opacity: loading ? 0.6 : 1,
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
-          {loading ? 'Uploading...' : 'Upload Photo'}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Photos Grid */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+      {/* Photos Grid (non-scrollable) */}
+      <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120 }}>
         {photos.map((photo) => (
           <View key={photo.id} style={{ width: '48%', marginBottom: 15 }}>
             <Image
@@ -236,10 +220,59 @@ export default function PhotoUploadScreen() {
       </View>
 
       {photos.length === 0 && (
-        <Text style={{ textAlign: 'center', color: '#666', marginTop: 50 }}>
+        <Text style={{ textAlign: 'center', color: '#666', marginTop: 20 }}>
           No photos uploaded yet
         </Text>
       )}
-    </ScrollView>
+
+      {/* Upload + Camera */}
+      <View style={{ position: 'absolute', left: 20, right: 20, bottom: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <TouchableOpacity
+          onPress={pickImage}
+          disabled={loading}
+          style={[
+            Style.buttonBig,
+            {
+              width: "45%"
+            }]}
+        >
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+            {loading ? 'Uploading...' : 'Upload Photo'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+              if (permissionResult.granted === false) {
+                Alert.alert("Permission required", "Permission to access camera is required!");
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+              });
+              if (!result.canceled) {
+                await uploadPhoto(result.assets[0]);
+              }
+            } catch (error) {
+              console.error('Camera error:', error);
+              Alert.alert("Error", "Failed to open camera");
+            }
+          }}
+          style={[
+            Style.buttonBig,
+            {
+              width: "45%"
+            }]}
+        >
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Camera</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+    </View>
   );
 }

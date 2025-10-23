@@ -4,8 +4,9 @@ import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import BASE_URL from '../Config';
 
-const API_URL = "http://localhost:5121";
+const API_URL = BASE_URL;
 
 export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
@@ -113,8 +114,19 @@ export default function PhotoUploadScreen() {
 
   const loadPhotos = async () => {
     try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.log("No token found, skipping photo load");
+        return;
+      }
+
       const response = await axios.post(`${API_URL}/event/photos/list`, {
         eventId: currentEventId
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.data) {
@@ -122,7 +134,11 @@ export default function PhotoUploadScreen() {
       }
     } catch (error) {
       console.error('Load photos error:', error);
-      Alert.alert("Error", "Failed to load photos");
+      if (error.response?.status === 401) {
+        Alert.alert("Error", "Authentication failed. Please login again.");
+      } else {
+        Alert.alert("Error", "Failed to load photos");
+      }
     }
   };
 

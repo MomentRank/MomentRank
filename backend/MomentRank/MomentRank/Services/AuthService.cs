@@ -4,6 +4,7 @@ using MomentRank.Data;
 using MomentRank.DTOs;
 using MomentRank.Models;
 using MomentRank.Services;
+using MomentRank.Extensions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -25,6 +26,22 @@ namespace MomentRank.Services
         {
             try
             {
+                // Validate input
+                if (!request.Email.IsValidEmail())
+                {
+                    return null; // Invalid email
+                }
+
+                if (!request.Username.IsValidUsername())
+                {
+                    return null; // Invalid username
+                }
+
+                if (!request.Password.IsValidPassword())
+                {
+                    return null; // Invalid password
+                }
+
                 // Check if user already exists
                 var existingUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower() ||

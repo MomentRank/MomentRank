@@ -262,4 +262,11 @@ export default StyleSheet.create({
   navIcon: {
     fontSize: 32,
   },
+  validRequirement: {
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  invalidRequirement: {
+    color: "#F44336",
+  },
 });

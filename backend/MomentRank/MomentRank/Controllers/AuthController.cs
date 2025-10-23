@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Mvc;
 using MomentRank.DTOs;
 using MomentRank.Services;
+using MomentRank.Extensions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
@@ -95,6 +96,17 @@ namespace MomentRank.Controllers
 
             // return same format as normal login
             return Ok(new LoginResponse { Access_token = jwt });
+        }
+
+        [HttpGet("validation-requirements")]
+        public IActionResult GetValidationRequirements()
+        {
+            return Ok(new
+            {
+                PasswordRequirements = ValidationExtensions.GetPasswordRequirements(),
+                UsernameRequirements = ValidationExtensions.GetUsernameRequirements(),
+                EmailRequirements = "Email must be a valid email address format"
+            });
         }
     }
 }

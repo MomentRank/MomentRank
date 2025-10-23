@@ -1,23 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, TextInput, Alert, Text, TouchableOpacity, Image } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../Styles/main";
 import AppHeader from "../components/AppHeader";
 import InfoFooter from "../components/InfoFooter";
 
+const API_URL = "http://localhost:5121";
+
 export default function FirstTimeLoginScreen() {
   const router = useRouter();
+  const { username: passedUsername } = useLocalSearchParams();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
 
+  useEffect(() => {
+    if (passedUsername) {
+      setUsername(passedUsername);
+    }
+  }, [passedUsername]);
+
   const handleSubmit = async () => {
     try {
-      // Add first time login logic here
-      // For now, navigate to main app
+      // Get the JWT token from storage
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        Alert.alert("Error", "No authentication token found. Please login again.");
+        router.replace("/");
+        return;
+      }
+
+      // Create profile with the backend
+      const response = await axios.post(`${API_URL}/profile/create`, {
+        name: name.trim() || null,
+        bio: bio.trim() || null
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log("Profile created successfully:", response.data);
       router.replace("/(tabs)");
     } catch (err) {
-      Alert.alert("Error", err.message);
+      console.error("Profile creation error:", err);
+      if (err.response?.status === 401) {
+        Alert.alert("Error", "Authentication failed. Please login again.");
+        router.replace("/");
+      } else if (err.response?.status === 400) {
+        Alert.alert("Error", "Invalid profile data. Please check your inputs.");
+      } else {
+        Alert.alert("Error", `Profile creation failed: ${err.message}`);
+      }
     }
   };
 
@@ -47,12 +84,17 @@ export default function FirstTimeLoginScreen() {
 
         <Text style={styles.text}>Username</Text>
         <TextInput
-          style={[styles.input, {color: username ? "#000000" : "rgba(0,0,0,0.3)"}]}
+          style={[
+            styles.input, 
+            {color: username ? "#000000" : "rgba(0,0,0,0.3)"},
+            passedUsername ? {backgroundColor: "#f5f5f5", color: "#666666"} : {}
+          ]}
           placeholder="Enter your username"
           placeholderTextColor={"rgba(0,0,0,0.3)"}
           value={username}
-          onChangeText={setUsername}
+          onChangeText={passedUsername ? undefined : setUsername}
           autoCapitalize="none"
+          editable={!passedUsername}
         />
 
         <Text style={styles.text}>Bio</Text>

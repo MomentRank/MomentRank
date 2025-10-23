@@ -2,6 +2,7 @@ import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BASE_URL from "../Config";
 const API_URL = BASE_URL; // adjust port if needed
+console.log("AuthService using API URL:", API_URL);
 
 export const register = async (username, email, password) => {
   try {

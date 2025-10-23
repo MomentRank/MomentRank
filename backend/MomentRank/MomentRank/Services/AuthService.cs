@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using BCrypt.Net;
 
 
 namespace MomentRank.Services
@@ -147,13 +148,12 @@ namespace MomentRank.Services
 
         private string HashPassword(string password)
         {
-            // TODO: implement password hashing.
-            return password;
+            return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
         }
 
         private bool VerifyPassword(string password, string hashedPassword)
         {
-            return HashPassword(password).Equals(hashedPassword);
+            return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
 
         private string GenerateJwtToken(User user)

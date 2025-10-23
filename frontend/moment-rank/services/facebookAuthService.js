@@ -5,7 +5,7 @@ import axios from 'axios';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://localhost:5121";
 
 // Facebook OAuth Configuration
 const FACEBOOK_APP_ID = '1509885020039998';

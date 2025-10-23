@@ -14,14 +14,12 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     try {
-      //const token = await login(email, password);
+      const token = await login(email, password);
       // Navigate to main app (tabs)
       router.replace("/(tabs)");
     } catch (err) {
       Alert.alert("Error", err.message);
     }
-    // For testing purposes, navigate directly to MainApp
-    // router.replace("/(tabs)");
   };
 
   const handleFacebookLogin = async () => {

@@ -93,7 +93,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpPost("list")]
-        public async Task<IActionResult> List()
+        public async Task<IActionResult> List([FromQuery] bool includeOwned = false, [FromQuery] int? statusFilter = null)
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -101,7 +101,12 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            var events = await _eventService.ListEventsAsync(user);
+            // Demonstrating named parameters - explicitly naming the arguments for clarity
+            var events = await _eventService.ListEventsAsync(
+                user: user, 
+                includeOwned: includeOwned, 
+                filterByStatus: statusFilter.HasValue ? (Enums.EventStatus)statusFilter.Value : null);
+            
             if (events == null)
             {
                 return StatusCode(500, "Failed to retrieve events");

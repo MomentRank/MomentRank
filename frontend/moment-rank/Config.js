@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 // LAN IP
-const IP = '172.20.10.2';
+const IP = 'localhost';
 const PORT = 5000;
 
 const BASE_URL = (() => {

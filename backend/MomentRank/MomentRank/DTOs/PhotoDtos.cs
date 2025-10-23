@@ -1,35 +1,35 @@
 namespace MomentRank.DTOs
 {
-    public class DeletePhotoRequest
+    public record DeletePhotoRequest
     {
-        public int PhotoId { get; set; }
+        public int PhotoId { get; init; }
     }
 
-    public class ListPhotosRequest
+    public record ListPhotosRequest
     {
-        public int EventId { get; set; }
+        public int EventId { get; init; }
     }
 
-    public class PhotoResponse
+    public record PhotoResponse
     {
-        public int Id { get; set; }
-        public int EventId { get; set; }
-        public int UploadedById { get; set; }
-        public string FileName { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public string ContentType { get; set; } = string.Empty;
-        public long FileSizeBytes { get; set; }
-        public DateTime UploadedAt { get; set; }
-        public string? Caption { get; set; }
-        public string UploadedByUsername { get; set; } = string.Empty;
+        public int Id { get; init; }
+        public int EventId { get; init; }
+        public int UploadedById { get; init; }
+        public required string FileName { get; init; }
+        public required string FilePath { get; init; }
+        public required string ContentType { get; init; }
+        public long FileSizeBytes { get; init; }
+        public DateTime UploadedAt { get; init; }
+        public string? Caption { get; init; }
+        public required string UploadedByUsername { get; init; }
     }
 
-    public class Base64UploadRequest
+    public record Base64UploadRequest
     {
-        public int EventId { get; set; }
-        public string FileData { get; set; } = string.Empty; // Base64 encoded file data
-        public string FileName { get; set; } = string.Empty;
-        public string ContentType { get; set; } = string.Empty;
-        public string? Caption { get; set; }
+        public int EventId { get; init; }
+        public required string FileData { get; init; } // Base64 encoded file data
+        public required string FileName { get; init; }
+        public required string ContentType { get; init; }
+        public string? Caption { get; init; }
     }
 }

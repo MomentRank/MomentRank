@@ -1,21 +1,21 @@
 ﻿namespace MomentRank.DTOs
 {
-    public class RegisterRequest
+    public record RegisterRequest
     {
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+        public required string Username { get; init; }
+        public required string Email { get; init; }
+        public required string Password { get; init; }
     }
 
-    public class LoginRequest
+    public record LoginRequest
     {
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+        public required string Email { get; init; }
+        public required string Password { get; init; }
     }
 
-    public class LoginResponse
+    public record LoginResponse
     {
-        public string Access_token { get; set; } = string.Empty;
-        public bool First_time_login { get; set; } = false;
+        public required string Access_token { get; init; }
+        public bool First_time_login { get; init; }
     }
 }

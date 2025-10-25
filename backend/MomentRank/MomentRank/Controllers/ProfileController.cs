@@ -97,5 +97,23 @@ namespace MomentRank.Controllers
             var results = await _profileService.SearchProfilesAsync(query);
             return Ok(results);
         }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var profile = await _profileService.GetProfileByIdAsync(user, id);
+            if (profile == null)
+            {
+                return NotFound("Profile not found");
+            }
+
+            return Ok(profile);
+        }
     }
 }

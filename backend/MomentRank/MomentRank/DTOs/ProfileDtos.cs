@@ -21,4 +21,11 @@ namespace MomentRank.DTOs
         public string? Bio { get; init; }
         public DateTime CreatedAt { get; init; }
     }
+
+    public record ProfileSearchResult
+    {
+        public int Id { get; init; }
+        public required string Username { get; init; }
+        public string? Name { get; init; }
+    }
 }

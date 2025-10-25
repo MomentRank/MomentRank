@@ -130,6 +130,7 @@ namespace MomentRank.Services
                 var photos = await _context.Photos
                     .Where(p => p.EventId == eventId)
                     .Include(p => p.UploadedBy)
+                    .Include(p => p.Event)
                     .OrderByDescending(p => p.UploadedAt)
                     .ToListAsync();
 
@@ -144,7 +145,8 @@ namespace MomentRank.Services
                     FileSizeBytes = p.FileSizeBytes,
                     UploadedAt = p.UploadedAt,
                     Caption = p.Caption,
-                    UploadedByUsername = p.UploadedBy.Username
+                    UploadedByUsername = p.UploadedBy.Username,
+                    EventOwnerId = p.Event.OwnerId
                 }).ToList();
             }
             catch (Exception)
@@ -163,29 +165,31 @@ namespace MomentRank.Services
                 if (photo == null)
                     return false;
 
-                // Get the event separately to avoid schema issues
+                // Get the event to check ownership
                 var eventEntity = await _context.Events
                     .FirstOrDefaultAsync(e => e.Id == photo.EventId);
 
                 if (eventEntity == null)
                     return false;
 
-                // Check if user is the uploader or event owner
-                if (photo.UploadedById != user.Id && eventEntity.OwnerId != user.Id)
-                    return false;
-
-                // Delete physical file
-                var fullPath = Path.Combine(_environment.WebRootPath, photo.FilePath);
-                if (File.Exists(fullPath))
+                // Allow deletion if user is the photo uploader OR the event owner
+                if (photo.UploadedById == user.Id || eventEntity.OwnerId == user.Id)
                 {
-                    File.Delete(fullPath);
+                    // Delete physical file
+                    var fullPath = Path.Combine(_environment.WebRootPath, photo.FilePath);
+                    if (File.Exists(fullPath))
+                    {
+                        File.Delete(fullPath);
+                    }
+
+                    // Delete database record
+                    _context.Photos.Remove(photo);
+                    await _context.SaveChangesAsync();
+
+                    return true;
                 }
 
-                // Delete database record
-                _context.Photos.Remove(photo);
-                await _context.SaveChangesAsync();
-
-                return true;
+                return false;
             }
             catch (Exception)
             {
@@ -197,18 +201,51 @@ namespace MomentRank.Services
         {
             try
             {
-                // Query only the columns we need to avoid schema issues
-                var eventOwnerId = await _context.Events
-                    .Where(e => e.Id == eventId)
-                    .Select(e => e.OwnerId)
-                    .FirstOrDefaultAsync();
+                var eventEntity = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == eventId);
 
-                if (eventOwnerId == 0)
+                if (eventEntity == null)
                     return false;
 
-                // For now, allow photo uploads for event owners only
-                // TODO: Implement proper member checking when EventMember table is used
-                return eventOwnerId == user.Id;
+                // For public events, anyone can upload photos
+                if (eventEntity.Public)
+                    return true;
+
+                // For private events, check if user is the event owner or a member
+                if (eventEntity.OwnerId == user.Id)
+                    return true;
+
+                // Check if user is a member of the event (using MemberIds list)
+                var userIdString = user.Id.ToString();
+                return eventEntity.MemberIds != null && eventEntity.MemberIds.Contains(userIdString);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> CanUserViewEventPhotosAsync(User user, int eventId)
+        {
+            try
+            {
+                var eventEntity = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == eventId);
+
+                if (eventEntity == null)
+                    return false;
+
+                // For public events, anyone can view photos
+                if (eventEntity.Public)
+                    return true;
+
+                // For private events, only members can view photos
+                if (eventEntity.OwnerId == user.Id)
+                    return true;
+
+                // Check if user is a member of the event
+                var userIdString = user.Id.ToString();
+                return eventEntity.MemberIds != null && eventEntity.MemberIds.Contains(userIdString);
             }
             catch (Exception)
             {

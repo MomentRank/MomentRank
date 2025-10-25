@@ -9,5 +9,6 @@ namespace MomentRank.Services
         Task<List<PhotoResponse>?> ListPhotosAsync(int eventId);
         Task<bool> DeletePhotoAsync(User user, int photoId);
         Task<bool> IsUserEventMemberAsync(User user, int eventId);
+        Task<bool> CanUserViewEventPhotosAsync(User user, int eventId);
     }
 }

@@ -13,9 +13,35 @@ export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Use eventId from params or default to 1 for testing
   const currentEventId = eventId || '1';
+
+  const getCurrentUser = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/profile/get`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data) {
+        setCurrentUser(response.data);
+      }
+    } catch (error) {
+      console.error('Get current user error:', error);
+      if (error.response?.status === 401) {
+        Alert.alert("Error", "Authentication failed. Please login again.");
+      }
+    }
+  };
 
   const pickImage = async () => {
     try {
@@ -65,7 +91,7 @@ export default function PhotoUploadScreen() {
           try {
             const base64data = reader.result;
             
-            // Send as JSON instead of FormData
+            // Send as JSON
             const uploadData = {
               eventId: parseInt(currentEventId),
               fileData: base64data,
@@ -92,6 +118,8 @@ export default function PhotoUploadScreen() {
               Alert.alert("Error", "Authentication failed. Please login again.");
             } else if (error.response?.status === 400) {
               Alert.alert("Error", "Invalid file. Please check file size and type.");
+            } else if (error.response?.status === 403) {
+              Alert.alert("Access Denied", "You don't have access to upload photos to this event. This might be a private event that requires membership.");
             } else {
               Alert.alert("Error", "Failed to upload photo");
             }
@@ -117,7 +145,6 @@ export default function PhotoUploadScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        console.log("No token found, skipping photo load");
         return;
       }
 
@@ -137,6 +164,8 @@ export default function PhotoUploadScreen() {
       console.error('Load photos error:', error);
       if (error.response?.status === 401) {
         Alert.alert("Error", "Authentication failed. Please login again.");
+      } else if (error.response?.status === 403) {
+        Alert.alert("Access Denied", "You don't have access to view photos for this event. This might be a private event that requires membership.");
       } else {
         Alert.alert("Error", "Failed to load photos");
       }
@@ -168,17 +197,20 @@ export default function PhotoUploadScreen() {
       console.error('Delete error:', error);
       if (error.response?.status === 401) {
         Alert.alert("Error", "Authentication failed. Please login again.");
+      } else if (error.response?.status === 403) {
+        Alert.alert("Error", "You can only delete your own photos or photos from events you own.");
       } else if (error.response?.status === 404) {
-        Alert.alert("Error", "Photo not found or you don't have permission to delete it.");
+        Alert.alert("Error", "Photo not found.");
       } else {
         Alert.alert("Error", "Failed to delete photo");
       }
     }
   };
 
-  // Load photos when component mounts
+  // Load photos and current user when component mounts
   React.useEffect(() => {
     loadPhotos();
+    getCurrentUser();
   }, []);
 
   return (
@@ -203,18 +235,21 @@ export default function PhotoUploadScreen() {
             <Text style={{ fontSize: 10, color: '#999' }}>
               by {photo.uploadedByUsername}
             </Text>
-            <TouchableOpacity
-              onPress={() => deletePhoto(photo.id)}
-              style={{
-                backgroundColor: '#FF3B30',
-                padding: 5,
-                borderRadius: 4,
-                alignItems: 'center',
-                marginTop: 5,
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 12 }}>Delete</Text>
-            </TouchableOpacity>
+            {(currentUser && photo.uploadedById === currentUser.id) || 
+             (currentUser && photo.eventOwnerId === currentUser.id) ? (
+              <TouchableOpacity
+                onPress={() => deletePhoto(photo.id)}
+                style={{
+                  backgroundColor: '#FF3B30',
+                  padding: 5,
+                  borderRadius: 4,
+                  alignItems: 'center',
+                  marginTop: 5,
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>Delete</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         ))}
       </View>

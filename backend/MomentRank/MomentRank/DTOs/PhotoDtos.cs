@@ -22,6 +22,7 @@ namespace MomentRank.DTOs
         public DateTime UploadedAt { get; init; }
         public string? Caption { get; init; }
         public required string UploadedByUsername { get; init; }
+        public int EventOwnerId { get; init; }
     }
 
     public record Base64UploadRequest

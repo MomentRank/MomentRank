@@ -13,6 +13,7 @@ namespace MomentRank.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<Photo> Photos { get; set; }
+        public DbSet<FriendRequest> FriendRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -55,6 +56,29 @@ namespace MomentRank.Data
                       .WithMany()
                       .HasForeignKey(p => p.UploadedById)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // FriendRequest configuration
+            modelBuilder.Entity<FriendRequest>(entity =>
+            {
+                entity.HasKey(fr => fr.Id);
+                entity.Property(fr => fr.Status).IsRequired();
+                entity.Property(fr => fr.CreatedAt).IsRequired();
+
+                // Configure relationship with Sender
+                entity.HasOne(fr => fr.Sender)
+                      .WithMany()
+                      .HasForeignKey(fr => fr.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Configure relationship with Receiver
+                entity.HasOne(fr => fr.Receiver)
+                      .WithMany()
+                      .HasForeignKey(fr => fr.ReceiverId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Create index to prevent duplicate requests
+                entity.HasIndex(fr => new { fr.SenderId, fr.ReceiverId, fr.Status });
             });
         }
     }

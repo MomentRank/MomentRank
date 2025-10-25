@@ -1,18 +1,23 @@
-import React from "react";
+import React, {useState} from "react";
 import { View, Text, TouchableOpacity, TextInput, Image } from "react-native";
 import { useRouter } from "expo-router";
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
 import { logout } from "../../services/authService";
+import axios from "axios";
+import BASE_URL from "../../Config";
+
+const API_URL = BASE_URL;
 
 export default function ProfileScreen() {
   const router = useRouter();
+  
 
   const handleLogout = async () => {
     await logout();
     router.replace("/");
   };
-
+  
   return (
     <View style={styles.container}>
       <View style={styles.backgroundWhiteBox}>

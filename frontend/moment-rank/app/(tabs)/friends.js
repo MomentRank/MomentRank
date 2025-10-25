@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, TextInput} from "react-native";
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
 
@@ -8,9 +8,13 @@ export default function FriendsScreen() {
     <View style={styles.container}>
       <View style={styles.backgroundWhiteBox}>
         <AppHeader />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={styles.h2}>Friends</Text>
-          <Text style={styles.text}>Coming soon...</Text>
+        <View >
+          <TextInput
+            style={styles.input}
+            placeholder="Search for friends..."
+            placeholderTextColor="#888"
+            width="80%"
+          />
         </View>
       </View>
     </View>

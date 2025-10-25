@@ -5,6 +5,7 @@ backend/MomentRank/.vs
 *.db
 *.db-shm
 *.db-wal
+backend/MomentRank/MomentRank/wwwroot/*
 
 # NuGet
 **/[Pp]ackages/

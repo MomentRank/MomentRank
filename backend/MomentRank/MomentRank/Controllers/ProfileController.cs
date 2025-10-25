@@ -79,5 +79,23 @@ namespace MomentRank.Controllers
 
             return Ok(profile);
         }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return BadRequest("Search query is required");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var results = await _profileService.SearchProfilesAsync(query);
+            return Ok(results);
+        }
     }
 }

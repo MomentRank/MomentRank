@@ -181,10 +181,10 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            // Check if user has access to the event
-            if (!await _photoService.IsUserEventMemberAsync(user, request.EventId))
+            // Check if user can view photos for this event (different rules for public vs private)
+            if (!await _photoService.CanUserViewEventPhotosAsync(user, request.EventId))
             {
-                return Forbid("You don't have access to this event");
+                return Forbid("You don't have access to view photos for this event");
             }
 
             var photos = await _photoService.ListPhotosAsync(request.EventId);
@@ -205,48 +205,13 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            try
+            var result = await _photoService.DeletePhotoAsync(user, request.PhotoId);
+            if (!result)
             {
-                var photo = await _context.Photos
-                    .FirstOrDefaultAsync(p => p.Id == request.PhotoId);
-
-                if (photo == null)
-                {
-                    return NotFound($"Photo with ID {request.PhotoId} not found");
-                }
-
-                // Get the event separately to avoid schema issues
-                var eventEntity = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Id == photo.EventId);
-
-                if (eventEntity == null)
-                {
-                    return NotFound($"Event with ID {photo.EventId} not found");
-                }
-
-                // Check if user is the uploader or event owner
-                if (photo.UploadedById != user.Id && eventEntity.OwnerId != user.Id)
-                {
-                    return Forbid($"User {user.Id} is not uploader ({photo.UploadedById}) or event owner ({eventEntity.OwnerId})");
-                }
-
-                // Delete physical file
-                var fullPath = Path.Combine(_environment.WebRootPath, photo.FilePath);
-                if (System.IO.File.Exists(fullPath))
-                {
-                    System.IO.File.Delete(fullPath);
-                }
-
-                // Delete database record
-                _context.Photos.Remove(photo);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Photo deleted successfully" });
+                return Forbid("You can only delete your own photos or photos from events you own");
             }
-            catch (Exception ex)
-            {
-                return BadRequest($"Delete failed: {ex.Message}");
-            }
+
+            return Ok(new { message = "Photo deleted successfully" });
         }
 
     }

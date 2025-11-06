@@ -17,8 +17,34 @@ export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const currentEventId = eventId || '1';
+
+  const getCurrentUser = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/profile/get`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data) {
+        setCurrentUser(response.data);
+      }
+    } catch (error) {
+      console.error('Get current user error:', error);
+      if (error.response?.status === 401) {
+        Alert.alert("Error", "Authentication failed. Please login again.");
+      }
+    }
+  };
 
   const pickImage = async () => {
     try {
@@ -219,7 +245,6 @@ export default function PhotoUploadScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        console.log("No token found, skipping photo load");
         return;
       }
 
@@ -241,6 +266,8 @@ export default function PhotoUploadScreen() {
       console.error('Load photos error:', error);
       if (error.response?.status === 401) {
         Alert.alert("Error", "Authentication failed. Please login again.");
+      } else if (error.response?.status === 403) {
+        Alert.alert("Access Denied", "You don't have access to view photos for this event. This might be a private event that requires membership.");
       } else {
         Alert.alert("Error", "Failed to load photos");
       }
@@ -293,7 +320,7 @@ export default function PhotoUploadScreen() {
     );
   };
 
-  // Load photos when component mounts
+  // Load photos and current user when component mounts
   React.useEffect(() => {
     loadPhotos();
   }, []);

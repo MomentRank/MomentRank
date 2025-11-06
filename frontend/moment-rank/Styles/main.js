@@ -10,7 +10,7 @@ export default StyleSheet.create({
   containerTitle: {
     alignSelf: "center",
     justifyContent: "center",
-    marginTop: '12%',
+    marginTop: '10%',
     marginBottom:'6%',
     flex: 0,
   },
@@ -19,6 +19,7 @@ export default StyleSheet.create({
     justifyContent: "space-evenly",
     alignItems: "flex-end",
     flex: 0.4,
+    marginHorizontal: '5%',
   },
   signinContainer: {
     marginTop: 40,
@@ -167,12 +168,12 @@ export default StyleSheet.create({
   backgroundWhiteBox: {
     flex: 1,
     position: 'absolute',
-    top: '1.8%',
+    top: '6%',
     left: '1.6%',
     right: '1.6%',
-    bottom: '5%',
+    bottom: '6%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 70,
+    borderRadius: 50,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

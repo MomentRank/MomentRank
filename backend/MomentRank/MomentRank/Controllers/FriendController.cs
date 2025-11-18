@@ -2,27 +2,28 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MomentRank.Data;
 using MomentRank.DTOs;
+using MomentRank.Models;
 using MomentRank.Services;
 using MomentRank.Utils;
 
 namespace MomentRank.Controllers
 {
-    [ApiController]
-    [Route("friends")]
-    [Authorize]
-    public class FriendController : ControllerBase
+    public abstract class GenericFriendController<TService, TContext> : ControllerBase
+        where TService : class, IFriendService
+        where TContext : ApplicationDbContext
     {
-        private readonly IFriendService _friendService;
-        private readonly ApplicationDbContext _context;
+        protected readonly TService _friendService;
+        protected readonly TContext _context;
 
-        public FriendController(IFriendService friendService, ApplicationDbContext context)
+        protected GenericFriendController(TService friendService, TContext context)
         {
             _friendService = friendService;
             _context = context;
         }
 
-        [HttpPost("request/send")]
-        public async Task<IActionResult> SendFriendRequest([FromBody] SendFriendRequestRequest request)
+        
+        protected async Task<IActionResult> ExecuteWithUserAsync<TResult>(Func<User, Task<TResult?>> work, string? nullErrorMessage = null)
+            where TResult : class
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -30,35 +31,35 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            var result = await _friendService.SendFriendRequestAsync(user, request.ReceiverId);
+            var result = await work(user);
             if (result == null)
             {
-                return BadRequest("Unable to send friend request. User may not exist, you may already be friends, or a request already exists.");
+                return BadRequest(nullErrorMessage ?? "Bad request");
             }
 
             return Ok(result);
+        }
+
+        [HttpPost("request/send")]
+        public virtual async Task<IActionResult> SendFriendRequest([FromBody] SendFriendRequestRequest request)
+        {
+            return await ExecuteWithUserAsync(async user =>
+            {
+                return await _friendService.SendFriendRequestAsync(user, request.ReceiverId);
+            }, "Unable to send friend request. User may not exist, you may already be friends, or a request already exists.");
         }
 
         [HttpPost("request/respond")]
-        public async Task<IActionResult> RespondToFriendRequest([FromBody] RespondToFriendRequestRequest request)
+        public virtual async Task<IActionResult> RespondToFriendRequest([FromBody] RespondToFriendRequestRequest request)
         {
-            var user = await this.GetCurrentUserAsync(_context);
-            if (user == null)
+            return await ExecuteWithUserAsync(async user =>
             {
-                return Unauthorized();
-            }
-
-            var result = await _friendService.RespondToFriendRequestAsync(user, request.RequestId, request.Accept);
-            if (result == null)
-            {
-                return BadRequest("Unable to respond to friend request. Request may not exist or you may not be authorized.");
-            }
-
-            return Ok(result);
+                return await _friendService.RespondToFriendRequestAsync(user, request.RequestId, request.Accept);
+            }, "Unable to respond to friend request. Request may not exist or you may not be authorized.");
         }
 
         [HttpPost("request/cancel/{requestId}")]
-        public async Task<IActionResult> CancelFriendRequest(int requestId)
+        public virtual async Task<IActionResult> CancelFriendRequest(int requestId)
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -76,7 +77,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpPost("remove/{friendId}")]
-        public async Task<IActionResult> RemoveFriend(int friendId)
+        public virtual async Task<IActionResult> RemoveFriend(int friendId)
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -94,7 +95,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpGet("requests/received")]
-        public async Task<IActionResult> GetPendingReceivedRequests()
+        public virtual async Task<IActionResult> GetPendingReceivedRequests()
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -107,7 +108,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpGet("requests/sent")]
-        public async Task<IActionResult> GetPendingSentRequests()
+        public virtual async Task<IActionResult> GetPendingSentRequests()
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -120,7 +121,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetFriends()
+        public virtual async Task<IActionResult> GetFriends()
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -133,7 +134,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpGet("status/{userId}")]
-        public async Task<IActionResult> GetFriendRequestStatus(int userId)
+        public virtual async Task<IActionResult> GetFriendRequestStatus(int userId)
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -151,7 +152,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpGet("check/{userId}")]
-        public async Task<IActionResult> CheckIfFriends(int userId)
+        public virtual async Task<IActionResult> CheckIfFriends(int userId)
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -161,6 +162,17 @@ namespace MomentRank.Controllers
 
             var areFriends = await _friendService.AreFriendsAsync(user.Id, userId);
             return Ok(new { areFriends });
+        }
+    }
+
+    [ApiController]
+    [Route("friends")]
+    [Authorize]
+    public class FriendController : GenericFriendController<IFriendService, ApplicationDbContext>
+    {
+        public FriendController(IFriendService friendService, ApplicationDbContext context)
+            : base(friendService, context)
+        {
         }
     }
 }

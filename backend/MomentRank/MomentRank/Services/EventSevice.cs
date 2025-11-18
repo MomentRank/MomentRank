@@ -3,6 +3,7 @@ using MomentRank.Data;
 using MomentRank.DTOs;
 using MomentRank.Enums;
 using MomentRank.Models;
+using System.Numerics;
 
 namespace MomentRank.Services
 {
@@ -55,8 +56,8 @@ namespace MomentRank.Services
             {
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(u => u.Name == request.Name &&
-                                            u.OwnerId == user.Id);
+                    .FirstOrDefaultAsync(e => e.Id == int.Parse(request.Id) &&
+                                            e.OwnerId == user.Id);
 
                 if (existingEvent == null)
                 {
@@ -79,8 +80,8 @@ namespace MomentRank.Services
             {
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(u => u.Name == request.Name &&
-                                            u.OwnerId == user.Id);
+                    .FirstOrDefaultAsync(e => e.Id == int.Parse(request.Id) &&
+                                            e.OwnerId == user.Id);
 
                 if (existingEvent == null)
                 {
@@ -94,7 +95,7 @@ namespace MomentRank.Services
             }
         }
 
-        public async Task<List<Event>?> ListEventsAsync(User user, bool includeOwned = false, EventStatus? filterByStatus = null)
+        public async Task<List<Event>?> ListEventsAsync(User user, ListEventsRequest request)
         {
             try
             {
@@ -102,24 +103,29 @@ namespace MomentRank.Services
                 var query = _context.Events.AsQueryable();
 
                 // Apply public filter (always include public events)
-                if (includeOwned)
+                if (request.includePublic)
                 {
-                    // Include both public events and events owned by the user
-                    query = query.Where(e => e.Public == true || e.OwnerId == user.Id);
+                    // Include both public events and event that user participates in
+                    query = query.Where(e => e.Public == true || e.MemberIds.Contains(user.Id.ToString()) || (user.Id == e.OwnerId));
                 }
                 else
                 {
-                    // Only public events
-                    query = query.Where(e => e.Public == true);
+                    // Only private events 
+                    query = query.Where(e => e.MemberIds.Contains(user.Id.ToString()) || (user.Id == e.OwnerId));
                 }
 
                 // Apply status filter if provided
-                if (filterByStatus.HasValue)
-                {
-                    query = query.Where(e => e.Status == filterByStatus.Value);
-                }
+                //if (filterByStatus.HasValue)
+                //{
+                //    query = query.Where(e => e.Status == filterByStatus.Value);
+                //}
 
                 var events = await query.ToListAsync();
+
+                foreach(var x in events)
+                {
+                    Console.WriteLine(x);
+                }
 
                 return events;
             }
@@ -135,7 +141,7 @@ namespace MomentRank.Services
             {
                 // Find the event by name
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Name == request.Name);
+                    .FirstOrDefaultAsync(e => e.Id == int.Parse(request.Id));
 
                 if (existingEvent == null)
                 {

@@ -5,19 +5,22 @@ import { useRouter } from "expo-router";
 import axios from "axios"; // Import axios
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
-import API_URL from "../../Config"
+import BASE_URL from "../../Config"
+import { useFocusEffect } from '@react-navigation/native';
 
-const ContentCard = ({ imageSource, description, onPress }) => {
+const API_URL = BASE_URL;
+
+const ContentCard = ({ imageSource, name, accesibility, onPress }) => {
     const source = typeof imageSource === "string" ? { uri: imageSource } : imageSource;
 
     return (
         <View style={styles.contentCard}>
             <Image source={source} style={styles.stockImage} resizeMode="cover" />
             <View style={styles.descriptionLabelContainer}>
-                <Text style={styles.descriptionLabel}>Description</Text>
+                <Text style={styles.descriptionLabel}>{name}</Text>
             </View>
             <View style={styles.descriptionTextContainer}>
-                <Text style={styles.descriptionText}>{description}</Text>
+                <Text style={styles.descriptionText}>{accesibility ? "Public" : "Private"}</Text>
             </View>
             <View style={styles.openButtonContainer}>
                 <TouchableOpacity onPress={onPress} style={styles.openButton} activeOpacity={0.7}>
@@ -42,26 +45,30 @@ export default function HomeScreen() {
 
     const getEvents = async () => {
         try {
-            const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+            Alert.alert("Error", "Please login first");
+            return;
+        }
 
             const response = await axios.post(
-                `${API_URL}/event/list`, // URL
-                null, // POST body (null because your API doesn’t expect a body)
+            `${API_URL}/event/list`, 
+                {
+                    includePublic: true, // query parameter
+                }, 
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
                     },
-                    timeout: 5000, // optional
-                    params: {
-                        includeOwned: true,  // optional query parameters
-                        statusFilter: 10
-                    }
+                    timeout: 5000,
                 }
             );
 
             const data = response.data; // Axios already parses JSON
             console.log(data);
+
+            setCardData(data);
+            setLoading(false);
 
         } catch (error) {
             console.error("Error fetching events:", error);
@@ -70,9 +77,12 @@ export default function HomeScreen() {
         }
     };
 
-    useEffect(() => {
+    
+    useFocusEffect(
+    React.useCallback(() => {
         getEvents();
-    }, []);
+    }, [])
+    );
 
     if (loading) {
         return (
@@ -98,7 +108,8 @@ export default function HomeScreen() {
                         <ContentCard
                             key={card.id}
                             imageSource={card.imageSource}
-                            description={card.description}
+                            name={card.name}
+                            accesibility={card.public}
                             onPress={() => handleOpen(card.id)}
                         />
                     ))}

@@ -53,7 +53,7 @@ namespace MomentRank.Controllers
         [HttpPost("delete")]
         public async Task<IActionResult> Delete([FromBody] DeleteEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            if (string.IsNullOrEmpty(request.Id))
             {
                 return BadRequest();
             }
@@ -76,7 +76,7 @@ namespace MomentRank.Controllers
         [HttpPost("read")]
         public async Task<IActionResult> Read([FromBody] ReadEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            if (string.IsNullOrEmpty(request.Id))
             {
                 return BadRequest();
             }
@@ -97,7 +97,7 @@ namespace MomentRank.Controllers
         }
 
         [HttpPost("list")]
-        public async Task<IActionResult> List([FromQuery] bool includeOwned = false, [FromQuery] int? statusFilter = null)
+        public async Task<IActionResult> List([FromBody] ListEventsRequest request)
         {
             var user = await this.GetCurrentUserAsync(_context);
             if (user == null)
@@ -107,9 +107,9 @@ namespace MomentRank.Controllers
 
             // Demonstrating named parameters - explicitly naming the arguments for clarity
             var events = await _eventService.ListEventsAsync(
-                user: user, 
-                includeOwned: includeOwned, 
-                filterByStatus: statusFilter.HasValue ? (Enums.EventStatus)statusFilter.Value : null);
+                user: user,
+                request: request);
+                //filterByStatus: statusFilter.HasValue ? (Enums.EventStatus)statusFilter.Value : null);
             
             if (events == null)
             {
@@ -122,7 +122,7 @@ namespace MomentRank.Controllers
         [HttpPost("join")]
         public async Task<IActionResult> Join([FromBody] JoinEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            if (string.IsNullOrEmpty(request.Id))
             {
                 return BadRequest();
             }

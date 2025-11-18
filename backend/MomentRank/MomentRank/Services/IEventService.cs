@@ -1,6 +1,7 @@
 ﻿using MomentRank.DTOs;
 using MomentRank.Enums;
 using MomentRank.Models;
+using System.ComponentModel;
 
 namespace MomentRank.Services
 {
@@ -9,7 +10,7 @@ namespace MomentRank.Services
         Task<Event?> CreateEventAsync(User user, CreateEventRequest request);
         Task<Event?> DeleteEventAsync(User user, DeleteEventRequest request);
         Task<Event?> ReadEventAsync(User user, ReadEventRequest request);
-        Task<List<Event>?> ListEventsAsync(User user, bool includeOwned = false, EventStatus? filterByStatus = null);
+        Task<List<Event>?> ListEventsAsync(User user, ListEventsRequest request);
         Task<Event?> JoinEventAsync(User user, JoinEventRequest request);
     }
 }

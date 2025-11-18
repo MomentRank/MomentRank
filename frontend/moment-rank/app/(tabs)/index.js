@@ -1,73 +1,104 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, Image, ScrollView, ActivityIndicator } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
+import axios from "axios"; // Import axios
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
+import BASE_URL from "../../Config"
+import { useFocusEffect } from '@react-navigation/native';
 
-// Extracted ContentCard component for reusability
-const ContentCard = ({ imageSource, description, onPress }) => (
-    <View style={styles.contentCard}>
-        <Image
-            source={imageSource}
-            style={styles.stockImage}
-            resizeMode="cover"
-        />
-        <View style={styles.descriptionLabelContainer}>
-            <Text style={styles.descriptionLabel}>Description</Text>
+const API_URL = BASE_URL;
+
+const ContentCard = ({ imageSource, name, accesibility, onPress }) => {
+    const source = typeof imageSource === "string" ? { uri: imageSource } : imageSource;
+
+    return (
+        <View style={styles.contentCard}>
+            <Image source={source} style={styles.stockImage} resizeMode="cover" />
+            <View style={styles.descriptionLabelContainer}>
+                <Text style={styles.descriptionLabel}>{name}</Text>
+            </View>
+            <View style={styles.descriptionTextContainer}>
+                <Text style={styles.descriptionText}>{accesibility ? "Public" : "Private"}</Text>
+            </View>
+            <View style={styles.openButtonContainer}>
+                <TouchableOpacity onPress={onPress} style={styles.openButton} activeOpacity={0.7}>
+                    <Text style={styles.openButtonText}>Open</Text>
+                </TouchableOpacity>
+            </View>
         </View>
-        <View style={styles.descriptionTextContainer}>
-            <Text style={styles.descriptionText}>
-                {description}
-            </Text>
-        </View>
-        <View style={styles.openButtonContainer}>
-            <TouchableOpacity onPress={onPress} style={styles.openButton} activeOpacity={0.7}>
-                <Text style={styles.openButtonText}>Open</Text>
-            </TouchableOpacity>
-        </View>
-    </View>
-);
+    );
+};
 
 export default function HomeScreen() {
     const router = useRouter();
-    
+    const [cardData, setCardData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const handleOpen = (cardId) => {
-        // Navigate to PhotoUploadScreen with the card ID as eventId
         router.push({
-            pathname: '/photo-upload',
-            params: { eventId: cardId.toString() }
+            pathname: "/photo-upload",
+            params: { eventId: cardId.toString() },
         });
     };
 
-    const cardData = [
-        {
-            id: 1,
-            imageSource: require('../../assets/stock-photo.png'),
-            description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's"
-        },
-        {
-            id: 2,
-            imageSource: require('../../assets/stock-photo.png'),
-            description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's"
-        },
-        {
-            id: 3,
-            imageSource: require('../../assets/stock-photo.png'),
-            description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's"
-        },
-        {
-            id: 4,
-            imageSource: require('../../assets/stock-photo.png'),
-            description: "Lorem ipsum dolor sit amet, quodsi quaeque sit et, ut eros interesset pri. Primis labores repudiare nam id, at eum facete delectus contentiones. Ne lobortis aliquando per. Eum saperet mediocritatem no, sea admodum signiferumque ut, an utamur dolorum adversarium pro. Per ad mazim consulatu complectitur, elit mazim et nec."
+    const getEvents = async () => {
+        try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+            Alert.alert("Error", "Please login first");
+            return;
         }
-    ];
+
+            const response = await axios.post(
+            `${API_URL}/event/list`, 
+                {
+                    includePublic: true, // query parameter
+                }, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    timeout: 5000,
+                }
+            );
+
+            const data = response.data; // Axios already parses JSON
+            console.log(data);
+
+            setCardData(data);
+            setLoading(false);
+
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        } finally{
+            setLoading(false);
+        }
+    };
+
+    
+    useFocusEffect(
+    React.useCallback(() => {
+        getEvents();
+    }, [])
+    );
+
+    if (loading) {
+        return (
+            <ActivityIndicator
+                size="large"
+                color="#0000ff"
+                style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            />
+        );
+    }
 
     return (
         <View style={styles.container}>
             <View style={styles.backgroundWhiteBox}>
                 <AppHeader />
-                <ScrollView 
+                <ScrollView
                     style={styles.scrollContainer}
                     contentContainerStyle={styles.scrollContentContainer}
                     showsVerticalScrollIndicator={true}
@@ -77,16 +108,13 @@ export default function HomeScreen() {
                         <ContentCard
                             key={card.id}
                             imageSource={card.imageSource}
-                            description={card.description}
+                            name={card.name}
+                            accesibility={card.public}
                             onPress={() => handleOpen(card.id)}
                         />
                     ))}
                 </ScrollView>
             </View>
         </View>
-
     );
-    
 }
-
-

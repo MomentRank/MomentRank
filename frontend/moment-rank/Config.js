@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
 // LAN IP
-const IP = 'https://asteroidsim.com/mr';
+const BASE_URL = 'http://172.20.10.5:5000';
 
-export default IP;
+export default BASE_URL;

@@ -256,7 +256,7 @@ export default function PhotoUploadScreen() {
           'Content-Type': 'application/json',
         },
       });
-
+      console.log(response.data);
       if (response.data) {
         setPhotos(response.data);
         // Start prefetching/measurement to improve viewer performance

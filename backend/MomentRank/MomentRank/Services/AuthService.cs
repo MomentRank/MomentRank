@@ -29,19 +29,13 @@ namespace MomentRank.Services
             {
                 // Validate input
                 if (!request.Email.IsValidEmail())
-                {
-                    return null; // Invalid email
-                }
+                    throw new InvalidEmailException(request.Email);
 
                 if (!request.Username.IsValidUsername())
-                {
-                    return null; // Invalid username
-                }
+                    throw new InvalidUsernameException(request.Username);
 
                 if (!request.Password.IsValidPassword())
-                {
-                    return null; // Invalid password
-                }
+                    throw new InvalidPasswordException();
 
                 // Check if user already exists
                 var existingUser = await _context.Users
@@ -49,9 +43,7 @@ namespace MomentRank.Services
                                             u.Username.ToLower() == request.Username.ToLower());
 
                 if (existingUser != null)
-                {
-                    return null; // User already exists
-                }
+                    throw new UserAlreadyExistsException(request.Email);
 
                 // Hash the password
                 var passwordHash = HashPassword(request.Password);
@@ -71,7 +63,9 @@ namespace MomentRank.Services
             }
             catch (Exception ex)
             {
-                return null;
+                File.AppendAllText("Logs/errors.log",
+                    $"{DateTime.UtcNow}: {ex}\n");
+                throw;
             }
         }
 
@@ -83,21 +77,20 @@ namespace MomentRank.Services
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
 
                 if (user == null)
-                {
-                    return null;
-                }
+                    throw new UserNotFoundException(request.Email);
 
                 if (!VerifyPassword(request.Password, user.PasswordHash))
-                {
-                    return null;
-                }
+                    throw new InvalidCredentialsException();
+
 
                 var token = GenerateJwtToken(user);
                 return token;
             }
             catch (Exception ex)
             {
-                return null;
+                File.AppendAllText("Logs/errors.log",
+                    $"{DateTime.UtcNow}: {ex}\n");
+                throw;
             }
         }
 
@@ -120,16 +113,17 @@ namespace MomentRank.Services
                 }
 
                 if (user == null)
-                {
-                    return null;
-                }
+                    throw new UserNotFoundException(request.Email);
+
 
                 var token = GenerateJwtToken(user);
                 return token;
             }
             catch (Exception ex)
             {
-                return null;
+                File.AppendAllText("Logs/errors.log",
+                    $"{DateTime.UtcNow}: {ex}\n");
+                throw;
             }
         }
 
@@ -141,7 +135,9 @@ namespace MomentRank.Services
             }
             catch (Exception ex)
             {
-                return null;
+                File.AppendAllText("Logs/errors.log",
+                    $"{DateTime.UtcNow}: {ex}\n");
+                throw;
             }
         }
 

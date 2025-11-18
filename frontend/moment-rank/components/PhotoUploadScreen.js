@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput, Dimensions, FlatList, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 import axios from 'axios';
 import BASE_URL from '../Config';
 import Style from '../Styles/main';
+import AppHeader from './AppHeader';
+
 
 const API_URL = BASE_URL;
 
@@ -15,7 +19,6 @@ export default function PhotoUploadScreen() {
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Use eventId from params or default to 1 for testing
   const currentEventId = eventId || '1';
 
   const getCurrentUser = async () => {
@@ -45,7 +48,6 @@ export default function PhotoUploadScreen() {
 
   const pickImage = async () => {
     try {
-      // Request permission
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (permissionResult.granted === false) {
@@ -55,13 +57,13 @@ export default function PhotoUploadScreen() {
 
       // Pick image
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1.0,
+        mediaTypes: ['images'], 
+        allowsEditing: false,
+        quality: 0.5,
+        base64: false,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         await uploadPhoto(result.assets[0]);
       }
     } catch (error) {
@@ -70,76 +72,174 @@ export default function PhotoUploadScreen() {
     }
   };
 
+  const takePhoto = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert("Permission required", "Permission to access the camera is required!");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'], // Updated from deprecated MediaTypeOptions
+        allowsEditing: false,
+        quality: 0.5,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadPhoto(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
   const uploadPhoto = async (imageAsset) => {
     try {
       setLoading(true);
-      
-      // Get JWT token
+
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert("Error", "Please login first");
         return;
       }
 
-      // Convert image to base64 for React Native
-      const response = await fetch(imageAsset.uri);
-      const blob = await response.blob();
-      
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = async () => {
+
+      console.log('Original image URI:', imageAsset.uri);
+      const manipulatedImage = await manipulateAsync(
+        imageAsset.uri,
+        [
+          { resize: { width: 1920 } },
+        ],
+        { 
+          compress: 0.5, 
+          format: SaveFormat.JPEG,
+        }
+      );
+
+      console.log('Compressed image URI:', manipulatedImage.uri);
+
+
+      let base64data;
+      let uri = manipulatedImage.uri;
+
+      console.log('Starting upload for:', uri);
+
+
+      if (manipulatedImage.base64) {
+        console.log('Using provided base64 data');
+        base64data = manipulatedImage.base64;
+      }
+
+      if (uri.startsWith('file://')) {
+        console.log('Reading file with FileSystem');
+        try {
+          base64data = await FileSystem.readAsStringAsync(uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          console.log('FileSystem read successful, base64 length:', base64data.length);
+        } catch (fileError) {
+          console.error('FileSystem read error:', fileError);
+          // Fallback to fetch method if FileSystem fails
+          console.log('Trying fetch method as fallback');
           try {
-            const base64data = reader.result;
-            
-            // Send as JSON
-            const uploadData = {
-              eventId: parseInt(currentEventId),
-              fileData: base64data,
-              fileName: imageAsset.fileName,
-              contentType: 'image/jpeg',
-              caption: ''
-            };
+            const response = await fetch(uri);
+            const blob = await response.blob();
 
-            const uploadResponse = await axios.post(`${API_URL}/event/photos/upload-base64`, uploadData, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
+            base64data = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result;
+                const base64 = result.includes(',') ? result.split(',')[1] : result;
+                resolve(base64);
+              };
+              reader.onerror = () => reject(new Error('Failed to read file'));
+              reader.readAsDataURL(blob);
             });
-
-            if (uploadResponse.data) {
-              Alert.alert("Success", "Photo uploaded successfully!");
-              loadPhotos(); // Refresh the list
-              resolve(uploadResponse.data);
-            }
-          } catch (error) {
-            console.error('Upload error:', error);
-            if (error.response?.status === 401) {
-              Alert.alert("Error", "Authentication failed. Please login again.");
-            } else if (error.response?.status === 400) {
-              Alert.alert("Error", "Invalid file. Please check file size and type.");
-            } else if (error.response?.status === 403) {
-              Alert.alert("Access Denied", "You don't have access to upload photos to this event. This might be a private event that requires membership.");
-            } else {
-              Alert.alert("Error", "Failed to upload photo");
-            }
-            reject(error);
-          } finally {
-            setLoading(false);
+          } catch (fetchError) {
+            console.error('Fetch method also failed:', fetchError);
+            throw new Error('Failed to read image file using any method');
           }
-        };
-        reader.onerror = () => {
-          setLoading(false);
-          reject(new Error('Failed to read file'));
-        };
-        reader.readAsDataURL(blob);
-      });
+        }
+      }
+
+      else {
+        console.log('Using fetch + FileReader method for non-file URI');
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        base64data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result;
+            const base64 = result.includes(',') ? result.split(',')[1] : result;
+            resolve(base64);
+          };
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      // Generate fileName
+      const fileName = imageAsset.fileName || 
+                      imageAsset.uri.split('/').pop() || 
+                      `photo_${new Date().getTime()}.jpg`;
+
+      // Prepare JSON payload
+      const uploadData = {
+        eventId: parseInt(currentEventId),
+        fileData: base64data,
+        fileName: fileName,
+        contentType: imageAsset.type === 'image' ? 'image/jpeg' : (imageAsset.mimeType || 'image/jpeg'),
+        caption: ''
+      };
+
+      console.log('Uploading photo:', fileName, 'Size:', base64data.length);
+
+      // Upload photo
+      const uploadResponse = await axios.post(
+        `${API_URL}/event/photos/upload-base64`,
+        uploadData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 5000,
+        }
+      );
+
+      if (uploadResponse.data) {
+        Alert.alert("Success", "Photo uploaded successfully!");
+        await loadPhotos(); // Refresh the list
+        return uploadResponse.data;
+      }
+
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert("Error", "Failed to upload photo");
+      console.error('Error details:', error.response?.data);
+
+      if (error.response?.status === 401) {
+        Alert.alert("Error", "Authentication failed. Please login again.");
+      } else if (error.response?.status === 400) {
+        Alert.alert("Error", "Invalid file. Please check file size and type.");
+      } else if (error.response?.status === 413) {
+        Alert.alert("Error", "Photo file is too large. Try taking a photo with lower resolution.");
+      } else if (error.code === 'ECONNABORTED') {
+        Alert.alert("Error", "Upload timeout. Please check your connection.");
+      } else {
+        Alert.alert("Error", `Failed to upload photo: ${error.message}`);
+      }
+
+      throw error;
+
+    } finally {
       setLoading(false);
     }
   };
+
 
   const loadPhotos = async () => {
     try {
@@ -149,7 +249,7 @@ export default function PhotoUploadScreen() {
       }
 
       const response = await axios.post(`${API_URL}/event/photos/list`, {
-        eventId: currentEventId
+        eventId: parseInt(currentEventId)
       }, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -159,6 +259,8 @@ export default function PhotoUploadScreen() {
 
       if (response.data) {
         setPhotos(response.data);
+        // Start prefetching/measurement to improve viewer performance
+        prefetchAndMeasure(response.data).catch(() => {});
       }
     } catch (error) {
       console.error('Load photos error:', error);
@@ -173,86 +275,234 @@ export default function PhotoUploadScreen() {
   };
 
   const deletePhoto = async (photoId) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert("Error", "Please login first");
-        return;
-      }
+    Alert.alert(
+      "Delete Photo",
+      "Are you sure you want to delete this photo?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
+              }
 
-      const response = await axios.post(`${API_URL}/event/photos/delete`, {
-        photoId: photoId
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+              const response = await axios.post(`${API_URL}/event/photos/delete`, {
+                photoId: photoId
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-      if (response.data) {
-        Alert.alert("Success", "Photo deleted successfully!");
-        loadPhotos(); // Refresh the list
-      }
-    } catch (error) {
-      console.error('Delete error:', error);
-      if (error.response?.status === 401) {
-        Alert.alert("Error", "Authentication failed. Please login again.");
-      } else if (error.response?.status === 403) {
-        Alert.alert("Error", "You can only delete your own photos or photos from events you own.");
-      } else if (error.response?.status === 404) {
-        Alert.alert("Error", "Photo not found.");
-      } else {
-        Alert.alert("Error", "Failed to delete photo");
-      }
-    }
+              if (response.data) {
+                Alert.alert("Success", "Photo deleted successfully!");
+                loadPhotos(); // Refresh the list
+              }
+            } catch (error) {
+              console.error('Delete error:', error);
+              if (error.response?.status === 401) {
+                Alert.alert("Error", "Authentication failed. Please login again.");
+              } else if (error.response?.status === 404) {
+                Alert.alert("Error", "Photo not found or you don't have permission to delete it.");
+              } else {
+                Alert.alert("Error", "Failed to delete photo");
+              }
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Load photos and current user when component mounts
   React.useEffect(() => {
     loadPhotos();
-    getCurrentUser();
   }, []);
+
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
+  const flatListRef = React.useRef(null);
+  const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
+  const [aspectRatios, setAspectRatios] = useState({});
+  const PREFETCH_EAGER_COUNT = 6; // number of images to prefetch/measure eagerly
+
+  // Helper: get image size as promise
+  const getSizeAsync = (uri) => new Promise((resolve, reject) => {
+    Image.getSize(uri, (w, h) => resolve({ w, h }), reject);
+  });
+
+  // Prefetch and measure images to improve viewer performance.
+  const prefetchAndMeasure = React.useCallback(async (photoList) => {
+    if (!Array.isArray(photoList) || photoList.length === 0) return;
+
+    const eager = photoList.slice(0, PREFETCH_EAGER_COUNT);
+    const rest = photoList.slice(PREFETCH_EAGER_COUNT);
+    const eagerRatios = {};
+
+    // Eagerly prefetch and measure first few images (blocking-ish) to reduce initial lag.
+    await Promise.all(eager.map(async (p, i) => {
+      const uri = `${API_URL}/${p.filePath}`;
+      try {
+        await Image.prefetch(uri);
+        const { w, h } = await getSizeAsync(uri);
+        eagerRatios[i] = w / h;
+      } catch (e) {
+        eagerRatios[i] = eagerRatios[i] || 1.5;
+      }
+    }));
+
+    if (Object.keys(eagerRatios).length > 0) {
+      setAspectRatios(prev => ({ ...prev, ...eagerRatios }));
+    }
+
+    // Background prefetch + measure remaining images (non-blocking)
+    (async () => {
+      await Promise.all(rest.map(async (p, idx) => {
+        const realIndex = idx + PREFETCH_EAGER_COUNT;
+        const uri = `${API_URL}/${p.filePath}`;
+        try {
+          await Image.prefetch(uri);
+          const { w, h } = await getSizeAsync(uri);
+          setAspectRatios(prev => ({ ...prev, [realIndex]: w / h }));
+        } catch (e) {
+          setAspectRatios(prev => ({ ...prev, [realIndex]: prev[realIndex] || 1.5 }));
+        }
+      }));
+    })();
+  }, []);
+
+  // Memoized renderItem for FlatList (must be declared unconditionally)
+  const renderFullScreenItem = React.useCallback(({ item: photo, index }) => {
+    const ratio = aspectRatios[index];
+
+    // Compute a centered black box with 3:4 aspect ratio that fits the screen.
+    // boxWidth / boxHeight = 3/4 => boxHeight = boxWidth * 4/3
+    const maxBoxWidth = windowWidth * 0.95;
+    const maxBoxHeight = windowHeight * 0.95;
+    const boxWidth = Math.min(maxBoxWidth, (maxBoxHeight * 3) / 4);
+    const boxHeight = (boxWidth * 4) / 3;
+
+    // Compute image height so it fits within the box while preserving aspect ratio.
+    let imageHeight;
+    if (ratio) {
+      // ratio = w/h => height when width = boxWidth is boxWidth / ratio
+      imageHeight = Math.min(boxHeight, boxWidth / ratio);
+    } else {
+      imageHeight = boxHeight * 0.95;
+    }
+
+    return (
+      <View style={{ width: windowWidth, height: windowHeight, justifyContent: 'center', alignItems: 'center' }}>
+        {/* Black 3:4 background box behind the image */}
+        <View style={{ width: boxWidth, height: boxHeight, backgroundColor: 'black', borderRadius: 4, position: 'absolute' }} />
+
+        {/* Keep the blurry/semi-transparent backdrop (already rendered at overlay level) and render image on top */}
+        <Image
+          source={{ uri: `${API_URL}/${photo.filePath}` }}
+          style={{ width: boxWidth, height: imageHeight }}
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }, [aspectRatios, windowWidth, windowHeight]);
+
+  const openPhotoViewer = (index) => {
+    setSelectedPhotoIndex(index);
+  };
+
+  const closePhotoViewer = () => {
+    setSelectedPhotoIndex(null);
+  };
+
+  // Scroll to selected photo when viewer opens
+  React.useEffect(() => {
+    if (selectedPhotoIndex !== null && flatListRef.current) {
+      // small timeout to allow layout to finish
+      setTimeout(() => {
+        try {
+          flatListRef.current.scrollToIndex({ index: selectedPhotoIndex, animated: false });
+        } catch (e) {
+          // fallback: scrollToOffset
+          try {
+            flatListRef.current.scrollToOffset({ offset: selectedPhotoIndex * windowWidth, animated: false });
+          } catch (e2) {
+            // ignore
+          }
+        }
+      }, 50);
+    }
+  }, [selectedPhotoIndex, windowWidth]);
+
+  // load aspect ratio for selected image so we can size it to fit horizontally
+  React.useEffect(() => {
+    if (selectedPhotoIndex !== null && photos[selectedPhotoIndex]) {
+      const uri = `${API_URL}/${photos[selectedPhotoIndex].filePath}`;
+      if (!aspectRatios[selectedPhotoIndex]) {
+        Image.getSize(uri, (w, h) => {
+          setAspectRatios(prev => ({ ...prev, [selectedPhotoIndex]: w / h }));
+        }, (err) => {
+          // fallback if fetch fails
+          setAspectRatios(prev => ({ ...prev, [selectedPhotoIndex]: 1.5 }));
+        });
+      }
+    }
+  }, [selectedPhotoIndex, photos]);
 
   return (
     <View style={{backgroundColor:'#FFD280', overflow: 'hidden', flex: 1}}>
-    <View style={[Style.container, {backgroundColor:'#FFFFFF', borderRadius: 78, paddingTop:100, paddingBottom:50, margin:5, marginVertical:15, flex: 1}]}>
-      <Text style={[Style.h2, { marginBottom: 20, textAlign: 'center' }]}>
+    <View style={{backgroundColor:'#FFFFFF', borderRadius: 50, paddingBottom:50, marginBottom:'10%', marginTop:'12.4%', marginHorizontal:'1.5%', flex: 1}}>
+      <AppHeader />
+      <Text style={[Style.h2, {textAlign: 'center'}]}>
         Event Photos
       </Text>
+  <ScrollView scrollEnabled={selectedPhotoIndex === null} contentContainerStyle={{ padding: 0, paddingBottom: 100 }}>
+        {/* Photos Grid */}
+          <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120, marginHorizontal:"3%"}}>
+            {photos.map((photo, index) => (
+              <View key={photo.id} style={{ width: '48%', marginBottom: 15 }}>
+                <View style={{ position: 'relative' }}>
+                <TouchableOpacity onPress={() => openPhotoViewer(index)}>
+                  <Image
+                    source={{ uri: `${API_URL}/${photo.filePath}` }}
+                    style={{ width: '100%', height: 200, borderRadius: 8 }}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => deletePhoto(photo.id)}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    width: 23,
+                    height: 23,
+                    borderRadius: 14,
+                    backgroundColor: '#FF3B30',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>×</Text>
+                </TouchableOpacity>
+                </View>
 
-      {/* Photos Grid (non-scrollable) */}
-      <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120 }}>
-        {photos.map((photo) => (
-          <View key={photo.id} style={{ width: '48%', marginBottom: 15 }}>
-            <Image
-              source={{ uri: `${API_URL}/${photo.filePath}` }}
-              style={{ width: '100%', height: 150, borderRadius: 8 }}
-              resizeMode="cover"
-            />
-            <Text style={{ fontSize: 12, marginTop: 5, color: '#666' }}>
-              {photo.caption || 'No caption'}
-            </Text>
-            <Text style={{ fontSize: 10, color: '#999' }}>
-              by {photo.uploadedByUsername}
-            </Text>
-            {(currentUser && photo.uploadedById === currentUser.id) || 
-             (currentUser && photo.eventOwnerId === currentUser.id) ? (
-              <TouchableOpacity
-                onPress={() => deletePhoto(photo.id)}
-                style={{
-                  backgroundColor: '#FF3B30',
-                  padding: 5,
-                  borderRadius: 4,
-                  alignItems: 'center',
-                  marginTop: 5,
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>Delete</Text>
-              </TouchableOpacity>
-            ) : null}
+                <Text style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
+                  {photo.caption || 'No caption'}
+                </Text>
+                <Text style={{ fontSize: 10, color: '#999' }}>
+                  by {photo.uploadedByUsername}
+                </Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+      
 
       {photos.length === 0 && (
         <Text style={{ textAlign: 'center', color: '#666', marginTop: 20 }}>
@@ -260,54 +510,100 @@ export default function PhotoUploadScreen() {
         </Text>
       )}
 
-      {/* Upload + Camera */}
-      <View style={{ position: 'absolute', left: 20, right: 20, bottom: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
-        <TouchableOpacity
-          onPress={pickImage}
-          disabled={loading}
-          style={[
-            Style.buttonBig,
-            {
-              width: "45%"
-            }]}
-        >
-          <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
-            {loading ? 'Uploading...' : 'Upload Photo'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={async () => {
-            try {
-              const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-              if (permissionResult.granted === false) {
-                Alert.alert("Permission required", "Permission to access camera is required!");
-                return;
-              }
-              const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.8,
-              });
-              if (!result.canceled) {
-                await uploadPhoto(result.assets[0]);
-              }
-            } catch (error) {
-              console.error('Camera error:', error);
-              Alert.alert("Error", "Failed to open camera");
-            }
-          }}
-          style={[
-            Style.buttonBig,
-            {
-              width: "45%"
-            }]}
-        >
-          <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Camera</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
+    <View style={{ position: 'absolute', left: 20, right: 20, bottom: windowHeight * 0.08, flexDirection: 'row', justifyContent: 'space-between', zIndex: 900 }} pointerEvents="box-none">
+      <TouchableOpacity
+        onPress={pickImage}
+        disabled={loading}
+        style={{
+          flex: 1,
+          marginRight: 10,
+          backgroundColor: loading ? '#666' : '#333',
+          paddingVertical: 14,
+          borderRadius: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row'
+        }}
+      >
+        <Image source={require('../assets/icon_upload.png')} style={{ width: 22, height: 22, marginRight: 10, tintColor: 'white' }} />
+        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+          {loading ? 'Uploading...' : 'Upload'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Camera on the right */}
+      <TouchableOpacity
+        onPress={takePhoto}
+        disabled={loading}
+        style={{
+          flex: 1,
+          marginLeft: 10,
+          backgroundColor: loading ? '#CC7700' : '#FF9500',
+          paddingVertical: 14,
+          borderRadius: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row'
+        }}
+      >
+        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+          {loading ? 'Uploading...' : 'Camera'}
+        </Text>
+        <Image source={require('../assets/icon_camera.png')} style={{ width: 22, height: 22, marginLeft: 10, tintColor: 'white' }} />
+      </TouchableOpacity>
+    </View>
+
+    {selectedPhotoIndex !== null && (
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1000,
+        }}
+      >
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)' }} />
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+          <FlatList
+            ref={flatListRef}
+            data={photos}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item, idx) => String(item.id ?? idx)}
+            getItemLayout={(data, index) => (
+              {length: windowWidth, offset: windowWidth * index, index}
+            )}
+            initialScrollIndex={selectedPhotoIndex}
+            renderItem={renderFullScreenItem}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ height: windowHeight }}
+            snapToInterval={windowWidth}
+            decelerationRate="fast"
+            initialNumToRender={1}
+            maxToRenderPerBatch={2}
+            windowSize={3}
+            removeClippedSubviews={true}
+          />
+          <TouchableOpacity
+            onPress={closePhotoViewer}
+            style={{
+              position: 'absolute',
+              top: 40,
+              right: 20,
+              padding: 10,
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 30 }}>×</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )}
     </View>
   );
 }

@@ -216,8 +216,7 @@ namespace MomentRank.Services
                     return true;
 
                 // Check if user is a member of the event (using MemberIds list)
-                var userIdString = user.Id.ToString();
-                return eventEntity.MemberIds != null && eventEntity.MemberIds.Contains(userIdString);
+                return eventEntity.MemberIds != null && eventEntity.MemberIds.Contains(user.Id);
             }
             catch (Exception)
             {
@@ -244,8 +243,7 @@ namespace MomentRank.Services
                     return true;
 
                 // Check if user is a member of the event
-                var userIdString = user.Id.ToString();
-                return eventEntity.MemberIds != null && eventEntity.MemberIds.Contains(userIdString);
+                return eventEntity.MemberIds != null && eventEntity.MemberIds.Contains(user.Id);
             }
             catch (Exception)
             {

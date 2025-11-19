@@ -95,10 +95,13 @@ namespace MomentRank.Services
             }
         }
 
-        public async Task<List<Event>?> ListEventsAsync(User user, ListEventsRequest request)
+        public async Task<PagedResult<Event>?> ListEventsAsync(User user, ListEventsRequest request)
         {
             try
             {
+                // Limit pageSize to maximum of 32
+                var pageSize = Math.Min(request.PageSize, 32);
+                
                 // Start with public events query
                 var query = _context.Events.AsQueryable();
 
@@ -120,14 +123,19 @@ namespace MomentRank.Services
                 //    query = query.Where(e => e.Status == filterByStatus.Value);
                 //}
 
-                var events = await query.ToListAsync();
+                var totalCount = await query.CountAsync();
+
+                var events = await query
+                    .Skip((request.PageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
 
                 foreach(var x in events)
                 {
                     Console.WriteLine(x);
                 }
 
-                return events;
+                return new PagedResult<Event>(events, totalCount, request.PageNumber, pageSize);
             }
             catch (Exception ex)
             {

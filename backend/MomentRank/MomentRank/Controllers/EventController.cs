@@ -53,7 +53,7 @@ namespace MomentRank.Controllers
         [HttpPost("delete")]
         public async Task<IActionResult> Delete([FromBody] DeleteEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Id))
+            if (request.Id <= 0)
             {
                 return BadRequest();
             }
@@ -76,7 +76,7 @@ namespace MomentRank.Controllers
         [HttpPost("read")]
         public async Task<IActionResult> Read([FromBody] ReadEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Id))
+            if (request.Id <= 0)
             {
                 return BadRequest();
             }
@@ -122,7 +122,7 @@ namespace MomentRank.Controllers
         [HttpPost("join")]
         public async Task<IActionResult> Join([FromBody] JoinEventRequest request)
         {
-            if (string.IsNullOrEmpty(request.Id))
+            if (request.Id <= 0)
             {
                 return BadRequest();
             }

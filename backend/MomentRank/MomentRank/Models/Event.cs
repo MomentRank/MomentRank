@@ -6,7 +6,7 @@ namespace MomentRank.Models
     public class Event
     {
         public int Id { get; set; }
-        public List<string> MemberIds { get; set; } = new List<string>();
+        public List<int> MemberIds { get; set; } = new List<int>();
         public int OwnerId { get; set; }
         public string Name { get; set; } = string.Empty;
         public bool Public { get; set; } = false;

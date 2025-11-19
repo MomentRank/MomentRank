@@ -56,7 +56,7 @@ namespace MomentRank.Services
             {
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Id == int.Parse(request.Id) &&
+                    .FirstOrDefaultAsync(e => e.Id == request.Id &&
                                             e.OwnerId == user.Id);
 
                 if (existingEvent == null)
@@ -80,7 +80,7 @@ namespace MomentRank.Services
             {
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Id == int.Parse(request.Id) &&
+                    .FirstOrDefaultAsync(e => e.Id == request.Id &&
                                             e.OwnerId == user.Id);
 
                 if (existingEvent == null)
@@ -106,12 +106,12 @@ namespace MomentRank.Services
                 if (request.includePublic)
                 {
                     // Include both public events and event that user participates in
-                    query = query.Where(e => e.Public == true || e.MemberIds.Contains(user.Id.ToString()) || (user.Id == e.OwnerId));
+                    query = query.Where(e => e.Public == true || e.MemberIds.Contains(user.Id) || (user.Id == e.OwnerId));
                 }
                 else
                 {
                     // Only private events 
-                    query = query.Where(e => e.MemberIds.Contains(user.Id.ToString()) || (user.Id == e.OwnerId));
+                    query = query.Where(e => e.MemberIds.Contains(user.Id) || (user.Id == e.OwnerId));
                 }
 
                 // Apply status filter if provided
@@ -141,7 +141,7 @@ namespace MomentRank.Services
             {
                 // Find the event by name
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Id == int.Parse(request.Id));
+                    .FirstOrDefaultAsync(e => e.Id == request.Id);
 
                 if (existingEvent == null)
                 {
@@ -155,14 +155,13 @@ namespace MomentRank.Services
                 }
 
                 // Check if user is already a member
-                var userIdString = user.Id.ToString();
-                if (existingEvent.MemberIds.Contains(userIdString))
+                if (existingEvent.MemberIds.Contains(user.Id))
                 {
                     return null; // Already a member
                 }
 
                 // Add user to members list
-                existingEvent.MemberIds.Add(userIdString);
+                existingEvent.MemberIds.Add(user.Id);
                 await _context.SaveChangesAsync();
 
                 return existingEvent;

@@ -10,17 +10,17 @@
 
     public record DeleteEventRequest
     {
-        public required string Id { get; init; }
+        public required int Id { get; init; }
     }
 
     public record ReadEventRequest
     {
-        public required string Id { get; init; }
+        public required int Id { get; init; }
     }
 
     public record JoinEventRequest
     {
-        public required string Id { get; init; }
+        public required int Id { get; init; }
     }
     public record ListEventsRequest
     {

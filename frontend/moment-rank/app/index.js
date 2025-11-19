@@ -16,7 +16,7 @@ export default function LoginScreen() {
     try {
       const token = await login(email, password);
       // Navigate to main app (tabs)
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/home");
     } catch (err) {
       Alert.alert("Error", err.message);
     }
@@ -28,7 +28,7 @@ export default function LoginScreen() {
       if (result.success) {
         // Check if this is the user's first login
         // Navigate to appropriate screen
-        router.replace("/(tabs)");
+        router.replace("/(tabs)/home");
       }
     } catch (err) {
       Alert.alert("Facebook Login Error", err.message);

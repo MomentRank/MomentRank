@@ -55,6 +55,8 @@ export default function HomeScreen() {
             `${API_URL}/event/list`, 
                 {
                     includePublic: true, // query parameter
+                    pageNumber: 0,
+                    pageSize: 32
                 }, 
                 {
                     headers: {
@@ -67,7 +69,7 @@ export default function HomeScreen() {
             const data = response.data; // Axios already parses JSON
             console.log(data);
 
-            setCardData(data);
+            setCardData(data.items);
             setLoading(false);
 
         } catch (error) {

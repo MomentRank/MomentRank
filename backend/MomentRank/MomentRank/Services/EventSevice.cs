@@ -4,11 +4,13 @@ using MomentRank.DTOs;
 using MomentRank.Enums;
 using MomentRank.Models;
 using System.Numerics;
+using System.Collections.Concurrent;
 
 namespace MomentRank.Services
 {
     public class EventService : IEventService
     {
+        private static readonly ConcurrentDictionary<int, int> _eventViews = new();
         private readonly ApplicationDbContext _context;
 
         public EventService(ApplicationDbContext context)
@@ -87,6 +89,10 @@ namespace MomentRank.Services
                 {
                     return null; // Event doesnt exist
                 }
+
+                // Track event views in memory using concurrent collection
+                _eventViews.AddOrUpdate(request.Id, 1, (key, count) => count + 1);
+
                 return existingEvent;
             }
             catch (Exception ex)

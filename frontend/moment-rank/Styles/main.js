@@ -110,7 +110,8 @@ export default StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: "#000", // change color if needed
+    opacity:  0.5,
+    backgroundColor: "#000",
   },
   lineText: {
     marginHorizontal: 10,
@@ -270,4 +271,21 @@ export default StyleSheet.create({
   invalidRequirement: {
     color: "#F44336",
   },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 20,
+    marginBottom: 5,
+  },
+  sectionLine: {
+    height: 1,
+    backgroundColor: "#ccc",
+    marginBottom: 15,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#777",
+    marginVertical: 10,
+  },
+
 });

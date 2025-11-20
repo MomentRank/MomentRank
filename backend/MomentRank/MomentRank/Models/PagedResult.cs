@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace MomentRank.Models
 {
-    public class PagedResult<T>
+    public class PagedResult<T> where T : class, new()
     {
         public IEnumerable<T> Items { get; set; }
         public int TotalCount { get; set; }

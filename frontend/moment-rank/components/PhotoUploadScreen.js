@@ -4,12 +4,11 @@ import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system/legacy';
 import axios from 'axios';
 import BASE_URL from '../Config';
 import Style from '../Styles/main';
 import AppHeader from './AppHeader';
-
+import {takePhoto, pickImage} from "./CameraFunctions" 
 
 const API_URL = BASE_URL;
 
@@ -17,229 +16,11 @@ export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   const currentEventId = eventId || '1';
 
-  const getCurrentUser = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        return;
-      }
-
-      const response = await axios.post(`${API_URL}/profile/get`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.data) {
-        setCurrentUser(response.data);
-      }
-    } catch (error) {
-      console.error('Get current user error:', error);
-      if (error.response?.status === 401) {
-        Alert.alert("Error", "Authentication failed. Please login again.");
-      }
-    }
-  };
-
-  const pickImage = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert("Permission required", "Permission to access camera roll is required!");
-        return;
-      }
-
-      // Pick image
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'], 
-        allowsEditing: false,
-        quality: 0.5,
-        base64: false,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadPhoto(result.assets[0]);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert("Error", "Failed to pick image");
-    }
-  };
-
-  const takePhoto = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      if (permissionResult.granted === false) {
-        Alert.alert("Permission required", "Permission to access the camera is required!");
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'], // Updated from deprecated MediaTypeOptions
-        allowsEditing: false,
-        quality: 0.5,
-        base64: false,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadPhoto(result.assets[0]);
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
-    }
-  };
-
-  const uploadPhoto = async (imageAsset) => {
-    try {
-      setLoading(true);
-
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert("Error", "Please login first");
-        return;
-      }
-
-
-      console.log('Original image URI:', imageAsset.uri);
-      const manipulatedImage = await manipulateAsync(
-        imageAsset.uri,
-        [
-          { resize: { width: 1920 } },
-        ],
-        { 
-          compress: 0.5, 
-          format: SaveFormat.JPEG,
-        }
-      );
-
-      console.log('Compressed image URI:', manipulatedImage.uri);
-
-
-      let base64data;
-      let uri = manipulatedImage.uri;
-
-      console.log('Starting upload for:', uri);
-
-
-      if (manipulatedImage.base64) {
-        console.log('Using provided base64 data');
-        base64data = manipulatedImage.base64;
-      }
-
-      if (uri.startsWith('file://')) {
-        console.log('Reading file with FileSystem');
-        try {
-          base64data = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          console.log('FileSystem read successful, base64 length:', base64data.length);
-        } catch (fileError) {
-          console.error('FileSystem read error:', fileError);
-          // Fallback to fetch method if FileSystem fails
-          console.log('Trying fetch method as fallback');
-          try {
-            const response = await fetch(uri);
-            const blob = await response.blob();
-
-            base64data = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const result = reader.result;
-                const base64 = result.includes(',') ? result.split(',')[1] : result;
-                resolve(base64);
-              };
-              reader.onerror = () => reject(new Error('Failed to read file'));
-              reader.readAsDataURL(blob);
-            });
-          } catch (fetchError) {
-            console.error('Fetch method also failed:', fetchError);
-            throw new Error('Failed to read image file using any method');
-          }
-        }
-      }
-
-      else {
-        console.log('Using fetch + FileReader method for non-file URI');
-        const response = await fetch(uri);
-        const blob = await response.blob();
-
-        base64data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.includes(',') ? result.split(',')[1] : result;
-            resolve(base64);
-          };
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(blob);
-        });
-      }
-
-      // Generate fileName
-      const fileName = imageAsset.fileName || 
-                      imageAsset.uri.split('/').pop() || 
-                      `photo_${new Date().getTime()}.jpg`;
-
-      // Prepare JSON payload
-      const uploadData = {
-        eventId: parseInt(currentEventId),
-        fileData: base64data,
-        fileName: fileName,
-        contentType: imageAsset.type === 'image' ? 'image/jpeg' : (imageAsset.mimeType || 'image/jpeg'),
-        caption: ''
-      };
-
-      console.log('Uploading photo:', fileName, 'Size:', base64data.length);
-
-      // Upload photo
-      const uploadResponse = await axios.post(
-        `${API_URL}/event/photos/upload-base64`,
-        uploadData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 5000,
-        }
-      );
-
-      if (uploadResponse.data) {
-        Alert.alert("Success", "Photo uploaded successfully!");
-        await loadPhotos(); // Refresh the list
-        return uploadResponse.data;
-      }
-
-    } catch (error) {
-      console.error('Upload error:', error);
-      console.error('Error details:', error.response?.data);
-
-      if (error.response?.status === 401) {
-        Alert.alert("Error", "Authentication failed. Please login again.");
-      } else if (error.response?.status === 400) {
-        Alert.alert("Error", "Invalid file. Please check file size and type.");
-      } else if (error.response?.status === 413) {
-        Alert.alert("Error", "Photo file is too large. Try taking a photo with lower resolution.");
-      } else if (error.code === 'ECONNABORTED') {
-        Alert.alert("Error", "Upload timeout. Please check your connection.");
-      } else {
-        Alert.alert("Error", `Failed to upload photo: ${error.message}`);
-      }
-
-      throw error;
-
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const handlePickImage = () => pickImage(setLoading, loadPhotos, currentEventId)();
+const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)();
 
   const loadPhotos = async () => {
     try {
@@ -256,7 +37,6 @@ export default function PhotoUploadScreen() {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
       if (response.data) {
         setPhotos(response.data);
         // Start prefetching/measurement to improve viewer performance
@@ -514,7 +294,7 @@ export default function PhotoUploadScreen() {
     </View>
     <View style={{ position: 'absolute', left: 20, right: 20, bottom: windowHeight * 0.08, flexDirection: 'row', justifyContent: 'space-between', zIndex: 900 }} pointerEvents="box-none">
       <TouchableOpacity
-        onPress={pickImage}
+        onPress={() => pickImage(setLoading, loadPhotos, currentEventId)()}
         disabled={loading}
         style={{
           flex: 1,
@@ -535,7 +315,7 @@ export default function PhotoUploadScreen() {
 
       {/* Camera on the right */}
       <TouchableOpacity
-        onPress={takePhoto}
+        onPress={() => takePhoto(setLoading, loadPhotos, currentEventId)()}
         disabled={loading}
         style={{
           flex: 1,

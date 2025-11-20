@@ -131,7 +131,7 @@ export default function ProfileScreen() {
             ))}
           </View>
 
-          <TouchableOpacity onPress={handleLogout} style={[styles.buttonBig, { marginTop: 20 }]}>
+          <TouchableOpacity onPress={handleLogout} style={[styles.buttonBig, { marginTop: 20, width: "30%", alignSelf: "center" }]}>
             <Text style={styles.buttonBigText}>LOGOUT</Text>
           </TouchableOpacity>
         </View>
@@ -141,8 +141,8 @@ export default function ProfileScreen() {
 }
 
 styles.profileImage = {
-  width: 150,
-  height: 150,
-  borderRadius: 75,
+  width: 120,
+  height: 120,
+  borderRadius: 65,
   alignSelf: "center",
 };

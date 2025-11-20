@@ -51,13 +51,20 @@ namespace MomentRank.Controllers
                 return BadRequest();
             }
 
-            var token = await _authService.LoginAsync(request);
-            if (token == null)
+            try
+            {
+                var token = await _authService.LoginAsync(request);
+                if (token == null)
+                {
+                    return Unauthorized();
+                }
+
+                return Ok(new LoginResponse { Access_token = token });
+            }
+            catch (Exception ex) when (ex is UserNotFoundException || ex is InvalidCredentialsException)
             {
                 return Unauthorized();
             }
-
-            return Ok(new LoginResponse { Access_token = token });
         }
 
         // FACEBOOK LOGIN ENDPOINTS

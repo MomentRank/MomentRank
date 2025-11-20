@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
 // LAN IP
-const BASE_URL = 'http://10.0.2.2:5000';
+const BASE_URL = 'https://momentrank.vr.lt';
 
 export default BASE_URL;

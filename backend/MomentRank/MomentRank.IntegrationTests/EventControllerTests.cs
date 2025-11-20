@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MomentRank.Data;
 using MomentRank.DTOs;
+using MomentRank.Models;
 using Xunit;
 
 namespace MomentRank.IntegrationTests;
@@ -66,4 +67,42 @@ public class EventControllerTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task UploadPhoto_WithValidData_ReturnsOk()
+    {
+        // Arrange
+        var token = await AuthenticateAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Create Event
+        var createEventRequest = new CreateEventRequest
+        {
+            Name = "Photo Event",
+            Public = true,
+            CreatedAt = DateTime.UtcNow,
+            EndsAt = DateTime.UtcNow.AddDays(1)
+        };
+        var eventResponse = await _client.PostAsJsonAsync("/event/create", createEventRequest);
+        var eventResult = await eventResponse.Content.ReadFromJsonAsync<Event>();
+
+        var uploadRequest = new Base64UploadRequest
+        {
+            EventId = eventResult!.Id,
+            FileData = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", // 1x1 GIF
+            FileName = "test.gif",
+            ContentType = "image/gif",
+            Caption = "Test Photo"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/event/photos/upload-base64", uploadRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var photo = await response.Content.ReadFromJsonAsync<PhotoResponse>();
+        photo.Should().NotBeNull();
+        photo!.FileName.Should().Be(uploadRequest.FileName);
+    }
+
 }

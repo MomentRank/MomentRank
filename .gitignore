@@ -7,6 +7,11 @@ backend/MomentRank/.vs
 *.db-wal
 backend/MomentRank/MomentRank/wwwroot/
 backend/MomentRank/MomentRank/Logs/
+backend/MomentRank/MomentRank.UnitTests/bin
+backend/MomentRank/MomentRank.UnitTests/obj
+backend/MomentRank/MomentRank.UnitTests/TestResults
+backend/MomentRank/MomentRank.IntegrationTests/bin
+backend/MomentRank/MomentRank.IntegrationTests/obj
 
 # NuGet
 **/[Pp]ackages/

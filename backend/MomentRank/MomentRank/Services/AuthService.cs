@@ -63,8 +63,7 @@ namespace MomentRank.Services
             }
             catch (Exception ex)
             {
-                File.AppendAllText("Logs/errors.log",
-                    $"{DateTime.UtcNow}: {ex}\n");
+                LogError(ex);
                 throw;
             }
         }
@@ -88,8 +87,7 @@ namespace MomentRank.Services
             }
             catch (Exception ex)
             {
-                File.AppendAllText("Logs/errors.log",
-                    $"{DateTime.UtcNow}: {ex}\n");
+                LogError(ex);
                 throw;
             }
         }
@@ -121,8 +119,7 @@ namespace MomentRank.Services
             }
             catch (Exception ex)
             {
-                File.AppendAllText("Logs/errors.log",
-                    $"{DateTime.UtcNow}: {ex}\n");
+                LogError(ex);
                 throw;
             }
         }
@@ -135,12 +132,24 @@ namespace MomentRank.Services
             }
             catch (Exception ex)
             {
-                File.AppendAllText("Logs/errors.log",
-                    $"{DateTime.UtcNow}: {ex}\n");
+                LogError(ex);
                 throw;
             }
         }
 
+
+        private void LogError(Exception ex)
+        {
+            try
+            {
+                Directory.CreateDirectory("Logs");
+                File.AppendAllText("Logs/errors.log", $"{DateTime.UtcNow}: {ex}\n");
+            }
+            catch
+            {
+                // Ignore logging errors
+            }
+        }
 
         private string HashPassword(string password)
         {

@@ -7,11 +7,14 @@ import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
 import BASE_URL from "../../Config";
 import { useFocusEffect } from '@react-navigation/native';
+import defaultImage from "../../assets/event_default.jpg";
 
 const API_URL = BASE_URL;
 
 const ContentCard = ({ imageSource, name, accesibility, onPress }) => {
-    const source = typeof imageSource === "string" ? { uri: imageSource } : imageSource;
+    const source = imageSource 
+    ? (typeof imageSource === "string" ? { uri: imageSource } : imageSource)
+    : defaultImage;
 
     return (
         <View style={styles.contentCard}>

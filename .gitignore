@@ -12,6 +12,7 @@ backend/MomentRank/MomentRank.UnitTests/obj
 backend/MomentRank/MomentRank.UnitTests/TestResults
 backend/MomentRank/MomentRank.IntegrationTests/bin
 backend/MomentRank/MomentRank.IntegrationTests/obj
+backend/MomentRank/MomentRank.IntegrationTests/TestResults
 
 # NuGet
 **/[Pp]ackages/

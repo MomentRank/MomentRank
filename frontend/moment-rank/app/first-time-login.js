@@ -44,7 +44,7 @@ export default function FirstTimeLoginScreen() {
       });
 
       console.log("Profile created successfully:", response.data);
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/home");
     } catch (err) {
       console.error("Profile creation error:", err);
       if (err.response?.status === 401) {

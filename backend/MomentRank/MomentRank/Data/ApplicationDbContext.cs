@@ -14,6 +14,7 @@ namespace MomentRank.Data
         public DbSet<Event> Events { get; set; }
         public DbSet<Photo> Photos { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }
+        public DbSet<EventInvite> EventInvites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +80,35 @@ namespace MomentRank.Data
 
                 // Create index to prevent duplicate requests
                 entity.HasIndex(fr => new { fr.SenderId, fr.ReceiverId, fr.Status });
+            });
+
+            // EventInvite configuration
+            modelBuilder.Entity<EventInvite>(entity =>
+            {
+                entity.HasKey(ei => ei.Id);
+                entity.Property(ei => ei.Status).IsRequired();
+                entity.Property(ei => ei.CreatedAt).IsRequired();
+
+                // Configure relationship with Event
+                entity.HasOne(ei => ei.Event)
+                      .WithMany()
+                      .HasForeignKey(ei => ei.EventId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with Sender
+                entity.HasOne(ei => ei.Sender)
+                      .WithMany()
+                      .HasForeignKey(ei => ei.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Configure relationship with Invitee
+                entity.HasOne(ei => ei.Invitee)
+                      .WithMany()
+                      .HasForeignKey(ei => ei.InviteeId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Create index to prevent duplicate invites
+                entity.HasIndex(ei => new { ei.EventId, ei.InviteeId, ei.Status });
             });
         }
     }

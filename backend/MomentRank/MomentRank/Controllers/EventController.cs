@@ -214,5 +214,92 @@ namespace MomentRank.Controllers
             return Ok(new { message = "Photo deleted successfully" });
         }
 
+        [HttpPost("invite")]
+        public async Task<IActionResult> InviteToEvent([FromBody] InviteToEventRequest request)
+        {
+            if (request.EventId <= 0 || request.InviteeId <= 0)
+            {
+                return BadRequest();
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var invite = await _eventService.InviteToEventAsync(user, request);
+            if (invite == null)
+            {
+                return Conflict("Cannot invite user - event doesn't exist, you're not authorized, user is already a member, or invite already exists");
+            }
+
+            return Ok(invite);
+        }
+
+        [HttpPost("invite/respond")]
+        public async Task<IActionResult> RespondToEventInvite([FromBody] RespondToEventInviteRequest request)
+        {
+            if (request.InviteId <= 0)
+            {
+                return BadRequest();
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var invite = await _eventService.RespondToEventInviteAsync(user, request);
+            if (invite == null)
+            {
+                return NotFound("Invite not found or you're not the invitee");
+            }
+
+            return Ok(invite);
+        }
+
+        [HttpPost("invite/list")]
+        public async Task<IActionResult> ListEventInvites([FromBody] ListEventInvitesRequest request)
+        {
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var invites = await _eventService.ListEventInvitesAsync(user, request);
+            if (invites == null)
+            {
+                return StatusCode(500, "Failed to retrieve invites");
+            }
+
+            return Ok(invites);
+        }
+
+        [HttpPost("invite/cancel")]
+        public async Task<IActionResult> CancelEventInvite([FromBody] CancelEventInviteRequest request)
+        {
+            if (request.InviteId <= 0)
+            {
+                return BadRequest();
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var invite = await _eventService.CancelEventInviteAsync(user, request);
+            if (invite == null)
+            {
+                return NotFound("Invite not found or you're not the sender");
+            }
+
+            return Ok(invite);
+        }
+
     }
 }

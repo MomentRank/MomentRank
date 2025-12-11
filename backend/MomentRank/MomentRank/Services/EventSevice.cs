@@ -174,11 +174,213 @@ namespace MomentRank.Services
                     return null; // Already a member
                 }
 
+                // For private events, check if user has a pending invitation
+                if (!existingEvent.Public)
+                {
+                    var hasInvite = await HasPendingInviteAsync(user.Id, request.Id);
+                    if (!hasInvite)
+                    {
+                        return null; // No invitation for private event
+                    }
+
+                    // Mark the invitation as accepted
+                    var invite = await _context.EventInvites
+                        .FirstOrDefaultAsync(ei => ei.EventId == request.Id && 
+                                                   ei.InviteeId == user.Id && 
+                                                   ei.Status == Enums.EventInviteStatus.Pending);
+                    if (invite != null)
+                    {
+                        invite.Status = Enums.EventInviteStatus.Accepted;
+                        invite.RespondedAt = DateTime.UtcNow;
+                    }
+                }
+
                 // Add user to members list
                 existingEvent.MemberIds.Add(user.Id);
                 await _context.SaveChangesAsync();
 
                 return existingEvent;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<bool> HasPendingInviteAsync(int userId, int eventId)
+        {
+            return await _context.EventInvites
+                .AnyAsync(ei => ei.EventId == eventId && 
+                               ei.InviteeId == userId && 
+                               ei.Status == Enums.EventInviteStatus.Pending);
+        }
+
+        public async Task<EventInvite?> InviteToEventAsync(User user, InviteToEventRequest request)
+        {
+            try
+            {
+                // Find the event
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == request.EventId);
+
+                if (existingEvent == null)
+                {
+                    return null; // Event doesn't exist
+                }
+
+                // Check if user is the owner or a member (only they can invite)
+                if (existingEvent.OwnerId != user.Id && !existingEvent.MemberIds.Contains(user.Id))
+                {
+                    return null; // User is not authorized to invite
+                }
+
+                // Check if invitee exists
+                var invitee = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == request.InviteeId);
+
+                if (invitee == null)
+                {
+                    return null; // Invitee doesn't exist
+                }
+
+                // Can't invite yourself
+                if (request.InviteeId == user.Id)
+                {
+                    return null;
+                }
+
+                // Can't invite the owner
+                if (request.InviteeId == existingEvent.OwnerId)
+                {
+                    return null;
+                }
+
+                // Check if invitee is already a member
+                if (existingEvent.MemberIds.Contains(request.InviteeId))
+                {
+                    return null; // Already a member
+                }
+
+                // Check if there's already a pending invite
+                var existingInvite = await _context.EventInvites
+                    .FirstOrDefaultAsync(ei => ei.EventId == request.EventId && 
+                                               ei.InviteeId == request.InviteeId && 
+                                               ei.Status == Enums.EventInviteStatus.Pending);
+
+                if (existingInvite != null)
+                {
+                    return null; // Already has a pending invite
+                }
+
+                var invite = new EventInvite
+                {
+                    EventId = request.EventId,
+                    SenderId = user.Id,
+                    InviteeId = request.InviteeId,
+                    Status = Enums.EventInviteStatus.Pending,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.EventInvites.Add(invite);
+                await _context.SaveChangesAsync();
+
+                return invite;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<EventInvite?> RespondToEventInviteAsync(User user, RespondToEventInviteRequest request)
+        {
+            try
+            {
+                // Find the invite
+                var invite = await _context.EventInvites
+                    .Include(ei => ei.Event)
+                    .FirstOrDefaultAsync(ei => ei.Id == request.InviteId && 
+                                               ei.InviteeId == user.Id &&
+                                               ei.Status == Enums.EventInviteStatus.Pending);
+
+                if (invite == null)
+                {
+                    return null; // Invite doesn't exist or user is not the invitee
+                }
+
+                if (request.Accept)
+                {
+                    invite.Status = Enums.EventInviteStatus.Accepted;
+                    
+                    // Add user to event members
+                    if (!invite.Event.MemberIds.Contains(user.Id))
+                    {
+                        invite.Event.MemberIds.Add(user.Id);
+                    }
+                }
+                else
+                {
+                    invite.Status = Enums.EventInviteStatus.Declined;
+                }
+
+                invite.RespondedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return invite;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<PagedResult<EventInvite>?> ListEventInvitesAsync(User user, ListEventInvitesRequest request)
+        {
+            try
+            {
+                var pageSize = Math.Min(request.PageSize, 32);
+
+                var query = _context.EventInvites
+                    .Include(ei => ei.Event)
+                    .Include(ei => ei.Sender)
+                    .Where(ei => ei.InviteeId == user.Id && ei.Status == Enums.EventInviteStatus.Pending);
+
+                var totalCount = await query.CountAsync();
+
+                var invites = await query
+                    .OrderByDescending(ei => ei.CreatedAt)
+                    .Skip((request.PageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PagedResult<EventInvite>(invites, totalCount, request.PageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<EventInvite?> CancelEventInviteAsync(User user, CancelEventInviteRequest request)
+        {
+            try
+            {
+                // Find the invite - only the sender can cancel
+                var invite = await _context.EventInvites
+                    .FirstOrDefaultAsync(ei => ei.Id == request.InviteId && 
+                                               ei.SenderId == user.Id &&
+                                               ei.Status == Enums.EventInviteStatus.Pending);
+
+                if (invite == null)
+                {
+                    return null; // Invite doesn't exist or user is not the sender
+                }
+
+                invite.Status = Enums.EventInviteStatus.Cancelled;
+                invite.RespondedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return invite;
             }
             catch (Exception ex)
             {

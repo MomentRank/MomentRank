@@ -28,4 +28,27 @@
         public int PageNumber { get; init; } = 1;
         public int PageSize { get; init; } = 10;
     }
+
+    public record InviteToEventRequest
+    {
+        public required int EventId { get; init; }
+        public required int InviteeId { get; init; }
+    }
+
+    public record RespondToEventInviteRequest
+    {
+        public required int InviteId { get; init; }
+        public required bool Accept { get; init; }
+    }
+
+    public record ListEventInvitesRequest
+    {
+        public int PageNumber { get; init; } = 1;
+        public int PageSize { get; init; } = 10;
+    }
+
+    public record CancelEventInviteRequest
+    {
+        public required int InviteId { get; init; }
+    }
 }

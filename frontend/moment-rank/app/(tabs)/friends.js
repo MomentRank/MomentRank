@@ -28,8 +28,8 @@ export default function FriendsScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, [activeTab]);
+    loadAllData();
+  }, []);
 
   // Debounced search effect
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function FriendsScreen() {
     }
   }, [searchQuery, activeTab]);
 
-  const loadData = async () => {
+  const loadAllData = async () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("token");
@@ -54,13 +54,16 @@ export default function FriendsScreen() {
         return;
       }
 
-      if (activeTab === "friends") {
-        await loadFriends(token);
-      } else if (activeTab === "received") {
-        await loadReceivedRequests(token);
-      } else if (activeTab === "sent") {
-        await loadSentRequests(token);
-      }
+      // Load all data in parallel
+      const [friendsResponse, receivedResponse, sentResponse] = await Promise.all([
+        axios.get(`${API_URL}/friends`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/friends/requests/received`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/friends/requests/sent`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      setFriends(friendsResponse.data || []);
+      setReceivedRequests(receivedResponse.data || []);
+      setSentRequests(sentResponse.data || []);
     } catch (error) {
       console.error("Error loading data:", error);
       Alert.alert("Error", "Failed to load data");
@@ -122,8 +125,8 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", `Friend request sent to ${username}`);
-      // Refresh sent requests
-      await loadSentRequests(token);
+      // Refresh all data
+      loadAllData();
     } catch (error) {
       console.error("Error sending friend request:", error);
       if (error.response?.status === 400) {
@@ -143,7 +146,7 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", "Friend request accepted");
-      loadData();
+      loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to accept request");
     }
@@ -158,7 +161,7 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", "Friend request rejected");
-      loadData();
+      loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to reject request");
     }
@@ -173,7 +176,7 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", "Friend request cancelled");
-      loadData();
+      loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to cancel request");
     }
@@ -197,7 +200,7 @@ export default function FriendsScreen() {
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               Alert.alert("Success", "Friend removed");
-              loadData();
+              loadAllData();
             } catch (error) {
               Alert.alert("Error", "Failed to remove friend");
             }

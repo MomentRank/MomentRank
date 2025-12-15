@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput, Dimensions, FlatList, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,14 +8,21 @@ import axios from 'axios';
 import BASE_URL from '../Config';
 import Style from '../Styles/main';
 import AppHeader from './AppHeader';
-import {takePhoto, pickImage} from "./CameraFunctions" 
+import {takePhoto, pickImage} from "./CameraFunctions"
+import InviteFriendsModal from './InviteFriendsModal';
+import ParticipantsModal from './ParticipantsModal';
 
 const API_URL = BASE_URL;
 
 export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
+  const router = useRouter();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [eventName, setEventName] = useState('Event Photos');
+  const [isPublic, setIsPublic] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
 
   const currentEventId = eventId || '1';
 
@@ -51,6 +58,33 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
       } else {
         Alert.alert("Error", "Failed to load photos");
       }
+    }
+  };
+
+  const loadEventDetails = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/event/read`, {
+        id: parseInt(currentEventId)
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data) {
+        setEventName(response.data.name || 'Event Photos');
+        setIsPublic(response.data.public);
+      }
+    } catch (error) {
+      console.error('Load event details error:', error);
+      // Keep default title if event details can't be loaded
+      setEventName('Event Photos');
     }
   };
 
@@ -102,6 +136,7 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
 
   // Load photos and current user when component mounts
   React.useEffect(() => {
+    loadEventDetails();
     loadPhotos();
   }, []);
 
@@ -156,6 +191,15 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
       }));
     })();
   }, []);
+
+
+  const handleViewParticipants = () => {
+    setShowParticipantsModal(true);
+  };
+
+  const handleInviteFriend = () => {
+    setShowInviteModal(true);
+  };
 
   // Memoized renderItem for FlatList (must be declared unconditionally)
   const renderFullScreenItem = React.useCallback(({ item: photo, index }) => {
@@ -236,11 +280,61 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
 
   return (
     <View style={{backgroundColor:'#FFD280', overflow: 'hidden', flex: 1}}>
-    <View style={{backgroundColor:'#FFFFFF', borderRadius: 50, paddingBottom:50, marginBottom:'10%', marginTop:'12.4%', marginHorizontal:'1.5%', flex: 1}}>
-      <AppHeader />
-      <Text style={[Style.h2, {textAlign: 'center'}]}>
-        Event Photos
-      </Text>
+      <View style={{backgroundColor:'#FFFFFF', borderRadius: 50, paddingBottom:50, marginBottom:'10%', marginTop:'12.4%', marginHorizontal:'1.5%', flex: 1}}>
+        
+        <AppHeader />
+        
+{/* --- HEADER ROW --- */}
+        <View style={{ 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          paddingHorizontal: 20,
+          marginTop: 10,
+          marginBottom: 10,
+          minHeight: 40
+        }}>
+          
+          {/* Left Button: Participants (Only if Private) */}
+          {isPublic ? (
+            <View style={{ width: 40 }} /> 
+          ) : (
+                        <TouchableOpacity 
+              onPress={handleViewParticipants}
+              style={{ padding: 5, width: 40, alignItems: 'flex-start' }}
+            >
+              <Image 
+                source={require('../assets/icon_friends.png')} // Replace with Participants Icon
+                style={{ width: 24, height: 24, tintColor: '#333' }} 
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Center: Event Name */}
+          <Text style={[Style.h2, { textAlign: 'center', flex: 1, marginHorizontal: 5 }]} numberOfLines={1}>
+            {eventName}
+          </Text>
+
+          {/* Right Button: Invite Friend (Only if Private) */}
+          {isPublic ? (
+          <View style={{ width: 40 }} />
+          ) : (
+            <TouchableOpacity 
+              onPress={handleInviteFriend}
+              style={{ padding: 5, width: 40, alignItems: 'flex-end' }}
+            >
+              <Image 
+                source={require('../assets/icon_add.png')} // Replace with Invite Icon
+                style={{ width: 24, height: 24, tintColor: '#333' }} 
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+        {/* --- HEADER ROW END --- */}
+
+
   <ScrollView scrollEnabled={selectedPhotoIndex === null} contentContainerStyle={{ padding: 0, paddingBottom: 100 }}>
         {/* Photos Grid */}
           <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120, marginHorizontal:"3%"}}>
@@ -384,6 +478,27 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
         </View>
       </View>
     )}
+
+    {/* Invite Friends Modal */}
+    {showInviteModal && (
+      <InviteFriendsModal 
+        visible={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        eventId={currentEventId}
+        eventName={eventName}
+      />
+    )}
+
+    {/* Participants Modal */}
+    {showParticipantsModal && (
+      <ParticipantsModal 
+        visible={showParticipantsModal}
+        onClose={() => setShowParticipantsModal(false)}
+        eventId={currentEventId}
+        eventName={eventName}
+      />
+    )}
+
     </View>
   );
 }

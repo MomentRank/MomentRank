@@ -39,6 +39,9 @@ frontend/moment-rank/.env
 frontend/moment-rank/.env.local
 frontend/moment-rank/.env.*.local
 
+# Config files with sensitive data
+frontend/moment-rank/Config.js
+
 # IDE and editor directories
 frontend/moment-rank/.idea/
 frontend/moment-rank/.vscode/

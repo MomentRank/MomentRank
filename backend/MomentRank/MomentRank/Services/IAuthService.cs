@@ -7,7 +7,7 @@ namespace MomentRank.Services
     {
         Task<User?> RegisterAsync(RegisterRequest request);
         Task<string?> LoginAsync(LoginRequest request);
-        Task<string?> FacebookLoginAsync(LoginRequest request);
+        Task<string?> GoogleLoginAsync(LoginRequest request);
         Task<User?> GetUserByIdAsync(int userId);
     }
 }

@@ -5,7 +5,7 @@ import styles from "../Styles/main";
 import AppHeader from "../components/AppHeader";
 import InfoFooter from "../components/InfoFooter";
 import { login } from "../services/authService";
-import { loginWithFacebook } from "../services/facebookAuthService";
+import { loginWithGoogle } from "../services/googleAuthService";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -22,16 +22,22 @@ export default function LoginScreen() {
     }
   };
 
-  const handleFacebookLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
-      const result = await loginWithFacebook();
-      if (result.success) {
-        // Check if this is the user's first login
-        // Navigate to appropriate screen
+      const result = await loginWithGoogle();
+      
+      console.log("Google login successful, firstTimeLogin:", result.firstTimeLogin);
+      
+      // Check if this is a first-time login
+      if (result.firstTimeLogin) {
+        console.log("First-time login detected, navigating to first-time-login...");
+        router.replace(`/first-time-login?username=${encodeURIComponent(result.username)}`);
+      } else {
+        // Navigate to main app (tabs) for existing users
         router.replace("/(tabs)/home");
       }
     } catch (err) {
-      Alert.alert("Facebook Login Error", err.message);
+      Alert.alert("Error", err.message);
     }
   };
 
@@ -80,10 +86,10 @@ export default function LoginScreen() {
       <View>
 
         <TouchableOpacity 
-          onPress={handleFacebookLogin} 
+          onPress={handleGoogleLogin} 
           style={styles.buttonAuth}>
-          <Image source={require('../assets/icon_facebook.png')} style={styles.logoImage} />
-          <Text style={styles.buttonAuthText}>Continue with Facebook</Text>
+          <Image source={require('../assets/icon_google.png')} style={styles.logoImage} />
+          <Text style={styles.buttonAuthText}>Continue with Google</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 

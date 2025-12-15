@@ -23,13 +23,29 @@ export default function FriendsScreen() {
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, [activeTab]);
+    loadAllData();
+  }, []);
 
-  const loadData = async () => {
+  // Debounced search effect
+  useEffect(() => {
+    if (activeTab === "friends" && searchQuery.trim()) {
+      const timeoutId = setTimeout(() => {
+        searchUsers(searchQuery);
+      }, 300); // 300ms debounce
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setIsSearching(false);
+    }
+  }, [searchQuery, activeTab]);
+
+  const loadAllData = async () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("token");
@@ -38,13 +54,16 @@ export default function FriendsScreen() {
         return;
       }
 
-      if (activeTab === "friends") {
-        await loadFriends(token);
-      } else if (activeTab === "received") {
-        await loadReceivedRequests(token);
-      } else if (activeTab === "sent") {
-        await loadSentRequests(token);
-      }
+      // Load all data in parallel
+      const [friendsResponse, receivedResponse, sentResponse] = await Promise.all([
+        axios.get(`${API_URL}/friends`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/friends/requests/received`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/friends/requests/sent`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      setFriends(friendsResponse.data || []);
+      setReceivedRequests(receivedResponse.data || []);
+      setSentRequests(sentResponse.data || []);
     } catch (error) {
       console.error("Error loading data:", error);
       Alert.alert("Error", "Failed to load data");
@@ -74,6 +93,50 @@ export default function FriendsScreen() {
     setSentRequests(response.data || []);
   };
 
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const response = await axios.get(`${API_URL}/profile/search`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { query: query.trim() }
+      });
+      setSearchResults(response.data || []);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSendFriendRequest = async (userId, username) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      await axios.post(
+        `${API_URL}/friends/request/send`,
+        { receiverId: userId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      Alert.alert("Success", `Friend request sent to ${username}`);
+      // Refresh all data
+      loadAllData();
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      if (error.response?.status === 400) {
+        Alert.alert("Error", "Friend request already sent or you're already friends");
+      } else {
+        Alert.alert("Error", "Failed to send friend request");
+      }
+    }
+  };
+
   const handleAcceptRequest = async (requestId) => {
     try {
       const token = await AsyncStorage.getItem("token");
@@ -83,7 +146,7 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", "Friend request accepted");
-      loadData();
+      loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to accept request");
     }
@@ -98,7 +161,7 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", "Friend request rejected");
-      loadData();
+      loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to reject request");
     }
@@ -113,7 +176,7 @@ export default function FriendsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert("Success", "Friend request cancelled");
-      loadData();
+      loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to cancel request");
     }
@@ -137,7 +200,7 @@ export default function FriendsScreen() {
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               Alert.alert("Success", "Friend removed");
-              loadData();
+              loadAllData();
             } catch (error) {
               Alert.alert("Error", "Failed to remove friend");
             }
@@ -270,13 +333,48 @@ export default function FriendsScreen() {
       <TouchableOpacity
         onPress={() => handleCancelRequest(item.id || item.requestId)}
         style={{
-          backgroundColor: "#888",
+          backgroundColor: "#ff0000ff",
           paddingHorizontal: 15,
           paddingVertical: 8,
           borderRadius: 5,
         }}
       >
         <Text style={{ color: "#fff", fontWeight: "bold" }}>Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderSearchResultItem = ({ item }) => (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#eee",
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.text, { fontWeight: "bold" }]}>
+          {item.name || item.username || "Unknown"}
+        </Text>
+        {item.username && (
+          <Text style={[styles.text, { color: "#666", fontSize: 12 }]}>
+            @{item.username}
+          </Text>
+        )}
+      </View>
+      <TouchableOpacity
+        onPress={() => handleSendFriendRequest(item.id || item.userId, item.name || item.username)}
+        style={{
+          backgroundColor: "#FF9500",
+          paddingHorizontal: 15,
+          paddingVertical: 8,
+          borderRadius: 5,
+        }}
+      >
+        <Text style={{ color: "#fff", fontWeight: "bold" }}>Add Friend</Text>
       </TouchableOpacity>
     </View>
   );
@@ -291,7 +389,7 @@ export default function FriendsScreen() {
           <View style={{ padding: 10 }}>
             <TextInput
               style={[styles.input, { width: "100%" }]}
-              placeholder="Search for friends..."
+              placeholder={searchQuery.trim() ? "Searching users..." : "Search friends or find new ones..."}
               placeholderTextColor="#888"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -323,7 +421,7 @@ export default function FriendsScreen() {
                 color: activeTab === "friends" ? "#FF9500" : "#666",
               }}
             >
-              Friends ({friends.length})
+              {activeTab === "friends" && searchQuery.trim() ? "Search Results" : `Friends (${friends.length})`}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -381,26 +479,34 @@ export default function FriendsScreen() {
         ) : (
           <FlatList
             data={
-              activeTab === "friends"
+              activeTab === "friends" && searchQuery.trim()
+                ? searchResults
+                : activeTab === "friends"
                 ? filteredFriends
                 : activeTab === "received"
                 ? receivedRequests
                 : sentRequests
             }
             renderItem={
-              activeTab === "friends"
+              activeTab === "friends" && searchQuery.trim()
+                ? renderSearchResultItem
+                : activeTab === "friends"
                 ? renderFriendItem
                 : activeTab === "received"
                 ? renderReceivedRequestItem
                 : renderSentRequestItem
             }
             keyExtractor={(item, index) =>
-              (item.id || item.requestId || index).toString()
+              (item.id || item.requestId || item.userId || index).toString()
             }
             ListEmptyComponent={
               <View style={{ padding: 20, alignItems: "center" }}>
                 <Text style={[styles.text, { color: "#999" }]}>
-                  {activeTab === "friends"
+                  {activeTab === "friends" && searchQuery.trim()
+                    ? isSearching
+                      ? "Searching..."
+                      : "No users found"
+                    : activeTab === "friends"
                     ? "No friends yet"
                     : activeTab === "received"
                     ? "No received requests"

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput, Dimensions, FlatList, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,15 +8,21 @@ import axios from 'axios';
 import BASE_URL from '../Config';
 import Style from '../Styles/main';
 import AppHeader from './AppHeader';
-import {takePhoto, pickImage} from "./CameraFunctions" 
+import {takePhoto, pickImage} from "./CameraFunctions"
+import InviteFriendsModal from './InviteFriendsModal';
+import ParticipantsModal from './ParticipantsModal';
 
 const API_URL = BASE_URL;
 
 export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
+  const router = useRouter();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [eventName, setEventName] = useState('Event Photos');
+  const [isPublic, setIsPublic] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
 
   const currentEventId = eventId || '1';
 
@@ -73,6 +79,7 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
 
       if (response.data) {
         setEventName(response.data.name || 'Event Photos');
+        setIsPublic(response.data.public);
       }
     } catch (error) {
       console.error('Load event details error:', error);
@@ -187,14 +194,11 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
 
 
   const handleViewParticipants = () => {
-    // TODO: Add your navigation logic here
-    console.log("Navigate to participants list");
-    // router.push(`/event/${eventId}/participants`); 
+    setShowParticipantsModal(true);
   };
 
   const handleInviteFriend = () => {
-    // TODO: Add your invite logic here (e.g., Share.share or navigation)
-    console.log("Open invite modal");
+    setShowInviteModal(true);
   };
 
   // Memoized renderItem for FlatList (must be declared unconditionally)
@@ -280,48 +284,57 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
         
         <AppHeader />
         
-        {/* --- NEW HEADER ROW STARTS HERE --- */}
+{/* --- HEADER ROW --- */}
         <View style={{ 
           flexDirection: 'row', 
           alignItems: 'center', 
           justifyContent: 'space-between', 
           paddingHorizontal: 20,
           marginTop: 10,
-          marginBottom: 10
+          marginBottom: 10,
+          minHeight: 40
         }}>
           
-          {/* Left Button: Participants */}
-          <TouchableOpacity 
-            onPress={handleViewParticipants}
-            style={{ padding: 5, width: 40, alignItems: 'flex-start' }}
-          >
-            {/* Replace source with your specific icon, e.g., require('../assets/users.png') */}
-            <Image 
-              source={require('../assets/icon_friends.png')} // Placeholder: Replace with your Participants Icon
-              style={{ width: 24, height: 24, tintColor: '#333' }} 
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+          {/* Left Button: Participants (Only if Private) */}
+          {isPublic ? (
+            <View style={{ width: 40 }} /> 
+          ) : (
+                        <TouchableOpacity 
+              onPress={handleViewParticipants}
+              style={{ padding: 5, width: 40, alignItems: 'flex-start' }}
+            >
+              <Image 
+                source={require('../assets/icon_friends.png')} // Replace with Participants Icon
+                style={{ width: 24, height: 24, tintColor: '#333' }} 
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
 
           {/* Center: Event Name */}
           <Text style={[Style.h2, { textAlign: 'center', flex: 1, marginHorizontal: 5 }]} numberOfLines={1}>
             {eventName}
           </Text>
 
-          {/* Right Button: Invite Friend */}
-          <TouchableOpacity 
-            onPress={handleInviteFriend}
-            style={{ padding: 5, width: 40, alignItems: 'flex-end' }}
-          >
-            {/* Replace source with your specific icon, e.g., require('../assets/invite.png') */}
-            <Image 
-              source={require('../assets/icon_add.png')} // Placeholder: Replace with your Invite Icon
-              style={{ width: 24, height: 24, tintColor: '#333' }} 
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-
+          {/* Right Button: Invite Friend (Only if Private) */}
+          {isPublic ? (
+          <View style={{ width: 40 }} />
+          ) : (
+            <TouchableOpacity 
+              onPress={handleInviteFriend}
+              style={{ padding: 5, width: 40, alignItems: 'flex-end' }}
+            >
+              <Image 
+                source={require('../assets/icon_add.png')} // Replace with Invite Icon
+                style={{ width: 24, height: 24, tintColor: '#333' }} 
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
         </View>
+        {/* --- HEADER ROW END --- */}
+
+
   <ScrollView scrollEnabled={selectedPhotoIndex === null} contentContainerStyle={{ padding: 0, paddingBottom: 100 }}>
         {/* Photos Grid */}
           <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120, marginHorizontal:"3%"}}>
@@ -465,6 +478,27 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
         </View>
       </View>
     )}
+
+    {/* Invite Friends Modal */}
+    {showInviteModal && (
+      <InviteFriendsModal 
+        visible={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        eventId={currentEventId}
+        eventName={eventName}
+      />
+    )}
+
+    {/* Participants Modal */}
+    {showParticipantsModal && (
+      <ParticipantsModal 
+        visible={showParticipantsModal}
+        onClose={() => setShowParticipantsModal(false)}
+        eventId={currentEventId}
+        eventName={eventName}
+      />
+    )}
+
     </View>
   );
 }

@@ -16,6 +16,7 @@ export default function PhotoUploadScreen() {
   const { eventId } = useLocalSearchParams();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [eventName, setEventName] = useState('Event Photos');
 
   const currentEventId = eventId || '1';
 
@@ -51,6 +52,32 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
       } else {
         Alert.alert("Error", "Failed to load photos");
       }
+    }
+  };
+
+  const loadEventDetails = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/event/read`, {
+        id: parseInt(currentEventId)
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data) {
+        setEventName(response.data.name || 'Event Photos');
+      }
+    } catch (error) {
+      console.error('Load event details error:', error);
+      // Keep default title if event details can't be loaded
+      setEventName('Event Photos');
     }
   };
 
@@ -102,6 +129,7 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
 
   // Load photos and current user when component mounts
   React.useEffect(() => {
+    loadEventDetails();
     loadPhotos();
   }, []);
 
@@ -239,7 +267,7 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
     <View style={{backgroundColor:'#FFFFFF', borderRadius: 50, paddingBottom:50, marginBottom:'10%', marginTop:'12.4%', marginHorizontal:'1.5%', flex: 1}}>
       <AppHeader />
       <Text style={[Style.h2, {textAlign: 'center'}]}>
-        Event Photos
+        {eventName}
       </Text>
   <ScrollView scrollEnabled={selectedPhotoIndex === null} contentContainerStyle={{ padding: 0, paddingBottom: 100 }}>
         {/* Photos Grid */}

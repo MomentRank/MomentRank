@@ -185,6 +185,18 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
     })();
   }, []);
 
+
+  const handleViewParticipants = () => {
+    // TODO: Add your navigation logic here
+    console.log("Navigate to participants list");
+    // router.push(`/event/${eventId}/participants`); 
+  };
+
+  const handleInviteFriend = () => {
+    // TODO: Add your invite logic here (e.g., Share.share or navigation)
+    console.log("Open invite modal");
+  };
+
   // Memoized renderItem for FlatList (must be declared unconditionally)
   const renderFullScreenItem = React.useCallback(({ item: photo, index }) => {
     const ratio = aspectRatios[index];
@@ -264,11 +276,52 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
 
   return (
     <View style={{backgroundColor:'#FFD280', overflow: 'hidden', flex: 1}}>
-    <View style={{backgroundColor:'#FFFFFF', borderRadius: 50, paddingBottom:50, marginBottom:'10%', marginTop:'12.4%', marginHorizontal:'1.5%', flex: 1}}>
-      <AppHeader />
-      <Text style={[Style.h2, {textAlign: 'center'}]}>
-        {eventName}
-      </Text>
+      <View style={{backgroundColor:'#FFFFFF', borderRadius: 50, paddingBottom:50, marginBottom:'10%', marginTop:'12.4%', marginHorizontal:'1.5%', flex: 1}}>
+        
+        <AppHeader />
+        
+        {/* --- NEW HEADER ROW STARTS HERE --- */}
+        <View style={{ 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          paddingHorizontal: 20,
+          marginTop: 10,
+          marginBottom: 10
+        }}>
+          
+          {/* Left Button: Participants */}
+          <TouchableOpacity 
+            onPress={handleViewParticipants}
+            style={{ padding: 5, width: 40, alignItems: 'flex-start' }}
+          >
+            {/* Replace source with your specific icon, e.g., require('../assets/users.png') */}
+            <Image 
+              source={require('../assets/icon_friends.png')} // Placeholder: Replace with your Participants Icon
+              style={{ width: 24, height: 24, tintColor: '#333' }} 
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
+          {/* Center: Event Name */}
+          <Text style={[Style.h2, { textAlign: 'center', flex: 1, marginHorizontal: 5 }]} numberOfLines={1}>
+            {eventName}
+          </Text>
+
+          {/* Right Button: Invite Friend */}
+          <TouchableOpacity 
+            onPress={handleInviteFriend}
+            style={{ padding: 5, width: 40, alignItems: 'flex-end' }}
+          >
+            {/* Replace source with your specific icon, e.g., require('../assets/invite.png') */}
+            <Image 
+              source={require('../assets/icon_add.png')} // Placeholder: Replace with your Invite Icon
+              style={{ width: 24, height: 24, tintColor: '#333' }} 
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
+        </View>
   <ScrollView scrollEnabled={selectedPhotoIndex === null} contentContainerStyle={{ padding: 0, paddingBottom: 100 }}>
         {/* Photos Grid */}
           <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120, marginHorizontal:"3%"}}>

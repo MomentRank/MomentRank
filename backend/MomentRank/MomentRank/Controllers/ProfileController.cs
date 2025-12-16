@@ -62,6 +62,29 @@ namespace MomentRank.Controllers
             return Ok(updated);
         }
 
+        [HttpPost("update-picture")]
+        public async Task<IActionResult> UpdateProfilePicture([FromBody] UpdateProfilePictureRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.FilePath))
+            {
+                return BadRequest("FilePath is required");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var updated = await _profileService.UpdateProfilePictureAsync(user, request);
+            if (updated == null)
+            {
+                return StatusCode(500, "Failed to update profile picture");
+            }
+
+            return Ok(updated);
+        }
+
         [HttpPost("get")]
         public async Task<IActionResult> Get()
         {

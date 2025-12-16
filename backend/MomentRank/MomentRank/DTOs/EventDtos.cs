@@ -50,4 +50,10 @@
     {
         public required int InviteId { get; init; }
     }
+
+    public record UpdateEventCoverPhotoRequest
+    {
+        public required int EventId { get; init; }
+        public required string FilePath { get; init; }
+    }
 }

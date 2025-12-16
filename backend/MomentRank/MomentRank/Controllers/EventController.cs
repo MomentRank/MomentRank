@@ -96,6 +96,34 @@ namespace MomentRank.Controllers
             return Ok(read);
         }
 
+        [HttpPost("update-cover-photo")]
+        public async Task<IActionResult> UpdateCoverPhoto([FromBody] UpdateEventCoverPhotoRequest request)
+        {
+            if (request.EventId <= 0)
+            {
+                return BadRequest("Invalid event ID");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.FilePath))
+            {
+                return BadRequest("FilePath is required");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var updated = await _eventService.UpdateEventCoverPhotoAsync(user, request);
+            if (updated == null)
+            {
+                return NotFound("Event not found or user is not the owner");
+            }
+
+            return Ok(updated);
+        }
+
         [HttpPost("list")]
         public async Task<IActionResult> List([FromBody] ListEventsRequest request)
         {

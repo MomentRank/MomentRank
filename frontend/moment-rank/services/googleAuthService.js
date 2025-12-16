@@ -8,7 +8,7 @@ const API_URL = BASE_URL;
 // Configure Google Sign-In
 GoogleSignin.configure({
   iosClientId: '734920707150-emfei8cufj25tlk703s4l4gmcvgnkcfh.apps.googleusercontent.com',
-  webClientId: '734920707150-th7t3n3n8ah9ftsfta2m1id4opm8d4gm.apps.googleusercontent.com',
+  webClientId: '755918280086-opa6m1gk82jhg5956jtuh6o527ma6e60.apps.googleusercontent.com',
   offlineAccess: true,
   scopes: ['profile', 'email'],
 });

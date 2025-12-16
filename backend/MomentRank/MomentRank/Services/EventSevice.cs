@@ -45,6 +45,7 @@ namespace MomentRank.Services
                     EndsAt = request.EndsAt,
                     CreatedAt = DateTime.UtcNow,
                     Public = request.Public,
+                    CoverPhoto = request.CoverPhoto,
                 };
 
                 _context.Events.Add(Event);

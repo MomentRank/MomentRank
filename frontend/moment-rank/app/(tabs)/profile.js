@@ -358,8 +358,11 @@ export default function ProfileScreen() {
                                     }}
                                 >
                                     <Image
-                                        // A placeholder is used here. For production, you should use the actual cover image URL.
-                                        source={item.imageSource ? { uri: item.imageSource } : require("../../assets/event_default.jpg")}
+                                        source={
+                                            item.coverPhoto 
+                                                ? { uri: `${API_URL}/${item.coverPhoto}` } 
+                                                : (item.imageSource ? { uri: item.imageSource } : require("../../assets/event_default.jpg"))
+                                        }
                                         style={{
                                             width: '100%',
                                             height: 120,

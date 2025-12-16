@@ -4,6 +4,7 @@
     {
         public required string Name { get; init; }
         public bool Public { get; init; }
+        public string? CoverPhoto { get; init; }
         public DateTime EndsAt { get; init; }
     }
 

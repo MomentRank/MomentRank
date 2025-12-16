@@ -44,10 +44,10 @@ namespace MomentRank.Services
 
                 // Optionally verify the audience (client ID) matches your app
                 // var expectedClientId = _configuration["Authentication:Google:ClientId"];
-                if (tokenInfo.aud != "755918280086-cnt76mvrp4j7323c0qiujelule7mbn6k.apps.googleusercontent.com" || tokenInfo.aud != "755918280086-lg9aqpg6o5pb9dq4ra5didcd3vbfjste.apps.googleusercontent.com")
+                /*if (tokenInfo.aud != "755918280086-cnt76mvrp4j7323c0qiujelule7mbn6k.apps.googleusercontent.com" || tokenInfo.aud != "755918280086-lg9aqpg6o5pb9dq4ra5didcd3vbfjste.apps.googleusercontent.com")
                 {
                     return null;
-                }
+                }*/
 
                 return new GoogleUserInfo
                 {

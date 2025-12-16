@@ -185,7 +185,7 @@ export default function HomeScreen() {
                     id: item.id,
                     name: item.name,
                     public: item.public === true || item.public === 1, 
-                    imageSource: item.imageSource || undefined,
+                    imageSource: item.coverPhoto ? `${API_URL}/${item.coverPhoto}` : (item.imageSource || undefined),
                     endsAt: item.endsAt,
                 };
             });

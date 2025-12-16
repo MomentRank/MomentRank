@@ -16,7 +16,7 @@ import BASE_URL from "../Config";
 import Style from "../Styles/main";
 import AppHeader from './AppHeader';
 import { useRouter } from "expo-router";
-import {takePhoto, pickImage} from "./CameraFunctions" 
+import {takePhoto, pickImage, pickCoverImage, takeCoverPhoto} from "./CameraFunctions" 
 import VisibilityToggle from "./PrivacyToggle";
 import DurationPicker from "./DurationPicker";
 
@@ -32,6 +32,7 @@ export default function CreateEventScreen() {
     const [loading, setLoading] = useState(false);
     const [duration, setDuration] = useState(null)
     const [endsAt, setEndsAt] = useState(null);
+    const [coverPhotoPath, setCoverPhotoPath] = useState(null);
     const scrollViewRef = useRef(null);
 
 const payload = {
@@ -67,6 +68,7 @@ const payload = {
                 name,
                 public: isPublic,
                 ...(endsAt && { endsAt }), // optional
+                ...(coverPhotoPath && { coverPhoto: coverPhotoPath }), // optional cover photo
             };
 
             //formData.append("image", {
@@ -152,6 +154,37 @@ return (
 
                     {/* Image Picker */}
                     <Text style={{ marginTop: 20, fontWeight: "bold" }}>Event Image</Text>
+                    
+                    {coverPhotoPath && (
+                        <View style={{ 
+                            marginTop: 15, 
+                            alignItems: 'center',
+                        }}>
+                            <View style={{
+                                borderRadius: 12,
+                                overflow: 'hidden',
+                                borderWidth: 2,
+                                borderColor: '#FF9500',
+                            }}>
+                                <Image 
+                                    source={{ uri: `${API_URL}/${coverPhotoPath}` }}
+                                    style={{ 
+                                        width: 120, 
+                                        height: 120, 
+                                        borderRadius: 10,
+                                    }}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                            <TouchableOpacity 
+                                onPress={() => setCoverPhotoPath(null)}
+                                style={{ marginTop: 8 }}
+                            >
+                                <Text style={{ color: '#999', fontSize: 12 }}>Remove</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
                     <View 
                         style={{
                             marginTop: 20,
@@ -166,7 +199,7 @@ return (
                     >
                         {/* Upload Button */}
                         <TouchableOpacity
-                            onPress={() => pickImage(setImage, setLoading)}
+                            onPress={pickCoverImage(setLoading, setCoverPhotoPath)}
                             disabled={loading}
                             style={{
                                 flex: 1,
@@ -183,13 +216,13 @@ return (
                                 style={{ width: 22, height: 22, marginRight: 10, tintColor: 'white' }} 
                             />
                             <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                                {loading ? 'Uploading...' : 'Upload'}
+                                {loading ? 'Uploading...' : coverPhotoPath ? 'Uploaded' : 'Upload'}
                             </Text>
                         </TouchableOpacity>
 
                         {/* Camera Button */}
                         <TouchableOpacity
-                            onPress={() => takePhoto(setImage, setLoading)}
+                            onPress={takeCoverPhoto(setLoading, setCoverPhotoPath)}
                             disabled={loading}
                             style={{
                                 flex: 1,
@@ -202,7 +235,7 @@ return (
                             }}
                         >
                             <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                                {loading ? 'Uploading...' : 'Camera'}
+                                {loading ? 'Uploading...' : coverPhotoPath ? 'Captured' : 'Camera'}
                             </Text>
                             <Image 
                                 source={require('../assets/icon_camera.png')} 

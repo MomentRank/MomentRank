@@ -64,6 +64,32 @@ namespace MomentRank.Services
                     Email = user.Email,
                     Name = user.Name,
                     Bio = user.Bio,
+                    ProfilePicture = user.ProfilePicture,
+                    CreatedAt = user.CreatedAt
+                };
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<ProfileResponse?> UpdateProfilePictureAsync(User user, UpdateProfilePictureRequest request)
+        {
+            try
+            {
+                user.ProfilePicture = request.FilePath;
+
+                await _context.SaveChangesAsync();
+
+                return new ProfileResponse
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Bio = user.Bio,
+                    ProfilePicture = user.ProfilePicture,
                     CreatedAt = user.CreatedAt
                 };
             }
@@ -84,6 +110,7 @@ namespace MomentRank.Services
                     Email = user.Email,
                     Name = user.Name,
                     Bio = user.Bio,
+                    ProfilePicture = user.ProfilePicture,
                     CreatedAt = user.CreatedAt
                 };
             }
@@ -112,6 +139,7 @@ namespace MomentRank.Services
                     Email = targetUser.Email,
                     Name = targetUser.Name,
                     Bio = targetUser.Bio,
+                    ProfilePicture = targetUser.ProfilePicture,
                     CreatedAt = targetUser.CreatedAt
                 };
             }
@@ -140,6 +168,7 @@ namespace MomentRank.Services
                     Email = targetUser.Email,
                     Name = targetUser.Name,
                     Bio = targetUser.Bio,
+                    ProfilePicture = targetUser.ProfilePicture,
                     CreatedAt = targetUser.CreatedAt
                 };
             }

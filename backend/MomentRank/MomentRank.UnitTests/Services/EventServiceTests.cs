@@ -34,7 +34,6 @@ namespace MomentRank.UnitTests.Services
             {
                 Name = "Test Event",
                 EndsAt = DateTime.UtcNow.AddDays(1),
-                CreatedAt = DateTime.UtcNow,
                 Public = true
             };
 
@@ -69,7 +68,6 @@ namespace MomentRank.UnitTests.Services
             {
                 Name = "Test Event",
                 EndsAt = DateTime.UtcNow.AddDays(1),
-                CreatedAt = DateTime.UtcNow,
                 Public = true
             };
 

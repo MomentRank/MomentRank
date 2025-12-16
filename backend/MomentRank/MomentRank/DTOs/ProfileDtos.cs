@@ -12,6 +12,11 @@ namespace MomentRank.DTOs
         public string? Bio { get; init; }   // null or empty = delete
     }
 
+    public record UpdateProfilePictureRequest
+    {
+        public required string FilePath { get; init; }
+    }
+
     public record ProfileResponse
     {
         public int Id { get; init; }
@@ -19,6 +24,7 @@ namespace MomentRank.DTOs
         public required string Email { get; init; }
         public string? Name { get; init; }
         public string? Bio { get; init; }
+        public string? ProfilePicture { get; init; }
         public DateTime CreatedAt { get; init; }
     }
 

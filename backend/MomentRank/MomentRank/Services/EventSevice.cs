@@ -22,6 +22,12 @@ namespace MomentRank.Services
         {
             try
             {
+                // Validate that EndsAt is in the future
+                if (request.EndsAt <= DateTime.UtcNow)
+                {
+                    return null;
+                }
+
                 // Check if event already exists
                 var existingEvent = await _context.Events
                     .FirstOrDefaultAsync(u => u.Name == request.Name &&
@@ -37,7 +43,7 @@ namespace MomentRank.Services
                     Name = request.Name.Trim(),
                     OwnerId = user.Id,
                     EndsAt = request.EndsAt,
-                    CreatedAt = request.CreatedAt,
+                    CreatedAt = DateTime.UtcNow,
                     Public = request.Public,
                 };
 
@@ -92,6 +98,31 @@ namespace MomentRank.Services
 
                 // Track event views in memory using concurrent collection
                 _eventViews.AddOrUpdate(request.Id, 1, (key, count) => count + 1);
+
+                return existingEvent;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<Event?> UpdateEventCoverPhotoAsync(User user, UpdateEventCoverPhotoRequest request)
+        {
+            try
+            {
+                // Check if event exists and if the user is the owner
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == request.EventId &&
+                                            e.OwnerId == user.Id);
+
+                if (existingEvent == null)
+                {
+                    return null; // Event doesn't exist or user is not the owner
+                }
+
+                existingEvent.CoverPhoto = request.FilePath;
+                await _context.SaveChangesAsync();
 
                 return existingEvent;
             }

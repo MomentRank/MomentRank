@@ -10,6 +10,7 @@ namespace MomentRank.Models
         public int OwnerId { get; set; }
         public string Name { get; set; } = string.Empty;
         public bool Public { get; set; } = false;
+        public string? CoverPhoto { get; set; }
         public DateTime EndsAt { get; set; } = DateTime.UtcNow.AddHours(1); //Default length: 1 hour
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public EventStatus Status { get; set; } = EventStatus.Active;

@@ -67,7 +67,6 @@ const payload = {
                 name,
                 public: isPublic,
                 ...(endsAt && { endsAt }), // optional
-                createdAt: new Date().toISOString()
             };
 
             //formData.append("image", {

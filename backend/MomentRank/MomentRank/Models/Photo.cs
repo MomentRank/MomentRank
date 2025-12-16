@@ -3,7 +3,7 @@ namespace MomentRank.Models
     public class Photo
     {
         public int Id { get; set; }
-        public int EventId { get; set; }
+        public int? EventId { get; set; }
         public int UploadedById { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
@@ -13,7 +13,7 @@ namespace MomentRank.Models
         public string? Caption { get; set; }
         
         // Navigation properties
-        public Event Event { get; set; } = null!;
+        public Event? Event { get; set; }
         public User UploadedBy { get; set; } = null!;
     }
 }

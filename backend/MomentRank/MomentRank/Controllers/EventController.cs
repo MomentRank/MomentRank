@@ -96,6 +96,34 @@ namespace MomentRank.Controllers
             return Ok(read);
         }
 
+        [HttpPost("update-cover-photo")]
+        public async Task<IActionResult> UpdateCoverPhoto([FromBody] UpdateEventCoverPhotoRequest request)
+        {
+            if (request.EventId <= 0)
+            {
+                return BadRequest("Invalid event ID");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.FilePath))
+            {
+                return BadRequest("FilePath is required");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var updated = await _eventService.UpdateEventCoverPhotoAsync(user, request);
+            if (updated == null)
+            {
+                return NotFound("Event not found or user is not the owner");
+            }
+
+            return Ok(updated);
+        }
+
         [HttpPost("list")]
         public async Task<IActionResult> List([FromBody] ListEventsRequest request)
         {
@@ -158,7 +186,7 @@ namespace MomentRank.Controllers
                     return Unauthorized();
                 }
 
-                var result = await _photoService.UploadPhotoBase64Async(user, request);
+                var result = await _photoService.UploadEventPhotoBase64Async(user, request);
                 if (result == null)
                 {
                     return BadRequest("Failed to upload photo. Check file size and type.");

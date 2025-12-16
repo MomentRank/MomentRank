@@ -264,7 +264,7 @@ export default function ProfileScreen() {
              <View style={styles.container}>
                  <View style={styles.backgroundWhiteBox}>
                      <AppHeader />
-                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginBottom: '20%'}}>
                          <ActivityIndicator size="large" color="#007bff" />
                          <Text style={[styles.text, { marginTop: 10, color: '#666' }]}>
                              Loading profile...
@@ -281,7 +281,7 @@ export default function ProfileScreen() {
             <View style={styles.backgroundWhiteBox}>
                 <AppHeader />
                 <ScrollView 
-                    style={{ flex: 1 }} 
+                    style={{ flex: 1, marginBottom: '20%'}} 
                     contentContainerStyle={{ paddingBottom: 150 }}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />

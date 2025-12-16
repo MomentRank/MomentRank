@@ -46,7 +46,7 @@ namespace MomentRank.Services
 
                 return Event;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -71,7 +71,7 @@ namespace MomentRank.Services
 
                 return existingEvent;
             }
-            catch(Exception ex) {
+            catch(Exception) {
                 return null;
             }
         }
@@ -95,7 +95,7 @@ namespace MomentRank.Services
 
                 return existingEvent;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -143,7 +143,7 @@ namespace MomentRank.Services
 
                 return new PagedResult<Event>(events, totalCount, request.PageNumber, pageSize);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -201,7 +201,7 @@ namespace MomentRank.Services
 
                 return existingEvent;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -286,7 +286,7 @@ namespace MomentRank.Services
 
                 return invite;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -328,7 +328,7 @@ namespace MomentRank.Services
 
                 return invite;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -355,7 +355,7 @@ namespace MomentRank.Services
 
                 return new PagedResult<EventInvite>(invites, totalCount, request.PageNumber, pageSize);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -382,7 +382,7 @@ namespace MomentRank.Services
 
                 return invite;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }

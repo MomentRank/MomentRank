@@ -48,7 +48,7 @@ namespace MomentRank.Services
                 {
                     fileBytes = Convert.FromBase64String(base64Data);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return null;
                 }
@@ -116,7 +116,7 @@ namespace MomentRank.Services
                     UploadedAt = photo.UploadedAt
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }

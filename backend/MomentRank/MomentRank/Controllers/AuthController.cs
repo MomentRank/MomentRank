@@ -101,19 +101,13 @@ namespace MomentRank.Controllers
                     Password = ""
                 };
 
-                var jwt = await _authService.GoogleLoginAsync(loginRequest);
+                var (jwt, firstTimeLogin, user) = await _authService.GoogleLoginAsync(loginRequest);
 
-                if (jwt == null)
+                if (jwt == null || user == null)
                 {
                     return Unauthorized(new { message = "Authentication failed" });
                 }
-
-                // Check if this was a new user registration
-                var user = await _authService.GetUserByIdAsync(
-                    int.Parse(new JwtSecurityTokenHandler().ReadJwtToken(jwt).Claims
-                        .First(c => c.Type == ClaimTypes.NameIdentifier).Value));
-
-                var firstTimeLogin = user?.CreatedAt > DateTime.UtcNow.AddMinutes(-1);
+                
 
                 return Ok(new
                 {

@@ -92,7 +92,7 @@ namespace MomentRank.Services
             }
         }
 
-        public async Task<string?> GoogleLoginAsync(LoginRequest request)
+        public async Task<(string?, bool?, User?)> GoogleLoginAsync(LoginRequest request)
         {
             try
             {
@@ -145,7 +145,7 @@ namespace MomentRank.Services
 
 
                 var token = GenerateJwtToken(user);
-                return token;
+                return (token, isNewUser, user);
             }
             catch (Exception ex)
             {

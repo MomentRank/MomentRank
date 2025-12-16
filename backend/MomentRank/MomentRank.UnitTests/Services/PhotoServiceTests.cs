@@ -66,7 +66,7 @@ namespace MomentRank.UnitTests.Services
                 Caption = "Test Caption"
             };
 
-            var result = await _service.UploadPhotoBase64Async(user, request);
+            var result = await _service.UploadEventPhotoBase64Async(user, request);
 
             result.Should().NotBeNull();
             result!.FileName.Should().Be("test.png");
@@ -107,7 +107,7 @@ namespace MomentRank.UnitTests.Services
                 ContentType = "image/png"
             };
 
-            var result = await _service.UploadPhotoBase64Async(user, request);
+            var result = await _service.UploadEventPhotoBase64Async(user, request);
 
             result.Should().BeNull();
         }

@@ -46,10 +46,11 @@ namespace MomentRank.Data
                 entity.Property(p => p.Caption).HasMaxLength(500);
                 entity.Property(p => p.UploadedAt).IsRequired();
 
-                // Configure relationship with Event
+                // Configure optional relationship with Event (nullable EventId for profile/cover photos)
                 entity.HasOne(p => p.Event)
                       .WithMany()
                       .HasForeignKey(p => p.EventId)
+                      .IsRequired(false)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 // Configure relationship with User (UploadedBy)

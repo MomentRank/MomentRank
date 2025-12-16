@@ -158,7 +158,7 @@ namespace MomentRank.Controllers
                     return Unauthorized();
                 }
 
-                var result = await _photoService.UploadPhotoBase64Async(user, request);
+                var result = await _photoService.UploadEventPhotoBase64Async(user, request);
                 if (result == null)
                 {
                     return BadRequest("Failed to upload photo. Check file size and type.");

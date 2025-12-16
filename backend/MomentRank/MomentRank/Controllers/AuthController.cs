@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Mvc;
 using MomentRank.DTOs;
 using MomentRank.Services;
@@ -17,11 +16,13 @@ namespace MomentRank.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IConfiguration _config;
+        private readonly IGoogleService _googleService;
 
-        public AuthController(IAuthService authService, IConfiguration config)
+        public AuthController(IAuthService authService, IConfiguration config, IGoogleService googleService)
         {
             _authService = authService;
             _config = config;
+            _googleService = googleService;
         }
 
         [HttpPost("register")]
@@ -66,44 +67,68 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
         }
+        
+        // GOOGLE LOGIN ENDPOINT
 
-        // FACEBOOK LOGIN ENDPOINTS
-
-        [HttpGet("facebook-login")]
-        public IActionResult FacebookLogin()
+        [HttpPost("google")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
         {
-            var redirectUrl = Url.Action("FacebookCallback", "Auth");
-            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
-            return Challenge(properties, FacebookDefaults.AuthenticationScheme);
-        }
-
-        [HttpGet("facebook-callback")]
-        public async Task<IActionResult> FacebookCallback()
-        {
-            var result = await HttpContext.AuthenticateAsync(FacebookDefaults.AuthenticationScheme);
-
-            if (!result.Succeeded)
-                return Unauthorized();
-
-            var claims = result.Principal.Identities.First().Claims.ToList();
-            var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "";
-            var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
-
-            var request = new LoginRequest
+            if (string.IsNullOrEmpty(request.Token))
             {
-                Email = email,
-                Password = ""
-            };
-
-            String? jwt = await _authService.FacebookLoginAsync(request);
-
-            if (jwt == null)
-            {
-                return Unauthorized();
+                return BadRequest(new { message = "Token is required" });
             }
 
-            // return same format as normal login
-            return Ok(new LoginResponse { Access_token = jwt });
+            try
+            {
+                // Verify the Google ID token
+                var userInfo = await _googleService.VerifyGoogleTokenAsync(request.Token);
+
+                if (userInfo == null || string.IsNullOrEmpty(userInfo.Email))
+                {
+                    return Unauthorized(new { message = "Invalid Google token" });
+                }
+
+                // Check if the email is verified
+                if (!userInfo.EmailVerified)
+                {
+                    return Unauthorized(new { message = "Email not verified with Google" });
+                }
+
+                // Authenticate or create user
+                var loginRequest = new LoginRequest
+                {
+                    Email = userInfo.Email,
+                    Password = ""
+                };
+
+                var (jwt, firstTimeLogin, user) = await _authService.GoogleLoginAsync(loginRequest);
+
+                if (jwt == null || user == null)
+                {
+                    return Unauthorized(new { message = "Authentication failed" });
+                }
+                
+
+                return Ok(new
+                {
+                    token = jwt,
+                    firstTimeLogin = firstTimeLogin,
+                    user = new
+                    {
+                        id = user?.Id,
+                        email = user?.Email,
+                        username = user?.Username,
+                        name = userInfo.Name,
+                        picture = userInfo.Picture
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Google auth error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "An error occurred during Google authentication", error = ex.Message });
+            }
         }
 
         [HttpGet("validation-requirements")]

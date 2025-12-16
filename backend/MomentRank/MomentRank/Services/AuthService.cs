@@ -92,19 +92,49 @@ namespace MomentRank.Services
             }
         }
 
-        public async Task<string?> FacebookLoginAsync(LoginRequest request)
+        public async Task<(string?, bool?, User?)> GoogleLoginAsync(LoginRequest request)
         {
             try
             {
                 var user = await _context.Users
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
 
+                bool isNewUser = false;
+
                 if (user == null)
                 {
+                    isNewUser = true;
+                    
+                    // Generate a valid username from email (before @ symbol)
+                    string baseUsername = request.Email.Split('@')[0]
+                        .Replace(".", "")
+                        .Replace("+", "")
+                        .Replace("-", "_");
+                    
+                    // Ensure username is valid length (3-20 characters)
+                    if (baseUsername.Length > 20)
+                        baseUsername = baseUsername.Substring(0, 20);
+                    else if (baseUsername.Length < 3)
+                        baseUsername = baseUsername + "_user";
+                    
+                    // Remove any trailing underscores or hyphens
+                    baseUsername = baseUsername.TrimEnd('_', '-');
+                    
+                    // Check if username exists and add suffix if needed
+                    string username = baseUsername;
+                    int suffix = 1;
+                    while (await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
+                    {
+                        username = $"{baseUsername}{suffix}";
+                        if (username.Length > 20)
+                            username = $"{baseUsername.Substring(0, 17)}{suffix}";
+                        suffix++;
+                    }
+                    
                     var registerRequest = new RegisterRequest
                     {
                         Email = request.Email.ToLower(),
-                        Username = request.Email.ToLower(),
+                        Username = username,
                         Password = "LabaiSlaptasRaktas123!"
                     };
                     user = await RegisterAsync(registerRequest);
@@ -115,7 +145,7 @@ namespace MomentRank.Services
 
 
                 var token = GenerateJwtToken(user);
-                return token;
+                return (token, isNewUser, user);
             }
             catch (Exception ex)
             {

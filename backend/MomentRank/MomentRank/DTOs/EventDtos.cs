@@ -4,7 +4,6 @@
     {
         public required string Name { get; init; }
         public bool Public { get; init; }
-        public DateTime CreatedAt { get; init; }
         public DateTime EndsAt { get; init; }
     }
 

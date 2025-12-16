@@ -22,6 +22,12 @@ namespace MomentRank.Services
         {
             try
             {
+                // Validate that EndsAt is in the future
+                if (request.EndsAt <= DateTime.UtcNow)
+                {
+                    return null;
+                }
+
                 // Check if event already exists
                 var existingEvent = await _context.Events
                     .FirstOrDefaultAsync(u => u.Name == request.Name &&
@@ -37,7 +43,7 @@ namespace MomentRank.Services
                     Name = request.Name.Trim(),
                     OwnerId = user.Id,
                     EndsAt = request.EndsAt,
-                    CreatedAt = request.CreatedAt,
+                    CreatedAt = DateTime.UtcNow,
                     Public = request.Public,
                 };
 

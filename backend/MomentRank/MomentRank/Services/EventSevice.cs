@@ -90,8 +90,7 @@ namespace MomentRank.Services
             {
                 // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
-                    .FirstOrDefaultAsync(e => e.Id == request.Id &&
-                                            e.OwnerId == user.Id);
+                    .FirstOrDefaultAsync(e => e.Id == request.Id && e.MemberIds.Contains(user.Id));
 
                 if (existingEvent == null)
                 {
@@ -100,6 +99,7 @@ namespace MomentRank.Services
 
                 // Track event views in memory using concurrent collection
                 _eventViews.AddOrUpdate(request.Id, 1, (key, count) => count + 1);
+
 
                 return existingEvent;
             }
@@ -172,11 +172,7 @@ namespace MomentRank.Services
                     .Take(pageSize)
                     .ToListAsync();
 
-                foreach(var x in events)
-                {
-                    Console.WriteLine(x);
-                }
-
+                
                 return new PagedResult<Event>(events, totalCount, request.PageNumber, pageSize);
             }
             catch (Exception)

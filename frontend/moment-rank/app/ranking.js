@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions, PanResponder, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
@@ -8,6 +8,23 @@ import styles from '../Styles/main';
 
 const API_URL = BASE_URL;
 const { width, height } = Dimensions.get('window');
+
+// ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
+const USE_MOCK_DATA = true;
+const MOCK_MATCHUP = {
+    photoA: {
+        id: 1,
+        filePath: 'https://picsum.photos/400/600',
+        uploaderUsername: 'john_doe'
+    },
+    photoB: {
+        id: 2,
+        filePath: 'https://picsum.photos/400/601',
+        uploaderUsername: 'jane_smith'
+    }
+};
+const MOCK_REMAINING = 15;
+// ========== END MOCK DATA ==========
 
 export default function RankingScreen() {
     const router = useRouter();
@@ -18,6 +35,142 @@ export default function RankingScreen() {
     const [photoB, setPhotoB] = useState(null);
     const [comparing, setComparing] = useState(false);
     const [remainingComparisons, setRemainingComparisons] = useState(null);
+    
+    // Swipe gesture state
+    const pan = useRef(new Animated.Value(0)).current;
+    
+    const handlePanGesture = (gestureState) => {
+        const clampedDx = Math.max(-60, Math.min(60, gestureState.dx * 0.4));
+        pan.setValue(clampedDx);
+    };
+    
+    const handlePanRelease = (gestureState) => {
+        // Snap to nearest lock point: -60 (left), 0 (center), 60 (right)
+        let snapPoint = 0;
+        if (gestureState.dx > 90) {
+            snapPoint = 60; // Lock right
+        } else if (gestureState.dx < -90) {
+            snapPoint = -60; // Lock left
+        }
+        
+        Animated.spring(pan, {
+            toValue: snapPoint,
+            useNativeDriver: false,
+        }).start();
+    };
+    
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => !comparing,
+            onMoveShouldSetPanResponder: () => !comparing,
+            onPanResponderMove: (_, gestureState) => handlePanGesture(gestureState),
+            onPanResponderRelease: (_, gestureState) => handlePanRelease(gestureState),
+        })
+    ).current;
+    
+    const sliderPanResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => !comparing,
+            onMoveShouldSetPanResponder: () => !comparing,
+            onPanResponderTerminationRequest: () => false,
+            onPanResponderGrant: (evt) => {
+                // locationX is relative to the View that has panHandlers (90% of screen minus padding)
+                const touchX = evt.nativeEvent.locationX;
+                // The actual width of the slider bar itself
+                const sliderBarWidth = (width - 40) * 0.9;
+                const centerX = sliderBarWidth / 2;
+                const offset = touchX - centerX;
+                const newValue = Math.max(-60, Math.min(60, -(offset / centerX) * 60));
+                pan.setValue(newValue);
+            },
+            onPanResponderMove: (evt) => {
+                const touchX = evt.nativeEvent.locationX;
+                const sliderBarWidth = (width - 40) * 0.9;
+                const centerX = sliderBarWidth / 2;
+                const offset = touchX - centerX;
+                const newValue = Math.max(-60, Math.min(60, -(offset / centerX) * 60));
+                pan.setValue(newValue);
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                const currentValue = pan._value;
+                let snapPoint = 0;
+                if (currentValue > 30) {
+                    snapPoint = 60;
+                } else if (currentValue < -30) {
+                    snapPoint = -60;
+                }
+                
+                Animated.spring(pan, {
+                    toValue: snapPoint,
+                    useNativeDriver: false,
+                }).start();
+            },
+        })
+    ).current;
+
+    // Calculate scale based on pan position
+    const leftScale = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [0.75, 0.9, 1.1],
+        extrapolate: 'clamp',
+    });
+
+    const rightScale = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [1.1, 0.9, 0.75],
+        extrapolate: 'clamp',
+    });
+
+    const leftOpacity = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [0.5, 1, 1],
+        extrapolate: 'clamp',
+    });
+
+    const rightOpacity = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [1, 1, 0.5],
+        extrapolate: 'clamp',
+    });
+
+    // Translation to move photos toward/away from center
+    const leftTranslateX = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [60, 0, -30],
+        extrapolate: 'clamp',
+    });
+
+    const rightTranslateX = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [30, 0, -60],
+        extrapolate: 'clamp',
+    });
+
+    // Flex values to adjust container sizes
+    const leftFlex = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [0.25, 1, 2.5],
+        extrapolate: 'clamp',
+    });
+
+    const rightFlex = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [2.5, 1, 0.25],
+        extrapolate: 'clamp',
+    });
+
+    // Margins for enlarged sides
+    const leftMargin = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [0, 0, 60],
+        extrapolate: 'clamp',
+    });
+
+    const rightMargin = pan.interpolate({
+        inputRange: [-60, 0, 60],
+        outputRange: [60, 0, 0],
+        extrapolate: 'clamp',
+    });
 
     useEffect(() => {
         loadNextMatchup();
@@ -27,6 +180,18 @@ export default function RankingScreen() {
     const loadNextMatchup = async () => {
         try {
             setLoading(true);
+            
+            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
+            if (USE_MOCK_DATA) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                setMatchup(MOCK_MATCHUP);
+                setPhotoA(MOCK_MATCHUP.photoA);
+                setPhotoB(MOCK_MATCHUP.photoB);
+                setLoading(false);
+                return;
+            }
+            // ========== END MOCK DATA ==========
+            
             const token = await AsyncStorage.getItem('token');
             if (!token) {
                 Alert.alert('Error', 'Please login first');
@@ -65,6 +230,13 @@ export default function RankingScreen() {
 
     const loadRemainingComparisons = async () => {
         try {
+            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
+            if (USE_MOCK_DATA) {
+                setRemainingComparisons(MOCK_REMAINING);
+                return;
+            }
+            // ========== END MOCK DATA ==========
+            
             const token = await AsyncStorage.getItem('token');
             if (!token) return;
 
@@ -88,6 +260,17 @@ export default function RankingScreen() {
     const handleVote = async (winnerPhotoId, loserPhotoId) => {
         try {
             setComparing(true);
+            
+            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
+            if (USE_MOCK_DATA) {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                setRemainingComparisons(prev => Math.max(0, prev - 1));
+                await loadNextMatchup();
+                setComparing(false);
+                return;
+            }
+            // ========== END MOCK DATA ==========
+            
             const token = await AsyncStorage.getItem('token');
             if (!token) {
                 Alert.alert('Error', 'Please login first');
@@ -174,7 +357,7 @@ export default function RankingScreen() {
                     <Text style={styles.openButtonText}>View Leaderboard</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                    style={[styles.openButton, { width: 200, backgroundColor: '#808080', marginTop: 10 }]}
+                    style={[styles.openButton, { width: 200, backgroundColor: '#6c757d', marginTop: 10 }]}
                     onPress={() => router.back()}
                 >
                     <Text style={styles.openButtonText}>Go Back</Text>
@@ -184,110 +367,154 @@ export default function RankingScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={{ backgroundColor: '#fff', padding: 20, paddingTop: 60 }}>
+        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
                 <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 10 }}>
                     <Text style={{ fontSize: 16, color: '#007bff' }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.h2, { marginBottom: 5 }]}>{eventName || 'Event Ranking'}</Text>
-                <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>Which photo is better?</Text>
+                <Text style={[styles.h2, { marginBottom: 15 }]}>{eventName || 'Event Ranking'}</Text>
+                <Text style={[styles.h2, { fontSize: 18, marginBottom: 5 }]}>Which photo is better?</Text>
                 {remainingComparisons !== null && (
-                    <Text style={{ fontSize: 12, color: '#999' }}>
+                    <Text style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
                         Remaining votes: {remainingComparisons}
                     </Text>
                 )}
             </View>
 
-            <View style={{ flex: 1, flexDirection: 'row' }}>
-                <TouchableOpacity 
-                    style={{ flex: 1, position: 'relative' }}
-                    onPress={() => !comparing && handleVote(photoA.id, photoB.id)}
-                    disabled={comparing}
-                    activeOpacity={0.7}
-                >
-                    <Image 
-                        source={{ uri: `${API_URL}/${photoA.filePath}` }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                    />
-                    <View style={{ 
-                        position: 'absolute', 
-                        top: 0, 
-                        left: 0, 
-                        right: 0, 
-                        bottom: 0,
-                        backgroundColor: comparing ? 'rgba(0,0,0,0.3)' : 'transparent',
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                    }}>
-                        {!comparing && (
-                            <View style={{ 
-                                backgroundColor: 'rgba(0,123,255,0.9)', 
-                                paddingHorizontal: 20, 
-                                paddingVertical: 10, 
-                                borderRadius: 20 
-                            }}>
-                                <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-                                    Vote
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                </TouchableOpacity>
+            <View style={{ flex: 1, flexDirection: 'column', backgroundColor: '#fff' }}>
+                <View style={{ flex: 1, flexDirection: 'row' }} {...panResponder.panHandlers}>
+                    <Animated.View 
+                        style={{ 
+                            flex: leftFlex, 
+                            justifyContent: 'center', 
+                            alignItems: 'center', 
+                            padding: 10,
+                            paddingRight: 15,
+                            marginLeft: leftMargin,
+                            opacity: leftOpacity,
+                            transform: [{ scale: leftScale }, { translateX: leftTranslateX }]
+                        }}
+                    >
+                        <View style={{ width: '100%', aspectRatio: 3/4, position: 'relative' }}>
+                            <Image 
+                                source={{ uri: USE_MOCK_DATA ? photoA.filePath : `${API_URL}/${photoA.filePath}` }}
+                                style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                                resizeMode="cover"
+                            />
+                            {comparing && (
+                                <View style={{ 
+                                    position: 'absolute', 
+                                    top: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bottom: 0,
+                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                    borderRadius: 10
+                                }} />
+                            )}
+                        </View>
+                    </Animated.View>
 
-                <View style={{ width: 2, backgroundColor: '#fff' }} />
+                    <View style={{ width: 1, backgroundColor: 'transparent' }} />
 
-                <TouchableOpacity 
-                    style={{ flex: 1, position: 'relative' }}
-                    onPress={() => !comparing && handleVote(photoB.id, photoA.id)}
-                    disabled={comparing}
-                    activeOpacity={0.7}
-                >
-                    <Image 
-                        source={{ uri: `${API_URL}/${photoB.filePath}` }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                    />
-                    <View style={{ 
-                        position: 'absolute', 
-                        top: 0, 
-                        left: 0, 
-                        right: 0, 
-                        bottom: 0,
-                        backgroundColor: comparing ? 'rgba(0,0,0,0.3)' : 'transparent',
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                    }}>
-                        {!comparing && (
-                            <View style={{ 
-                                backgroundColor: 'rgba(0,123,255,0.9)', 
-                                paddingHorizontal: 20, 
-                                paddingVertical: 10, 
-                                borderRadius: 20 
-                            }}>
-                                <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-                                    Vote
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                </TouchableOpacity>
+                    <Animated.View 
+                        style={{ 
+                            flex: rightFlex, 
+                            justifyContent: 'center', 
+                            alignItems: 'center', 
+                            padding: 10,
+                            paddingLeft: 15,
+                            marginRight: rightMargin,
+                            opacity: rightOpacity,
+                            transform: [{ scale: rightScale }, { translateX: rightTranslateX }]
+                        }}
+                    >
+                        <View style={{ width: '100%', aspectRatio: 3/4, position: 'relative' }}>
+                            <Image 
+                                source={{ uri: USE_MOCK_DATA ? photoB.filePath : `${API_URL}/${photoB.filePath}` }}
+                                style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                                resizeMode="cover"
+                            />
+                            {comparing && (
+                                <View style={{ 
+                                    position: 'absolute', 
+                                    top: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bottom: 0,
+                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                    borderRadius: 10
+                                }} />
+                            )}
+                        </View>
+                    </Animated.View>
+                </View>
+
+                {/* Vote buttons */}
+                <View style={{ flexDirection: 'row', paddingHorizontal: 15, paddingVertical: 10, gap: 10 }}>
+                    <TouchableOpacity 
+                        style={[styles.openButton, { flex: 1, backgroundColor: '#FF9500' }]}
+                        onPress={() => !comparing && handleVote(photoA.id, photoB.id)}
+                        disabled={comparing}
+                    >
+                        <Text style={styles.openButtonText}>Vote Left</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.openButton, { flex: 1, backgroundColor: '#FF9500' }]}
+                        onPress={() => !comparing && handleVote(photoB.id, photoA.id)}
+                        disabled={comparing}
+                    >
+                        <Text style={styles.openButtonText}>Vote Right</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            <View style={{ backgroundColor: '#fff', padding: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+            {/* Slider indicator */}
+            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 20 }}>
+                <View style={{ alignItems: 'center' }}>
+                    <View 
+                        style={{ width: '90%' }}
+                        {...sliderPanResponder.panHandlers}
+                    >
+                        <Text style={{ fontSize: 12, color: '#999', marginBottom: 8, textAlign: 'center', pointerEvents: 'none' }}>Swipe to view better</Text>
+                        <View style={{ paddingVertical: 15, pointerEvents: 'none' }}>
+                            <View style={{ width: '100%', height: 8, backgroundColor: '#e0e0e0', borderRadius: 4, position: 'relative' }}>
+                                <Animated.View 
+                                    style={{
+                                        position: 'absolute',
+                                        top: -4,
+                                        left: 0,
+                                        width: 16,
+                                        height: 16,
+                                        backgroundColor: '#FF9500',
+                                        borderRadius: 8,
+                                        transform: [{
+                                            translateX: pan.interpolate({
+                                                inputRange: [-60, 60],
+                                                outputRange: [(width - 40) * 0.9 - 16, 0],
+                                                extrapolate: 'clamp',
+                                            })
+                                        }]
+                                    }}
+                                />
+                            </View>
+                        </View>
+                        <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                            <Text style={{ fontSize: 10, color: '#FF9500' }}>Left</Text>
+                            <Text style={{ fontSize: 10, color: '#999' }}>Equal</Text>
+                            <Text style={{ fontSize: 10, color: '#FF9500' }}>Right</Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            <View style={{ backgroundColor: '#fff', padding: 15, borderTopWidth: 1, borderTopColor: '#e0e0e0' }}>
                 <TouchableOpacity 
-                    style={[styles.openButton, { flex: 1, marginRight: 10, backgroundColor: '#6c757d' }]}
+                    style={[styles.openButton, { backgroundColor: '#dc3545' }]}
                     onPress={handleSkip}
                     disabled={comparing}
                 >
                     <Text style={styles.openButtonText}>Skip</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.openButton, { flex: 1, backgroundColor: '#9C27B0' }]}
-                    onPress={handleViewLeaderboard}
-                    disabled={comparing}
-                >
-                    <Text style={styles.openButtonText}>Leaderboard</Text>
                 </TouchableOpacity>
             </View>
 

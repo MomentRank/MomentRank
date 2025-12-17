@@ -2,6 +2,7 @@
 backend/MomentRank/MomentRank/bin/
 backend/MomentRank/MomentRank/obj/
 backend/MomentRank/.vs
+backend/MomentRank/.vscode
 *.db
 *.db-shm
 *.db-wal

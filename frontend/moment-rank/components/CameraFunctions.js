@@ -8,6 +8,38 @@ import BASE_URL from '../Config';
 
 const API_URL = BASE_URL;
 
+// Update event cover photo after upload
+export const updateCoverPhoto = async (eventId, filePath) => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+            Alert.alert("Error", "Please login first");
+            return false;
+        }
+
+        await axios.post(
+            `${API_URL}/event/update-cover-photo`,
+            {
+                eventId: eventId,
+                filePath: filePath
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                timeout: 10000,
+            }
+        );
+
+        return true;
+    } catch (error) {
+        console.error('Error updating cover photo:', error);
+        Alert.alert("Error", "Failed to update event cover photo");
+        return false;
+    }
+};
+
 export const uploadPhoto = async (imageAsset, setLoading, loadPhotos, currentEventId) => {
     try {
         setLoading(true);

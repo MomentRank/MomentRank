@@ -10,7 +10,8 @@ import {
     FlatList, 
     Dimensions, 
     ActivityIndicator, 
-    RefreshControl // Added RefreshControl for pull-to-refresh
+    RefreshControl,
+    TextInput // Added for editing
 } from "react-native";
 import { useRouter } from "expo-router";
 import styles from "../../Styles/main";
@@ -19,6 +20,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BASE_URL from "../../Config";
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
 
 const API_URL = BASE_URL;
 
@@ -28,6 +30,7 @@ export default function ProfileScreen() {
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [bio, setBio] = useState("");
+    const [profilePhoto, setProfilePhoto] = useState(null);
     const [userId, setUserId] = useState(null);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true); 
@@ -38,7 +41,13 @@ export default function ProfileScreen() {
     const [currentPage, setCurrentPage] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
-    const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
+    const [refreshing, setRefreshing] = useState(false);
+    
+    // Edit modal states
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [editType, setEditType] = useState(null); // 'username', 'bio', or 'photo'
+    const [editValue, setEditValue] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
     
     const flatListRef = useRef(null);
     const windowWidth = Dimensions.get('window').width;
@@ -50,15 +59,7 @@ export default function ProfileScreen() {
         router.replace("/");
     };
 
-    /**
-     * Fetches events, filters them for expired, and updates the state.
-     * @param {string | null} token - Authentication token (optional, retrieved from AsyncStorage if null).
-     * @param {number} currentUserId - The ID of the current user.
-     * @param {number} page - The page number to fetch.
-     * @param {boolean} append - If true, appends new data to existing events.
-     */
     const fetchEvents = async (token, currentUserId, page = 1, append = false) => {
-        // Prevent simultaneous loading/fetching
         if (loadingMore && append) return; 
 
         if (!append) setLoading(true);
@@ -76,7 +77,7 @@ export default function ProfileScreen() {
             const response = await axios.post(`${API_URL}/event/list`, {
                 includePublic: true,
                 pageNumber: page,
-                pageSize: 4, // Page size remains 4
+                pageSize: 4,
             }, {
                 headers: {
                     Authorization: `Bearer ${tokenToUse}`,
@@ -95,9 +96,6 @@ export default function ProfileScreen() {
             const userArchivedEvents = eventsData.filter(event => {
                 const endsAtDate = new Date(event.endsAt);
                 const hasEnded = !isNaN(endsAtDate.getTime()) && endsAtDate < currentDate;
-
-                // Show events that have ended AND user is owner or member
-                // OR show events owned by user (even if not ended yet)
                 const isOwner = event.ownerId === currentUserId;
                 const isMember = event.memberIds && Array.isArray(event.memberIds) && event.memberIds.includes(currentUserId);
 
@@ -106,7 +104,6 @@ export default function ProfileScreen() {
 
             if (append) {
                 setEvents(prevEvents => {
-                    // Filter out any duplicates that might have sneaked in
                     const existingIds = new Set(prevEvents.map(e => e.id));
                     const newEvents = userArchivedEvents.filter(e => !existingIds.has(e.id));
                     return [...prevEvents, ...newEvents];
@@ -115,7 +112,6 @@ export default function ProfileScreen() {
                 setEvents(userArchivedEvents);
             }
 
-            // Determine if more data might exist based on the page size limit
             const newHasMoreData = eventsData.length === 4; 
             setHasMoreData(newHasMoreData);
 
@@ -123,7 +119,6 @@ export default function ProfileScreen() {
             console.warn("Failed to fetch events:", error.response?.data || error.message);
             if (!append) setEvents([]);
             Alert.alert("Error", "Failed to load events archive.");
-            // Stop infinite scroll attempts on error
             setHasMoreData(false); 
         } finally {
             if (!append) setLoading(false);
@@ -133,16 +128,13 @@ export default function ProfileScreen() {
     };
 
     const loadMoreEvents = () => {
-        // Check if a new page request is valid (not currently loading, has more data, and user ID is known)
         if (!loadingMore && hasMoreData && userId) {
-            setLoadingMore(true); // Set loading immediately
+            setLoadingMore(true);
             
-            // Use the functional form to get the current page state, increment it, and then call fetchEvents
             setCurrentPage(prevPage => {
                 const nextPage = prevPage + 1;
-                // Pass the fresh nextPage value to the fetch function
                 fetchEvents(null, userId, nextPage, true);
-                return nextPage; // Return the new page number for the state
+                return nextPage;
             });
         }
     };
@@ -165,11 +157,6 @@ export default function ProfileScreen() {
             });
             
             let photos = Array.isArray(response.data) ? response.data : (response.data?.photos || []);
-            
-            if (photos.length === 0) {
-
-            }
-            
             setEventPhotos(photos);
         } catch (error) {
             console.error("Failed to load event photos:", error.response?.data || error.message);
@@ -187,19 +174,16 @@ export default function ProfileScreen() {
 
     const handleRefresh = async () => {
         setRefreshing(true);
-        // Reset state and fetch the first page
         setCurrentPage(1);
         setHasMoreData(true);
         if (userId) {
             await fetchEvents(null, userId, 1, false);
         } else {
-            // Re-run the full profile load if userId is missing
             await fetchProfileAndEvents();
         }
         setRefreshing(false);
     };
 
-    // Consolidated logic to fetch profile and initial events
     const fetchProfileAndEvents = async () => {
         setLoading(true);
         try {
@@ -223,9 +207,9 @@ export default function ProfileScreen() {
             setName(data.name || "");
             setUsername(data.username || "");
             setBio(data.bio || "");
+            setProfilePhoto(data.profilePicture || null);
             setUserId(currentUserId);
 
-            // Reset and fetch events
             setCurrentPage(1);
             setHasMoreData(true);
             await fetchEvents(token, currentUserId, 1, false);
@@ -243,22 +227,194 @@ export default function ProfileScreen() {
         }
     };
 
+    // Open edit modal
+    const openEditModal = (type) => {
+        setEditType(type);
+        if (type === 'name') {
+            setEditValue(name);
+        } else if (type === 'bio') {
+            setEditValue(bio);
+        }
+        setEditModalVisible(true);
+    };
+
+    // Close edit modal
+    const closeEditModal = () => {
+        setEditModalVisible(false);
+        setEditType(null);
+        setEditValue("");
+    };
+
+    // Handle profile photo selection
+    const handleSelectPhoto = async () => {
+        try {
+            // Request permission
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            
+            if (permissionResult.granted === false) {
+                Alert.alert("Permission Required", "Please allow access to your photo library.");
+                return;
+            }
+
+            // Launch image picker
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                await uploadProfilePhoto(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error("Error selecting photo:", error);
+            Alert.alert("Error", "Failed to select photo.");
+        }
+    };
+
+    // Upload profile photo
+    const uploadProfilePhoto = async (uri) => {
+        setIsSaving(true);
+        try {
+            const token = await AsyncStorage.getItem("token");
+            
+            // Read the file as base64
+            const filename = uri.split('/').pop();
+            const match = /\.(\w+)$/.exec(filename);
+            const extension = match ? match[1] : 'jpg';
+            const contentType = `image/${extension}`;
+            
+            // Fetch the file and convert to base64
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            
+            reader.onloadend = async () => {
+                try {
+                    const base64data = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+                    
+                    // Step 1: Upload photo to get FilePath
+                    const uploadResponse = await axios.post(
+                        `${API_URL}/photo/upload`,
+                        {
+                            fileData: base64data,
+                            fileName: filename,
+                            contentType: contentType
+                        },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        }
+                    );
+
+                    const uploadedPhoto = uploadResponse.data;
+                    const filePath = uploadedPhoto.FilePath || uploadedPhoto.filePath;
+
+                    if (!filePath) {
+                        throw new Error("No file path returned from upload");
+                    }
+
+                    // Step 2: Update profile picture with the new photo path
+                    await axios.post(
+                        `${API_URL}/profile/update-picture`,
+                        {
+                            filePath: filePath
+                        },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        }
+                    );
+
+                    setProfilePhoto(filePath);
+                    Alert.alert("Success", "Profile photo updated!");
+                } catch (error) {
+                    console.error("Failed to upload or update photo:", error);
+                    Alert.alert("Error", "Failed to update profile photo.");
+                } finally {
+                    setIsSaving(false);
+                }
+            };
+            
+            reader.onerror = () => {
+                console.error("Failed to read file");
+                Alert.alert("Error", "Failed to read image file.");
+                setIsSaving(false);
+            };
+            
+            reader.readAsDataURL(blob);
+            
+        } catch (error) {
+            console.error("Failed to process photo:", error);
+            Alert.alert("Error", "Failed to process profile photo.");
+            setIsSaving(false);
+        }
+    };
+
+    // Save edit changes
+    const handleSaveEdit = async () => {
+        if (!editValue.trim() && editType !== 'photo') {
+            Alert.alert("Error", `${editType === 'name' ? 'Name' : 'Bio'} cannot be empty.`);
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const token = await AsyncStorage.getItem("token");
+            const updateData = {};
+            
+            if (editType === 'name') {
+                updateData.name = editValue.trim();
+            } else if (editType === 'bio') {
+                updateData.bio = editValue.trim();
+            }
+
+            await axios.post(
+                `${API_URL}/profile/update`,
+                updateData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            // Update local state
+            if (editType === 'name') {
+                setName(editValue.trim());
+            } else if (editType === 'bio') {
+                setBio(editValue.trim());
+            }
+
+            Alert.alert("Success", `${editType === 'name' ? 'Name' : 'Bio'} updated!`);
+            closeEditModal();
+        } catch (error) {
+            console.error("Failed to update profile:", error);
+            Alert.alert("Error", `Failed to update ${editType}.`);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     useFocusEffect(
         React.useCallback(() => {
             fetchProfileAndEvents();
-            return () => {}; // Cleanup function for useFocusEffect
+            return () => {};
         }, [])
     );
 
-    // Track current visible photo index in modal FlatList
     const onMomentumScrollEnd = (event) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
         const newIndex = Math.round(contentOffsetX / windowWidth);
         setSelectedPhotoIndex(newIndex);
     };
 
-    // Render loading state separately
     if (loading) {
          return (
              <View style={styles.container}>
@@ -275,7 +431,6 @@ export default function ProfileScreen() {
          );
     }
 
-
     return (
         <View style={styles.container}>
             <View style={styles.backgroundWhiteBox}>
@@ -288,24 +443,81 @@ export default function ProfileScreen() {
                     }
                 >
                     <View>
-                        <Image
-                            source={require("../../assets/profile-icon.png")}
-                            style={{
-                                width: 120,
-                                height: 120,
-                                borderRadius: 65,
-                                alignSelf: "center",
-                            }}
-                        />
-                        <Text style={[styles.h2, { textAlign: "center", marginTop: 10 }]}>
-                            {name || "User Name"}
-                        </Text>
+                        {/* Profile Photo with Edit Button */}
+                        <View style={{ alignSelf: 'center', marginTop: 20, position: 'relative' }}>
+                            <Image
+                                source={
+                                    profilePhoto 
+                                        ? { uri: `${API_URL}/${profilePhoto}` }
+                                        : require("../../assets/profile-icon.png")
+                                }
+                                style={{
+                                    width: 120,
+                                    height: 120,
+                                    borderRadius: 60,
+                                }}
+                            />
+                            <TouchableOpacity
+                                onPress={handleSelectPhoto}
+                                disabled={isSaving}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    right: 0,
+                                    backgroundColor: isSaving ? '#ccc' : '#FF9500',
+                                    width: 30,
+                                    height: 30,
+                                    borderRadius: 18,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderWidth: 3,
+                                    borderColor: '#fff',
+                                }}
+                            >
+                                {isSaving ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>✎</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Name with Edit Button */}
+                        <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', paddingHorizontal: 20 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: 26 }} />
+                                <Text style={[styles.h2, { textAlign: "center", fontSize: 24 }]}>
+                                    {name || "User Name"}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => openEditModal('name')}
+                                    style={{ marginLeft: 8, paddingHorizontal: 4, paddingVertical: 0, height: 26, justifyContent: 'center', alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: '#FF9500', fontSize: 18 }}>✎</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* Username (not editable) */}
                         <Text style={[styles.text, { textAlign: "center", marginBottom: 20 }]}>
                             @{username || "username"}
                         </Text>
-                        <Text style={[styles.text, { textAlign: "center", marginBottom: 20, paddingHorizontal: 20 }]}>
-                            {bio || "No bio yet."}
-                        </Text>
+
+                        {/* Bio with Edit Button */}
+                        <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20, paddingHorizontal: 20, flexDirection: 'row' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: 26 }} />
+                                <Text style={[styles.text, { textAlign: "center", fontSize: 16 }]}>
+                                    Bio: {bio || "No bio yet."}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => openEditModal('bio')}
+                                    style={{ marginLeft: 8, paddingHorizontal: 4, paddingVertical: 0, width: 26, height: 26, alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Text style={{ color: '#FF9500', fontSize: 16 }}>✎</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                         
                         <TouchableOpacity
                             onPress={handleLogout}
@@ -338,7 +550,7 @@ export default function ProfileScreen() {
                             keyExtractor={(item) => item.id.toString()}
                             numColumns={2}
                             contentContainerStyle={{ paddingHorizontal: 10 }}
-                            scrollEnabled={false} // CRITICAL: Disabled so the parent ScrollView handles the scrolling
+                            scrollEnabled={false}
                             onEndReached={loadMoreEvents}
                             onEndReachedThreshold={0.5}
                             ListFooterComponent={() => (
@@ -354,7 +566,7 @@ export default function ProfileScreen() {
                                         borderRadius: 8,
                                         borderWidth: 1,
                                         borderColor: "#eee",
-                                        maxWidth: (windowWidth - 30) / 2, // Ensures two items fit with padding
+                                        maxWidth: (windowWidth - 30) / 2,
                                     }}
                                 >
                                     <Image
@@ -394,7 +606,6 @@ export default function ProfileScreen() {
                         </Text>
                     )}
                     
-                    {/* Display "End of Feed" message */}
                     {!hasMoreData && events.length > 0 && !loadingMore && (
                         <View style={{ alignItems: 'center', marginVertical: 20 }}>
                             <Text style={[styles.text, { color: '#666' }]}>
@@ -403,11 +614,86 @@ export default function ProfileScreen() {
                         </View>
                     )}
 
-                    {/* Spacer for bottom padding */}
                     <View style={{ height: 50 }} />
                 </ScrollView>
 
-                {/* Event Photos Modal (No changes needed, already well structured) */}
+                {/* Edit Modal */}
+                <Modal
+                    visible={editModalVisible}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={closeEditModal}
+                >
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                        <View style={{ 
+                            backgroundColor: '#fff', 
+                            borderRadius: 12, 
+                            padding: 20, 
+                            width: '85%',
+                            maxWidth: 400,
+                        }}>
+                            <Text style={[styles.h2, { marginBottom: 15 }]}>
+                                Edit {editType === 'name' ? 'Name' : 'Bio'}
+                            </Text>
+                            
+                            <TextInput
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: '#ddd',
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    fontSize: 16,
+                                    marginBottom: 20,
+                                    minHeight: editType === 'bio' ? 100 : 50,
+                                    textAlignVertical: editType === 'bio' ? 'top' : 'center',
+                                }}
+                                value={editValue}
+                                onChangeText={setEditValue}
+                                placeholder={editType === 'name' ? 'Enter name' : 'Enter bio'}
+                                multiline={editType === 'bio'}
+                                maxLength={editType === 'name' ? 50 : 150}
+                            />
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <TouchableOpacity
+                                    onPress={closeEditModal}
+                                    disabled={isSaving}
+                                    style={{
+                                        flex: 1,
+                                        marginRight: 10,
+                                        padding: 15,
+                                        backgroundColor: '#f0f0f0',
+                                        borderRadius: 8,
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 16, color: '#333' }}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={handleSaveEdit}
+                                    disabled={isSaving}
+                                    style={{
+                                        flex: 1,
+                                        marginLeft: 10,
+                                        padding: 15,
+                                        backgroundColor: isSaving ? '#ccc' : '#FF9500',
+                                        borderRadius: 8,
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    {isSaving ? (
+                                        <ActivityIndicator color="#fff" />
+                                    ) : (
+                                        <Text style={{ fontSize: 16, color: '#fff', fontWeight: '600' }}>Save</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* Event Photos Modal */}
                 <Modal
                     visible={modalVisible}
                     animationType="slide"
@@ -459,7 +745,6 @@ export default function ProfileScreen() {
                             />
                         ) : (
                             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                {/* Show a different message if loading is done and there are no photos */}
                                 {modalVisible && !loadingMore ? (
                                     <Text style={{ color: '#fff', fontSize: 16 }}>No photos uploaded to this event.</Text>
                                 ) : (

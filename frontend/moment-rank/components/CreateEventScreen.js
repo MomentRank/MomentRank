@@ -16,7 +16,7 @@ import BASE_URL from "../Config";
 import Style from "../Styles/main";
 import AppHeader from './AppHeader';
 import { useRouter } from "expo-router";
-import {takePhoto, pickImage, pickCoverImage, takeCoverPhoto} from "./CameraFunctions" 
+import {takePhoto, pickImage, pickCoverImage, takeCoverPhoto, updateCoverPhoto} from "./CameraFunctions" 
 import VisibilityToggle from "./PrivacyToggle";
 import DurationPicker from "./DurationPicker";
 
@@ -58,6 +58,7 @@ const payload = {
         //}
 
         try {
+            setLoading(true);
             const token = await AsyncStorage.getItem("token");
             if (!token) {
                 Alert.alert("Error", "Please login first.");
@@ -68,16 +69,9 @@ const payload = {
                 name,
                 public: isPublic,
                 ...(endsAt && { endsAt }), // optional
-                ...(coverPhotoPath && { coverPhoto: coverPhotoPath }), // optional cover photo
             };
 
-            //formData.append("image", {
-            //    uri: image,
-            //    name: "event.jpg",
-            //    type: "image/jpeg",
-            //});
-
-            await axios.post(
+            const createResponse = await axios.post(
                 `${API_URL}/event/create`,
                 payload,
                 {
@@ -88,12 +82,26 @@ const payload = {
                 }
             );
 
+            const eventId = createResponse.data.id || createResponse.data.eventId;
+
+            // If cover photo was uploaded, update the event with it
+            if (coverPhotoPath && eventId) {
+                const updateSuccess = await updateCoverPhoto(eventId, coverPhotoPath);
+                if (!updateSuccess) {
+                    Alert.alert("Warning", "Event created but cover photo update failed. You can update it later.");
+                    router.back();
+                    return;
+                }
+            }
+
             Alert.alert("Success", "Event created successfully!");
             router.back();
 
         } catch (error) {
             console.error("Error creating event:", error);
             Alert.alert("Error", "Failed to create event.");
+        } finally {
+            setLoading(false);
         }
     };
 

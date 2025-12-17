@@ -56,7 +56,6 @@ public class EventControllerTests : IClassFixture<CustomWebApplicationFactory>
         {
             Name = "Test Event",
             Public = true,
-            CreatedAt = DateTime.UtcNow,
             EndsAt = DateTime.UtcNow.AddDays(1)
         };
 

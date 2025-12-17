@@ -7,18 +7,32 @@ import Style from '../Styles/main';
 
 const API_URL = BASE_URL;
 
-const ParticipantsModal = ({ visible, onClose, eventId, eventName }) => {
+const ParticipantsModal = ({ visible, onClose, eventId, eventName, owner, members = [] }) => {
   const [participants, setParticipants] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
   const loadParticipants = async () => {
     try {
-      // Mock participants data
-      setParticipants([
-        { id: 1, username: 'john_doe', email: 'john@example.com', isOwner: true },
-        { id: 2, username: 'jane_smith', email: 'jane@example.com', isOwner: false },
-        { id: 3, username: 'mike_wilson', email: 'mike@example.com', isOwner: false },
-      ]);
+      // Combine owner and members with owner marked separately
+      const allParticipants = [];
+      
+      if (owner) {
+        allParticipants.push({
+          ...owner,
+          isOwner: true
+        });
+      }
+
+      if (Array.isArray(members)) {
+        members.forEach(member => {
+          allParticipants.push({
+            ...member,
+            isOwner: false
+          });
+        });
+      }
+
+      setParticipants(allParticipants);
     } catch (error) {
       console.error('Load participants error:', error);
     }
@@ -35,14 +49,22 @@ const ParticipantsModal = ({ visible, onClose, eventId, eventName }) => {
           style: "destructive",
           onPress: async () => {
             try {
-              setLoading(true);
-              // TODO: Implement actual remove endpoint
+              setRemovingId(participantId);
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
+              }
+
+              // TODO: Implement actual remove endpoint when available
+              // For now, just remove from local state
               Alert.alert("Success", `${participantUsername} has been removed`);
-              loadParticipants(); // Refresh list
+              setParticipants(participants.filter(p => p.id !== participantId));
             } catch (error) {
+              console.error('Remove participant error:', error);
               Alert.alert("Error", "Failed to remove participant");
             } finally {
-              setLoading(false);
+              setRemovingId(null);
             }
           }
         }
@@ -124,16 +146,16 @@ const ParticipantsModal = ({ visible, onClose, eventId, eventName }) => {
               {!item.isOwner && (
                 <TouchableOpacity
                   onPress={() => removeParticipant(item.id, item.username)}
-                  disabled={loading}
+                  disabled={removingId === item.id}
                   style={{
-                    backgroundColor: loading ? '#ccc' : '#FF3B30',
+                    backgroundColor: removingId === item.id ? '#ccc' : '#FF3B30',
                     paddingHorizontal: 15,
                     paddingVertical: 6,
                     borderRadius: 15
                   }}
                 >
                   <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
-                    {loading ? 'Removing...' : 'Remove'}
+                    {removingId === item.id ? 'Removing...' : 'Remove'}
                   </Text>
                 </TouchableOpacity>
               )}

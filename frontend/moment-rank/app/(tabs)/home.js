@@ -10,12 +10,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import defaultImage from "../../assets/event_default.jpg";
 
 const API_URL = BASE_URL;
-const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000; 
 
-const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft }) => {
+const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin }) => {
     const source = imageSource
     ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
     : defaultImage;
+
+    const isOwner = currentUserId && ownerId && Number(currentUserId) === Number(ownerId);
+    const isMember = currentUserId && memberIds.some(id => Number(id) === Number(currentUserId));
+    const showJoinButton = accessibility && !isMember && !isOwner && currentUserId; 
 
     const formatTime = (time) => {
         if (!time || time.total <= 0) return "Ended";
@@ -89,13 +93,21 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                 <Text style={styles.descriptionText}>{accessibility ? "Public" : "Private"}</Text>
             </View>
             <View style={styles.openButtonContainer}>
-                <TouchableOpacity 
-                    onPress={onPress} 
-                    style={[styles.openButton, isEnded && { backgroundColor: '#808080' }]} 
-                    // Button is always active to allow navigation to 'View Archive'
-                >
-                    <Text style={styles.openButtonText}>{isEnded ? "View Archive" : "Open"}</Text> 
-                </TouchableOpacity>
+                {showJoinButton ? (
+                    <TouchableOpacity 
+                        onPress={() => onJoin(eventId, name)} 
+                        style={[styles.openButton, { backgroundColor: '#28a745' }]}
+                    >
+                        <Text style={styles.openButtonText}>Join Event</Text> 
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity 
+                        onPress={onPress} 
+                        style={[styles.openButton, isEnded && { backgroundColor: '#808080' }]} 
+                    >
+                        <Text style={styles.openButtonText}>{isEnded ? "View Archive" : "Open"}</Text> 
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -110,6 +122,7 @@ export default function HomeScreen() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
     const scrollViewRef = useRef(null);
 
     const handleOpen = (cardId) => {
@@ -123,13 +136,55 @@ export default function HomeScreen() {
         router.push("/create-event");
     };
 
-    // 🛠️ FIX 1: Using functional state update to ensure correct nextPage is used.
+    const handleJoin = async (eventId, eventName) => {
+        try {
+            const token = await AsyncStorage.getItem('token');
+            if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
+            }
+
+            await axios.post(`${API_URL}/event/join`, {
+                id: eventId
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            Alert.alert("Success", `You've joined ${eventName}!`);
+            
+            console.log('Before update - eventId:', eventId, 'currentUserId:', currentUserId);
+
+            setCardData(prevData => {
+                const updated = prevData.map(event => {
+                    if (event.id === eventId) {
+                        const newMemberIds = [...event.memberIds, currentUserId];
+                        console.log('Updated memberIds for event', event.name, ':', newMemberIds);
+                        return { ...event, memberIds: newMemberIds };
+                    }
+                    return event;
+                });
+                return updated;
+            });
+        } catch (error) {
+            console.error('Join event error:', error);
+            if (error.response?.status === 409) {
+                Alert.alert("Info", "You're already a member of this event");
+            } else {
+                Alert.alert("Error", "Failed to join event");
+            }
+        }
+    };
+
+
     const loadMoreEvents = () => {
         if (!loadingMore && !isLoadingMore && hasMoreData) {
             setLoadingMore(true);
             setIsLoadingMore(true);
             
-            // Use functional update to guarantee the correct previous page value
+
             setCurrentPage(prevPage => {
                 const nextPage = prevPage + 1;
                 getEvents(nextPage, true);
@@ -169,14 +224,12 @@ export default function HomeScreen() {
 
             const now = new Date().getTime();
             
-            // Filter events to only show active or recently ended (within 24 hours)
             const filteredItems = itemsArray.filter(item => {
-                if (!item.endsAt) return true; // Keep events without an end date (assuming perpetual/active)
+                if (!item.endsAt) return true;
 
                 const endTime = new Date(item.endsAt).getTime();
                 const distance = endTime - now;
 
-                // Keep event if: 1. Active (distance > 0) OR 2. Recently ended (distance > -ONE_DAY_IN_MS)
                 return distance > 0 || distance > -ONE_DAY_IN_MS;
             });
 
@@ -187,11 +240,13 @@ export default function HomeScreen() {
                     public: item.public === true || item.public === 1, 
                     imageSource: item.coverPhoto ? `${API_URL}/${item.coverPhoto}` : (item.imageSource || undefined),
                     endsAt: item.endsAt,
+                    memberIds: item.memberIds || [],
+                    ownerId: item.ownerId,
                 };
             });
 
             if (append) {
-                // Better duplicate filtering when appending
+
                 setCardData(prevData => {
                     const existingIds = new Set(prevData.map(item => item.id));
                     const uniqueNewItems = structuredItems.filter(item => !existingIds.has(item.id));
@@ -201,11 +256,11 @@ export default function HomeScreen() {
                 setCardData(structuredItems);
             }
 
-            // 🛠️ FIX 2: Use the local 'page' argument for reliable pagination check
+
             const totalCount = rawItems.totalCount;
             const newHasMoreData = totalCount 
                 ? (page * 5) < totalCount
-                : (itemsArray.length === 5 && page < 10); // Heuristic
+                : (itemsArray.length === 5 && page < 10);
 
             setHasMoreData(newHasMoreData);
         } catch (error) {
@@ -218,17 +273,38 @@ export default function HomeScreen() {
         }
     };
 
+    const getCurrentUser = async () => {
+        try {
+            const token = await AsyncStorage.getItem('token');
+            if (!token) return;
+
+            const response = await axios.post(`${API_URL}/profile/get`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            });
+
+            console.log('Current user response:', response.data);
+
+            if (response.data && response.data.id) {
+                setCurrentUserId(response.data.id);
+                console.log('Set currentUserId to:', response.data.id);
+            }
+        } catch (error) {
+            console.error('Error getting current user:', error);
+        }
+    };
+
     useFocusEffect(
         React.useCallback(() => {
-            // Reset state and load page 1 when screen focuses
             setCurrentPage(1);
             setHasMoreData(true);
             setIsLoadingMore(false);
+            getCurrentUser();
             getEvents(1, false);
         }, [])
     );
 
-    // Timer effect to update countdowns (logic is correct)
     useEffect(() => {
         const interval = setInterval(() => {
             const now = new Date().getTime();
@@ -266,11 +342,11 @@ export default function HomeScreen() {
 
     const handleScroll = (event) => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-        // Check if user scrolled within 20px of the bottom (trigger point)
+
         const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20; 
 
         if (isCloseToBottom && !loadingMore && !isLoadingMore && hasMoreData) {
-            // This now calls the fixed loadMoreEvents which uses the freshest page number
+
             loadMoreEvents();
         }
     };
@@ -311,7 +387,11 @@ export default function HomeScreen() {
                         accessibility={card.public}
                         eventId={card.id}
                         timeLeft={timeLeft[card.id]}
+                        memberIds={card.memberIds}
+                        ownerId={card.ownerId}
+                        currentUserId={currentUserId}
                         onPress={() => handleOpen(card.id)}
+                        onJoin={handleJoin}
                     />
                 ))
             ) : (
@@ -334,7 +414,7 @@ export default function HomeScreen() {
                     showsVerticalScrollIndicator={true}
                     nestedScrollEnabled={true}
                     onScroll={handleScroll}
-                    scrollEventThrottle={16} // Good for performance and smooth loading
+                    scrollEventThrottle={16}
                 >
 
                     {/* CREATE EVENT SECTION */}
@@ -365,14 +445,12 @@ export default function HomeScreen() {
                     </TouchableOpacity>
 
 
-                    {/* PRIVATE EVENTS SECTION */}
+
                     {renderEventSection(privateEvents, "Private Events")}
 
 
-                    {/* PUBLIC EVENTS SECTION */}
                     {renderEventSection(publicEvents, "Public Events")}
 
-                    {/* LOADING INDICATOR for infinite scroll */}
                     {loadingMore && (
                         <View style={{ alignItems: 'center', marginVertical: 20 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -384,7 +462,7 @@ export default function HomeScreen() {
                         </View>
                     )}
                     
-                    {/* NO MORE DATA MESSAGE */}
+
                     {!hasMoreData && cardData.length > 0 && (
                         <View style={{ alignItems: 'center', marginVertical: 20 }}>
                             <Text style={[styles.text, { color: '#666' }]}>

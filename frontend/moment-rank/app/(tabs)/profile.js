@@ -11,7 +11,7 @@ import {
     Dimensions, 
     ActivityIndicator, 
     RefreshControl,
-    TextInput // Added for editing
+    TextInput
 } from "react-native";
 import { useRouter } from "expo-router";
 import styles from "../../Styles/main";

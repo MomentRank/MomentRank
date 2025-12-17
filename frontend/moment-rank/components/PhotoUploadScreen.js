@@ -23,6 +23,8 @@ export default function PhotoUploadScreen() {
   const [isPublic, setIsPublic] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [eventOwner, setEventOwner] = useState(null);
+  const [eventMembers, setEventMembers] = useState([]);
 
   const currentEventId = eventId || '1';
 
@@ -78,8 +80,25 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
       });
 
       if (response.data) {
+        console.log('Event data:', JSON.stringify(response.data, null, 2));
         setEventName(response.data.name || 'Event Photos');
         setIsPublic(response.data.public);
+        
+        // Extract owner info
+        if (response.data.owner) {
+          console.log('Owner data:', response.data.owner);
+          setEventOwner(response.data.owner);
+        }
+        
+        // Extract members list (excluding owner)
+        if (response.data.members && Array.isArray(response.data.members)) {
+          console.log('Members data:', response.data.members);
+          setEventMembers(response.data.members);
+        } else if (response.data.memberIds && Array.isArray(response.data.memberIds)) {
+          // If only member IDs are provided, we'll need to fetch member details
+          console.log('Member IDs only:', response.data.memberIds);
+          setEventMembers(response.data.memberIds.map(id => ({ id })));
+        }
       }
     } catch (error) {
       console.error('Load event details error:', error);
@@ -486,6 +505,7 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
         onClose={() => setShowInviteModal(false)}
         eventId={currentEventId}
         eventName={eventName}
+        eventMembers={eventMembers}
       />
     )}
 
@@ -496,6 +516,8 @@ const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)(
         onClose={() => setShowParticipantsModal(false)}
         eventId={currentEventId}
         eventName={eventName}
+        owner={eventOwner}
+        members={eventMembers}
       />
     )}
 

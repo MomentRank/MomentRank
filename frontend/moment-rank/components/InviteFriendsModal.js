@@ -7,42 +7,83 @@ import Style from '../Styles/main';
 
 const API_URL = BASE_URL;
 
-const InviteFriendsModal = ({ visible, onClose, eventId, eventName }) => {
+const InviteFriendsModal = ({ visible, onClose, eventId, eventName, eventMembers = [] }) => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [invitingId, setInvitingId] = useState(null);
 
   const loadFriends = async () => {
     try {
+      setLoading(true);
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
-      // Mock friends data for now
-      setFriends([
-        { id: 1, username: 'john_doe', email: 'john@example.com' },
-        { id: 2, username: 'jane_smith', email: 'jane@example.com' },
-        { id: 3, username: 'mike_wilson', email: 'mike@example.com' },
-      ]);
+      const response = await axios.get(`${API_URL}/friends`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      let allFriends = response.data;
+      if (!Array.isArray(allFriends)) {
+        allFriends = allFriends.friends || allFriends.data || [];
+      }
+
+      // Ensure all friends have valid IDs
+      allFriends = allFriends.filter(friend => friend && (friend.id || friend.userId || friend.friendId));
+      
+      // Normalize IDs
+      allFriends = allFriends.map(friend => ({
+        ...friend,
+        id: friend.id || friend.userId || friend.friendId
+      }));
+
+      // Filter out friends that are already in the event
+      const memberIds = new Set(eventMembers.map(m => m.id));
+      const availableFriends = allFriends.filter(friend => !memberIds.has(friend.id));
+
+      setFriends(availableFriends);
     } catch (error) {
-      console.error('Load friends error:', error);
+      console.error('Load friends error:', error.response?.data || error.message);
+      Alert.alert("Error", "Failed to load friends");
+    } finally {
+      setLoading(false);
     }
   };
 
   const inviteFriend = async (friendId, friendUsername) => {
     try {
-      setLoading(true);
+      setInvitingId(friendId);
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert("Error", "Please login first");
         return;
       }
 
-      // TODO: Implement actual invite endpoint
+      await axios.post(
+        `${API_URL}/event/invite`,
+        {
+          eventId: eventId,
+          inviteeId: friendId
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
       Alert.alert("Success", `${friendUsername} has been invited to ${eventName}!`);
+      
+      // Remove invited friend from list
+      setFriends(friends.filter(f => f.id !== friendId));
     } catch (error) {
       console.error('Invite friend error:', error);
-      Alert.alert("Error", "Failed to send invitation");
+      Alert.alert("Error", error.response?.data?.message || "Failed to send invitation");
     } finally {
-      setLoading(false);
+      setInvitingId(null);
     }
   };
 
@@ -83,7 +124,7 @@ const InviteFriendsModal = ({ visible, onClose, eventId, eventName }) => {
 
         <FlatList
           data={friends}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item?.id?.toString() || item?.userId?.toString() || index.toString()}
           renderItem={({ item }) => (
             <View style={{
               flexDirection: 'row',
@@ -99,16 +140,16 @@ const InviteFriendsModal = ({ visible, onClose, eventId, eventName }) => {
               </View>
               <TouchableOpacity
                 onPress={() => inviteFriend(item.id, item.username)}
-                disabled={loading}
+                disabled={invitingId === item.id}
                 style={{
-                  backgroundColor: loading ? '#ccc' : '#FF9500',
+                  backgroundColor: invitingId === item.id ? '#ccc' : '#FF9500',
                   paddingHorizontal: 20,
                   paddingVertical: 8,
                   borderRadius: 20
                 }}
               >
                 <Text style={{ color: 'white', fontWeight: '600' }}>
-                  {loading ? 'Inviting...' : 'Invite'}
+                  {invitingId === item.id ? 'Inviting...' : 'Invite'}
                 </Text>
               </TouchableOpacity>
             </View>

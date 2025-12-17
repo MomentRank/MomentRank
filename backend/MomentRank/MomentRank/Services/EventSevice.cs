@@ -42,6 +42,7 @@ namespace MomentRank.Services
                 {
                     Name = request.Name.Trim(),
                     OwnerId = user.Id,
+                    MemberIds = new List<int> { user.Id },
                     EndsAt = request.EndsAt,
                     CreatedAt = DateTime.UtcNow,
                     Public = request.Public,
@@ -160,6 +161,9 @@ namespace MomentRank.Services
                 //{
                 //    query = query.Where(e => e.Status == filterByStatus.Value);
                 //}
+
+                // Sort by private first, then public events
+                query = query.OrderBy(e => e.Public);
 
                 var totalCount = await query.CountAsync();
 

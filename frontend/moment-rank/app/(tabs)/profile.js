@@ -317,11 +317,11 @@ export default function ProfileScreen() {
                         throw new Error("No file path returned from upload");
                     }
 
-                    // Step 2: Update profile with the new photo path
+                    // Step 2: Update profile picture with the new photo path
                     await axios.post(
-                        `${API_URL}/profile/update`,
+                        `${API_URL}/profile/update-picture`,
                         {
-                            profilePhoto: filePath
+                            filePath: filePath
                         },
                         {
                             headers: {
@@ -464,9 +464,9 @@ export default function ProfileScreen() {
                                     position: 'absolute',
                                     bottom: 0,
                                     right: 0,
-                                    backgroundColor: isSaving ? '#ccc' : '#007bff',
-                                    width: 36,
-                                    height: 36,
+                                    backgroundColor: isSaving ? '#ccc' : '#FF9500',
+                                    width: 30,
+                                    height: 30,
                                     borderRadius: 18,
                                     justifyContent: 'center',
                                     alignItems: 'center',
@@ -483,16 +483,19 @@ export default function ProfileScreen() {
                         </View>
 
                         {/* Name with Edit Button */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10 }}>
-                            <Text style={[styles.h2, { textAlign: "center" }]}>
-                                {name || "User Name"}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => openEditModal('name')}
-                                style={{ marginLeft: 8, padding: 4 }}
-                            >
-                                <Text style={{ color: '#007bff', fontSize: 18 }}>✎</Text>
-                            </TouchableOpacity>
+                        <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', paddingHorizontal: 20 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: 26 }} />
+                                <Text style={[styles.h2, { textAlign: "center", fontSize: 24 }]}>
+                                    {name || "User Name"}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => openEditModal('name')}
+                                    style={{ marginLeft: 8, paddingHorizontal: 4, paddingVertical: 0, height: 26, justifyContent: 'center', alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: '#FF9500', fontSize: 18 }}>✎</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         {/* Username (not editable) */}
@@ -501,16 +504,19 @@ export default function ProfileScreen() {
                         </Text>
 
                         {/* Bio with Edit Button */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20, paddingHorizontal: 20 }}>
-                            <Text style={[styles.text, { textAlign: "center", flex: 1 }]}>
-                                {bio || "No bio yet."}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => openEditModal('bio')}
-                                style={{ marginLeft: 8, padding: 4 }}
-                            >
-                                <Text style={{ color: '#007bff', fontSize: 16 }}>✎</Text>
-                            </TouchableOpacity>
+                        <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20, paddingHorizontal: 20, flexDirection: 'row' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: 26 }} />
+                                <Text style={[styles.text, { textAlign: "center", fontSize: 16 }]}>
+                                    Bio: {bio || "No bio yet."}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => openEditModal('bio')}
+                                    style={{ marginLeft: 8, paddingHorizontal: 4, paddingVertical: 0, width: 26, height: 26, alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Text style={{ color: '#FF9500', fontSize: 16 }}>✎</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                         
                         <TouchableOpacity
@@ -671,7 +677,7 @@ export default function ProfileScreen() {
                                         flex: 1,
                                         marginLeft: 10,
                                         padding: 15,
-                                        backgroundColor: isSaving ? '#ccc' : '#007bff',
+                                        backgroundColor: isSaving ? '#ccc' : '#FF9500',
                                         borderRadius: 8,
                                         alignItems: 'center',
                                     }}

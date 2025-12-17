@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, Alert, Text, TouchableOpacity, Image } from "react-native";
+import { View, TextInput, Alert, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import styles from "../Styles/main";
 import AppHeader from "../components/AppHeader";
@@ -44,57 +44,67 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.backgroundWhiteBox} />
-      <AppHeader />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <AppHeader />
 
-      <View style={styles.signinContainer}>
-        <Text style={styles.h2}>Sign in</Text>
-        <Text style={styles.text}>Email</Text>
-        <TextInput
-          style={[styles.input, { color: email ? "#000000" : "rgba(0,0,0,0.3)" }]}
-          placeholder="Enter your email"
-          placeholderTextColor={"rgba(0,0,0,0.3)"}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <Text style={styles.text}>Password</Text>
-        <TextInput
-          style={[styles.input, { color: password ? "#000000" : "rgba(0,0,0,0.3)" }]}
-          placeholder="Enter your password"
-          placeholderTextColor={"rgba(0,0,0,0.3)"}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity onPress={handleSubmit} style={styles.buttonBig}>
-          <Text style={styles.buttonBigText}>NEXT</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.signinContainer}>
+            <Text style={styles.h2}>Sign in</Text>
+            <Text style={styles.text}>Email</Text>
+            <TextInput
+              style={[styles.input, { color: email ? "#000000" : "rgba(0,0,0,0.3)" }]}
+              placeholder="Enter your email"
+              placeholderTextColor={"rgba(0,0,0,0.3)"}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <Text style={styles.text}>Password</Text>
+            <TextInput
+              style={[styles.input, { color: password ? "#000000" : "rgba(0,0,0,0.3)" }]}
+              placeholder="Enter your password"
+              placeholderTextColor={"rgba(0,0,0,0.3)"}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={handleSubmit} style={styles.buttonBig}>
+              <Text style={styles.buttonBigText}>NEXT</Text>
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.lineContainer}>
-        <View style={styles.line} />
-        <Text style={styles.lineText}>Or</Text>
-        <View style={styles.line} />
-      </View>
+          <View style={styles.lineContainer}>
+            <View style={styles.line} />
+            <Text style={styles.lineText}>Or</Text>
+            <View style={styles.line} />
+          </View>
 
-      <View>
+          <View>
 
-        <TouchableOpacity
-          onPress={handleGoogleLogin}
-          style={styles.buttonAuth}>
-          <Image source={require('../assets/icon_google.png')} style={styles.logoImage} />
-          <Text style={styles.buttonAuthText}>Continue with Google</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleGoogleLogin}
+              style={styles.buttonAuth}>
+              <Image source={require('../assets/icon_google.png')} style={styles.logoImage} />
+              <Text style={styles.buttonAuthText}>Continue with Google</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push("/register")}
-          style={styles.buttonCreate}>
-          <Text style={styles.buttonCreateText}>Create an Account</Text>
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              onPress={() => router.push("/register")}
+              style={styles.buttonCreate}>
+              <Text style={styles.buttonCreateText}>Create an Account</Text>
+            </TouchableOpacity>
+          </View>
 
-      <InfoFooter />
+          <InfoFooter />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

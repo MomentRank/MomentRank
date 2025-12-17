@@ -18,16 +18,16 @@ export default function LoginScreen() {
       // Navigate to main app (tabs)
       router.replace("/(tabs)/home");
     } catch (err) {
-      Alert.alert("Error", err.message);
+      console.error("Login error:", err);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
       const result = await loginWithGoogle();
-      
+
       console.log("Google login successful, firstTimeLogin:", result.firstTimeLogin);
-      
+
       // Check if this is a first-time login
       if (result.firstTimeLogin) {
         console.log("First-time login detected, navigating to first-time-login...");
@@ -50,7 +50,7 @@ export default function LoginScreen() {
         <Text style={styles.h2}>Sign in</Text>
         <Text style={styles.text}>Email</Text>
         <TextInput
-          style={[styles.input, {color: email ? "#000000" : "rgba(0,0,0,0.3)"}]}
+          style={[styles.input, { color: email ? "#000000" : "rgba(0,0,0,0.3)" }]}
           placeholder="Enter your email"
           placeholderTextColor={"rgba(0,0,0,0.3)"}
           value={email}
@@ -60,19 +60,14 @@ export default function LoginScreen() {
         />
         <Text style={styles.text}>Password</Text>
         <TextInput
-          style={[styles.input, {color: password ? "#000000" : "rgba(0,0,0,0.3)"}]}
+          style={[styles.input, { color: password ? "#000000" : "rgba(0,0,0,0.3)" }]}
           placeholder="Enter your password"
           placeholderTextColor={"rgba(0,0,0,0.3)"}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
-        
-        <TouchableOpacity onPress={handleSubmit} style={styles.buttonSmall}>
-          <Text style={styles.buttonSmallText}>Forgot password?</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={handleSubmit} style={styles.buttonBig}> 
+        <TouchableOpacity onPress={handleSubmit} style={styles.buttonBig}>
           <Text style={styles.buttonBigText}>NEXT</Text>
         </TouchableOpacity>
       </View>
@@ -85,15 +80,15 @@ export default function LoginScreen() {
 
       <View>
 
-        <TouchableOpacity 
-          onPress={handleGoogleLogin} 
+        <TouchableOpacity
+          onPress={handleGoogleLogin}
           style={styles.buttonAuth}>
           <Image source={require('../assets/icon_google.png')} style={styles.logoImage} />
           <Text style={styles.buttonAuthText}>Continue with Google</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => router.push("/register")} 
+        <TouchableOpacity
+          onPress={() => router.push("/register")}
           style={styles.buttonCreate}>
           <Text style={styles.buttonCreateText}>Create an Account</Text>
         </TouchableOpacity>

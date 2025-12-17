@@ -12,19 +12,33 @@ import defaultImage from "../../assets/event_default.jpg";
 const API_URL = BASE_URL;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000; 
 
-const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin }) => {
+const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
     const source = imageSource
     ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
     : defaultImage;
 
     const isOwner = currentUserId && ownerId && Number(currentUserId) === Number(ownerId);
     const isMember = currentUserId && memberIds.some(id => Number(id) === Number(currentUserId));
-    const showJoinButton = accessibility && !isMember && !isOwner && currentUserId; 
+    const showJoinButton = accessibility && !isMember && !isOwner && currentUserId && status === 1;
+
+    const getStatusInfo = () => {
+        switch(status) {
+            case 0: return { text: 'Scheduled', color: '#FFA500', button: 'View Details' };
+            case 1: return { text: 'Active', color: '#00cc14ff', button: 'Open' };
+            case 2: return { text: 'Ranking', color: '#9C27B0', button: 'Vote Now' };
+            case 3: return { text: 'Ended', color: '#cc0000ff', button: 'View Results' };
+            case 4: return { text: 'Cancelled', color: '#808080', button: 'Cancelled' };
+            case 5: return { text: 'Archived', color: '#696969', button: 'View Archive' };
+            default: return { text: 'Unknown', color: '#808080', button: 'Open' };
+        }
+    };
+
+    const statusInfo = getStatusInfo(); 
 
     const formatTime = (time) => {
         if (!time || time.total <= 0) return "Ended";
 
-        if (time.total < 0) {
+        if (time.total < 0) {s
             return "Recently Ended";
         }
 
@@ -43,9 +57,9 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
         }
     };
     
-    const isEnded = !timeLeft || timeLeft.total <= 0;
+    const isEnded = status >= 2;
     
-    let badgeColor = isEnded ? '#cc0000ff' : '#00cc14ff'; 
+    let badgeColor = statusInfo.color; 
 
     return (
         <View style={styles.contentCard}>
@@ -77,7 +91,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         textAlign: 'center',
                         marginBottom: 1
                     }]}>
-                        {isEnded ? "Status" : "Ends in"}
+                        {status === 1 ? "Ends in" : "Status"}
                     </Text>
                     <Text style={[styles.timerText, {
                         fontSize: 10,
@@ -85,7 +99,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         color: '#fff',
                         textAlign: 'center'
                     }]}>
-                        {formatTime(timeLeft)}
+                        {status === 1 ? formatTime(timeLeft) : statusInfo.text}
                     </Text>
                 </View>
             </View>
@@ -100,12 +114,20 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                     >
                         <Text style={styles.openButtonText}>Join Event</Text> 
                     </TouchableOpacity>
+                ) : status === 2 ? (
+                    <TouchableOpacity 
+                        onPress={() => onRanking(eventId, name)} 
+                        style={[styles.openButton, { backgroundColor: '#9C27B0' }]}
+                    >
+                        <Text style={styles.openButtonText}>Vote Now</Text> 
+                    </TouchableOpacity>
                 ) : (
                     <TouchableOpacity 
                         onPress={onPress} 
-                        style={[styles.openButton, isEnded && { backgroundColor: '#808080' }]} 
+                        style={[styles.openButton, status >= 3 && { backgroundColor: '#808080' }]}
+                        disabled={status === 4}
                     >
-                        <Text style={styles.openButtonText}>{isEnded ? "View Archive" : "Open"}</Text> 
+                        <Text style={styles.openButtonText}>{statusInfo.button}</Text> 
                     </TouchableOpacity>
                 )}
             </View>
@@ -134,6 +156,13 @@ export default function HomeScreen() {
 
     const handleCreate = () => {
         router.push("/create-event");
+    };
+
+    const handleRanking = (eventId, eventName) => {
+        router.push({
+            pathname: "/ranking",
+            params: { eventId: eventId.toString(), eventName: eventName },
+        });
     };
 
     const handleJoin = async (eventId, eventName) => {
@@ -242,6 +271,7 @@ export default function HomeScreen() {
                     endsAt: item.endsAt,
                     memberIds: item.memberIds || [],
                     ownerId: item.ownerId,
+                    status: item.status !== undefined ? item.status : 1,
                 };
             });
 
@@ -390,8 +420,10 @@ export default function HomeScreen() {
                         memberIds={card.memberIds}
                         ownerId={card.ownerId}
                         currentUserId={currentUserId}
+                        status={card.status}
                         onPress={() => handleOpen(card.id)}
                         onJoin={handleJoin}
+                        onRanking={handleRanking}
                     />
                 ))
             ) : (

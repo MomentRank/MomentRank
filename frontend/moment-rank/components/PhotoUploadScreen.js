@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput, Dimensions, FlatList, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BASE_URL from '../Config';
@@ -28,10 +26,63 @@ export default function PhotoUploadScreen() {
 
   const currentEventId = eventId || '1';
 
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
+  const flatListRef = React.useRef(null);
+  const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
+  const [aspectRatios, setAspectRatios] = useState({});
+  const PREFETCH_EAGER_COUNT = 6; // number of images to prefetch/measure eagerly
+
+  // Helper: get image size as promise
+  const getSizeAsync = (uri) => new Promise((resolve, reject) => {
+    Image.getSize(uri, (w, h) => resolve({ w, h }), reject);
+  });
+
+  // Prefetch and measure images to improve viewer performance.
+  const prefetchAndMeasure = React.useCallback(async (photoList) => {
+    if (!Array.isArray(photoList) || photoList.length === 0) return;
+
+    const eager = photoList.slice(0, PREFETCH_EAGER_COUNT);
+    const rest = photoList.slice(PREFETCH_EAGER_COUNT);
+    const eagerRatios = {};
+
+    // Eagerly prefetch and measure first few images (blocking-ish) to reduce initial lag.
+    await Promise.all(eager.map(async (p, i) => {
+      const uri = `${API_URL}/${p.filePath}`;
+      try {
+        await Image.prefetch(uri);
+        const { w, h } = await getSizeAsync(uri);
+        eagerRatios[i] = w / h;
+      } catch (e) {
+        eagerRatios[i] = eagerRatios[i] || 1.5;
+      }
+    }));
+
+    if (Object.keys(eagerRatios).length > 0) {
+      setAspectRatios(prev => ({ ...prev, ...eagerRatios }));
+    }
+
+    // Background prefetch + measure remaining images (non-blocking)
+    (async () => {
+      await Promise.all(rest.map(async (p, idx) => {
+        const realIndex = idx + PREFETCH_EAGER_COUNT;
+        const uri = `${API_URL}/${p.filePath}`;
+        try {
+          await Image.prefetch(uri);
+          const { w, h } = await getSizeAsync(uri);
+          setAspectRatios(prev => ({ ...prev, [realIndex]: w / h }));
+        } catch (e) {
+          setAspectRatios(prev => ({ ...prev, [realIndex]: prev[realIndex] || 1.5 }));
+        }
+      }));
+    })();
+  }, []);
+
   const handlePickImage = () => pickImage(setLoading, loadPhotos, currentEventId)();
   const handleTakePhoto = () => takePhoto(setLoading, loadPhotos, currentEventId)();
 
-  const loadPhotos = async () => {
+  // Wrap loadPhotos in useCallback to handle dependencies correctly
+  const loadPhotos = React.useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
@@ -49,19 +100,20 @@ export default function PhotoUploadScreen() {
       if (response.data) {
         setPhotos(response.data);
         // Start prefetching/measurement to improve viewer performance
+        // We catch strictly to avoid unhandled promise rejections, though specific error handling inside prefetch is better
         prefetchAndMeasure(response.data).catch(() => { });
       }
     } catch (error) {
       console.error('Load photos error:', error);
       if (error.response?.status === 401) {
-        Alert.alert("Error", "Authentication failed. Please login again.");
+        console.log("Auth failed during poll");
       } else if (error.response?.status === 403) {
-        Alert.alert("Access Denied", "You don't have access to view photos for this event. This might be a private event that requires membership.");
+        console.log("Access denied during poll");
       } else {
-        Alert.alert("Error", "Failed to load photos");
+        console.log("Failed to poll photos");
       }
     }
-  };
+  }, [currentEventId, prefetchAndMeasure]);
 
   const loadEventDetails = async () => {
     try {
@@ -152,63 +204,19 @@ export default function PhotoUploadScreen() {
     );
   };
 
-  // Load photos and current user when component mounts
+  // Poll for new photos every 5 seconds
   React.useEffect(() => {
     loadEventDetails();
-    loadPhotos();
-  }, []);
+    loadPhotos(); // Initial load
 
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
-  const flatListRef = React.useRef(null);
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
-  const [aspectRatios, setAspectRatios] = useState({});
-  const PREFETCH_EAGER_COUNT = 6; // number of images to prefetch/measure eagerly
+    const intervalId = setInterval(() => {
+      loadPhotos();
+    }, 5000);
 
-  // Helper: get image size as promise
-  const getSizeAsync = (uri) => new Promise((resolve, reject) => {
-    Image.getSize(uri, (w, h) => resolve({ w, h }), reject);
-  });
+    return () => clearInterval(intervalId);
+  }, [loadPhotos]);
 
-  // Prefetch and measure images to improve viewer performance.
-  const prefetchAndMeasure = React.useCallback(async (photoList) => {
-    if (!Array.isArray(photoList) || photoList.length === 0) return;
 
-    const eager = photoList.slice(0, PREFETCH_EAGER_COUNT);
-    const rest = photoList.slice(PREFETCH_EAGER_COUNT);
-    const eagerRatios = {};
-
-    // Eagerly prefetch and measure first few images (blocking-ish) to reduce initial lag.
-    await Promise.all(eager.map(async (p, i) => {
-      const uri = `${API_URL}/${p.filePath}`;
-      try {
-        await Image.prefetch(uri);
-        const { w, h } = await getSizeAsync(uri);
-        eagerRatios[i] = w / h;
-      } catch (e) {
-        eagerRatios[i] = eagerRatios[i] || 1.5;
-      }
-    }));
-
-    if (Object.keys(eagerRatios).length > 0) {
-      setAspectRatios(prev => ({ ...prev, ...eagerRatios }));
-    }
-
-    // Background prefetch + measure remaining images (non-blocking)
-    (async () => {
-      await Promise.all(rest.map(async (p, idx) => {
-        const realIndex = idx + PREFETCH_EAGER_COUNT;
-        const uri = `${API_URL}/${p.filePath}`;
-        try {
-          await Image.prefetch(uri);
-          const { w, h } = await getSizeAsync(uri);
-          setAspectRatios(prev => ({ ...prev, [realIndex]: w / h }));
-        } catch (e) {
-          setAspectRatios(prev => ({ ...prev, [realIndex]: prev[realIndex] || 1.5 }));
-        }
-      }));
-    })();
-  }, []);
 
 
   const handleViewParticipants = () => {

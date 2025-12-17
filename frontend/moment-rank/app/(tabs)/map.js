@@ -5,6 +5,7 @@ import * as Location from "expo-location";
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
 
+{/*
 export default function MapScreen() {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,7 @@ export default function MapScreen() {
   const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== "granted") {
         setErrorMsg("Permission to access location was denied");
         setLoading(false);
@@ -60,7 +61,7 @@ export default function MapScreen() {
 
   const getMapHTML = () => {
     if (!location) return "";
-    
+
     return `
       <!DOCTYPE html>
       <html>
@@ -141,7 +142,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <View style={styles.backgroundWhiteBox}>
         <AppHeader />
-        <View style={{flex: 1, width: '100%', marginBottom: '20%'}}>
+        <View style={{ flex: 1, width: '100%', marginBottom: '20%' }}>
           <WebView
             ref={webViewRef}
             source={{ html: getMapHTML() }}
@@ -155,8 +156,6 @@ export default function MapScreen() {
               </View>
             )}
           />
-
-          {/* Recenter button */}
           <TouchableOpacity
             onPress={handleRecenterMap}
             style={{
@@ -178,8 +177,10 @@ export default function MapScreen() {
           >
             <Text style={{ color: "#fff", fontSize: 20, fontWeight: "bold" }}>📍</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+        </View >
+      </View >
+    </View >
   );
 }
+
+*/}

@@ -65,6 +65,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+      {/*
       <MaterialTopTabs.Screen
         name="map"
         options={{
@@ -74,6 +75,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+      */}
       <MaterialTopTabs.Screen
         name="profile"
         options={{

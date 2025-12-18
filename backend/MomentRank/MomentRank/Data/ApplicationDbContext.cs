@@ -15,6 +15,8 @@ namespace MomentRank.Data
         public DbSet<Photo> Photos { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }
         public DbSet<EventInvite> EventInvites { get; set; }
+        public DbSet<PhotoRating> PhotoRatings { get; set; }
+        public DbSet<PhotoComparison> PhotoComparisons { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -110,6 +112,87 @@ namespace MomentRank.Data
 
                 // Create index to prevent duplicate invites
                 entity.HasIndex(ei => new { ei.EventId, ei.InviteeId, ei.Status });
+            });
+
+            // PhotoRating configuration
+            modelBuilder.Entity<PhotoRating>(entity =>
+            {
+                entity.HasKey(pr => pr.Id);
+                entity.Property(pr => pr.EloScore).IsRequired();
+                entity.Property(pr => pr.Uncertainty).IsRequired();
+                entity.Property(pr => pr.KFactor).IsRequired();
+                entity.Property(pr => pr.Category).IsRequired();
+                entity.Property(pr => pr.CreatedAt).IsRequired();
+                entity.Property(pr => pr.UpdatedAt).IsRequired();
+
+                // Configure relationship with Photo
+                entity.HasOne(pr => pr.Photo)
+                      .WithMany()
+                      .HasForeignKey(pr => pr.PhotoId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with Event
+                entity.HasOne(pr => pr.Event)
+                      .WithMany()
+                      .HasForeignKey(pr => pr.EventId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Unique constraint: one rating per photo per category per event
+                entity.HasIndex(pr => new { pr.PhotoId, pr.EventId, pr.Category }).IsUnique();
+
+                // Index for efficient querying by event and category (for leaderboards)
+                entity.HasIndex(pr => new { pr.EventId, pr.Category, pr.EloScore });
+
+                // Index for finding high-uncertainty photos (for matchup selection)
+                entity.HasIndex(pr => new { pr.EventId, pr.Category, pr.Uncertainty });
+            });
+
+            // PhotoComparison configuration
+            modelBuilder.Entity<PhotoComparison>(entity =>
+            {
+                entity.HasKey(pc => pc.Id);
+                entity.Property(pc => pc.Category).IsRequired();
+                entity.Property(pc => pc.CreatedAt).IsRequired();
+
+                // Configure relationship with Event
+                entity.HasOne(pc => pc.Event)
+                      .WithMany()
+                      .HasForeignKey(pc => pc.EventId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with PhotoA
+                entity.HasOne(pc => pc.PhotoA)
+                      .WithMany()
+                      .HasForeignKey(pc => pc.PhotoAId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Configure relationship with PhotoB
+                entity.HasOne(pc => pc.PhotoB)
+                      .WithMany()
+                      .HasForeignKey(pc => pc.PhotoBId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Configure optional relationship with WinnerPhoto
+                entity.HasOne(pc => pc.WinnerPhoto)
+                      .WithMany()
+                      .HasForeignKey(pc => pc.WinnerPhotoId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Configure relationship with Voter
+                entity.HasOne(pc => pc.Voter)
+                      .WithMany()
+                      .HasForeignKey(pc => pc.VoterId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Index for finding comparisons by voter and event (for history)
+                entity.HasIndex(pc => new { pc.VoterId, pc.EventId, pc.CreatedAt });
+
+                // Index for finding comparisons by photo pair (to avoid duplicates)
+                entity.HasIndex(pc => new { pc.EventId, pc.Category, pc.PhotoAId, pc.PhotoBId });
+
+                // Index for aggregations by event and category
+                entity.HasIndex(pc => new { pc.EventId, pc.Category });
             });
         }
     }

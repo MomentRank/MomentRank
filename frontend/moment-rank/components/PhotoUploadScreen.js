@@ -144,12 +144,25 @@ export default function PhotoUploadScreen() {
 
         // Extract members list (excluding owner)
         if (response.data.members && Array.isArray(response.data.members)) {
-          console.log('Members data:', response.data.members);
+          console.log('Members data:', JSON.stringify(response.data.members, null, 2));
           setEventMembers(response.data.members);
         } else if (response.data.memberIds && Array.isArray(response.data.memberIds)) {
-          // If only member IDs are provided, we'll need to fetch member details
-          console.log('Member IDs only:', response.data.memberIds);
-          setEventMembers(response.data.memberIds.map(id => ({ id })));
+          // If only member IDs are provided, fetch member details individually
+          const fetchedMembers = await Promise.all(response.data.memberIds.map(async (id) => {
+            try {
+              const userRes = await axios.get(`${API_URL}/profile/${id}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+              return userRes.data;
+            } catch (e) {
+              console.error(`Failed to fetch profile for ${id}`, e);
+              return { id, username: 'Unknown User' };
+            }
+          }));
+          setEventMembers(fetchedMembers);
         }
       }
     } catch (error) {

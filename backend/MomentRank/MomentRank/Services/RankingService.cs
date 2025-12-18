@@ -406,8 +406,9 @@ namespace MomentRank.Services
             if (photos.Any(p => p.UploadedById == user.Id))
                 return false;
 
-            if (photos[0].UploadedById == photos[1].UploadedById)
-                return false;
+            // Allow matchups between photos from the same person
+            // if (photos[0].UploadedById == photos[1].UploadedById)
+            //     return false;
 
             return true;
         }
@@ -531,9 +532,9 @@ namespace MomentRank.Services
             var photos = await _context.Photos
                 .Where(p => p.EventId == eventId && p.UploadedById != user.Id)
                 .ToListAsync();
-            
+
             Console.WriteLine($"[RankingService] GetEligiblePhotos: User {user.Id}, Event {eventId}, Found {photos.Count} eligible photos");
-            
+
             return photos;
         }
 
@@ -561,7 +562,7 @@ namespace MomentRank.Services
             RankingCategory category)
         {
             var candidates = eligiblePhotos
-                .Where(p => p.Id != photoA.Id && p.UploadedById != photoA.UploadedById)
+                .Where(p => p.Id != photoA.Id /* && p.UploadedById != photoA.UploadedById */)
                 .Where(p => !recentComparisons.Contains(NormalizePair(photoA.Id, p.Id)))
                 .ToList();
 
@@ -616,7 +617,7 @@ namespace MomentRank.Services
                 var ratingA = ratings[photoA.Id];
 
                 var candidates = eligiblePhotos
-                    .Where(p => p.Id != photoA.Id && p.UploadedById != photoA.UploadedById)
+                    .Where(p => p.Id != photoA.Id /* && p.UploadedById != photoA.UploadedById */)
                     .Where(p => !recentComparisons.Contains(NormalizePair(photoA.Id, p.Id)))
                     .Where(p => ratings.ContainsKey(p.Id))
                     .OrderBy(p => Math.Abs(ratings[p.Id].EloScore - ratingA.EloScore))
@@ -661,7 +662,7 @@ namespace MomentRank.Services
                 {
                     foreach (var mid in shuffledMid)
                     {
-                        if (top.UploadedById != mid.UploadedById &&
+                        if (/* top.UploadedById != mid.UploadedById && */
                             !recentComparisons.Contains(NormalizePair(top.Id, mid.Id)))
                         {
                             return (top, mid);
@@ -686,7 +687,7 @@ namespace MomentRank.Services
                     var photoA = shuffled[i];
                     var photoB = shuffled[j];
 
-                    if (photoA.UploadedById != photoB.UploadedById &&
+                    if (/* photoA.UploadedById != photoB.UploadedById && */
                         !recentComparisons.Contains(NormalizePair(photoA.Id, photoB.Id)))
                     {
                         return (photoA, photoB);

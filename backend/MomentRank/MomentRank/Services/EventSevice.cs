@@ -261,8 +261,8 @@ namespace MomentRank.Services
                     return null; // Event doesn't exist
                 }
 
-                // Check if user is the owner or a member (only they can invite)
-                if (existingEvent.OwnerId != user.Id && !existingEvent.MemberIds.Contains(user.Id))
+                // Check if user is a member of the event (owner is included in MemberIds)
+                if (!existingEvent.MemberIds.Contains(user.Id))
                 {
                     return null; // User is not authorized to invite
                 }
@@ -434,8 +434,8 @@ namespace MomentRank.Services
                     return null;
                 }
 
-                // Check if user is the owner or a member
-                if (existingEvent.OwnerId != user.Id && !existingEvent.MemberIds.Contains(user.Id))
+                // Check if user is a member of the event (owner is included in MemberIds)
+                if (!existingEvent.MemberIds.Contains(user.Id))
                 {
                     return null;
                 }

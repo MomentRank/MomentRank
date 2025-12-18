@@ -57,4 +57,23 @@
         public required int EventId { get; init; }
         public required string FilePath { get; init; }
     }
+
+    public record GenerateInviteLinkRequest
+    {
+        public required int EventId { get; init; }
+    }
+
+    public record GenerateInviteLinkResponse
+    {
+        public required string InviteCode { get; init; }
+        public required string InviteLink { get; init; }
+        public required string QrCodePath { get; init; }
+        public required int EventId { get; init; }
+        public required string EventName { get; init; }
+    }
+
+    public record JoinViaInviteCodeRequest
+    {
+        public required string InviteCode { get; init; }
+    }
 }

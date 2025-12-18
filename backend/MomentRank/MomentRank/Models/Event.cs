@@ -13,6 +13,7 @@ namespace MomentRank.Models
         public string? CoverPhoto { get; set; }
         public DateTime EndsAt { get; set; } = DateTime.UtcNow.AddHours(1);
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? InviteCode { get; set; }
 
         // Only stored for user-triggered terminal states
         public bool IsCancelled { get; private set; } = false;

@@ -69,13 +69,13 @@ export default function LeaderboardScreen() {
                 alignItems: 'center',
                 backgroundColor: '#fff',
                 padding: 15,
-                marginBottom: 10,
-                borderRadius: 10,
+                marginBottom: 12,
+                borderRadius: 12,
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 2,
-                elevation: 2,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
+                elevation: 3,
             }}>
                 <View style={{
                     width: 40,
@@ -97,7 +97,7 @@ export default function LeaderboardScreen() {
 
                 <Image
                     source={{ uri: `${API_URL}/${item.photo.filePath}` }}
-                    style={{ width: 80, height: 80, borderRadius: 8, marginRight: 15 }}
+                    style={{ width: 70, height: 93, borderRadius: 8, marginRight: 15 }}
                     resizeMode="cover"
                 />
 
@@ -119,12 +119,12 @@ export default function LeaderboardScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: '#f5f5f5' }]}>
-            <View style={{ backgroundColor: '#fff', padding: 20, paddingTop: 60, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
+        <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
                 <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 10 }}>
                     <Text style={{ fontSize: 16, color: '#007bff' }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.h2, { marginBottom: 10 }]}>{eventName || 'Event'} Leaderboard</Text>
+                <Text style={[styles.h2, { marginBottom: 15 }]}>{eventName || 'Event'} Leaderboard</Text>
                 
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
                     {categories.map((cat) => (
@@ -155,14 +155,14 @@ export default function LeaderboardScreen() {
             {loading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#007bff" />
-                    <Text style={{ marginTop: 20, fontSize: 14, color: '#666' }}>Loading leaderboard...</Text>
+                    <Text style={{ marginTop: 20, fontSize: 16, color: '#666' }}>Loading leaderboard...</Text>
                 </View>
             ) : (
                 <FlatList
                     data={leaderboard}
                     renderItem={renderLeaderboardItem}
                     keyExtractor={(item, index) => `${item.photo.id}-${index}`}
-                    contentContainerStyle={{ padding: 20 }}
+                    contentContainerStyle={{ padding: 15, paddingTop: 20 }}
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 50 }}>
                             <Text style={{ fontSize: 16, color: '#666' }}>No rankings available yet</Text>

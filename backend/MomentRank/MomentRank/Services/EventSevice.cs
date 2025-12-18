@@ -274,8 +274,8 @@ namespace MomentRank.Services
                     return null; // Event doesn't exist
                 }
 
-                // Check if user is the owner or a member (only they can invite)
-                if (existingEvent.OwnerId != user.Id && !existingEvent.MemberIds.Contains(user.Id))
+                // Check if user is a member of the event (owner is included in MemberIds)
+                if (!existingEvent.MemberIds.Contains(user.Id))
                 {
                     return null; // User is not authorized to invite
                 }
@@ -432,6 +432,122 @@ namespace MomentRank.Services
             {
                 return null;
             }
+        }
+
+        public async Task<GenerateInviteLinkResponse?> GenerateInviteLinkAsync(User user, GenerateInviteLinkRequest request)
+        {
+            try
+            {
+                // Find the event
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == request.EventId);
+
+                if (existingEvent == null)
+                {
+                    return null;
+                }
+
+                // Check if user is a member of the event (owner is included in MemberIds)
+                if (!existingEvent.MemberIds.Contains(user.Id))
+                {
+                    return null;
+                }
+
+                // Check if event has ended
+                if (existingEvent.EndsAt <= DateTime.UtcNow)
+                {
+                    return null;
+                }
+
+                // Generate invite code if not exists
+                if (string.IsNullOrEmpty(existingEvent.InviteCode))
+                {
+                    existingEvent.InviteCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
+                    await _context.SaveChangesAsync();
+                }
+
+                // Generate deep link
+                var inviteLink = $"momentrank://join/{existingEvent.InviteCode}";
+
+                // Generate QR code
+                var qrCodePath = await GenerateQrCodeAsync(inviteLink, existingEvent.InviteCode);
+
+                return new GenerateInviteLinkResponse
+                {
+                    InviteCode = existingEvent.InviteCode,
+                    InviteLink = inviteLink,
+                    QrCodePath = qrCodePath,
+                    EventId = existingEvent.Id,
+                    EventName = existingEvent.Name
+                };
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<Event?> JoinEventViaInviteCodeAsync(User user, string inviteCode)
+        {
+            try
+            {
+                // Find the event by invite code
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(e => e.InviteCode == inviteCode);
+
+                if (existingEvent == null)
+                {
+                    return null;
+                }
+
+                // Check if invite code is still valid (event hasn't ended)
+                if (existingEvent.EndsAt <= DateTime.UtcNow)
+                {
+                    return null;
+                }
+
+                // Check if user is the owner
+                if (existingEvent.OwnerId == user.Id)
+                {
+                    return null;
+                }
+
+                // Check if user is already a member
+                if (existingEvent.MemberIds.Contains(user.Id))
+                {
+                    return null;
+                }
+
+                // Add user to members list
+                existingEvent.MemberIds.Add(user.Id);
+                await _context.SaveChangesAsync();
+
+                return existingEvent;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private async Task<string> GenerateQrCodeAsync(string content, string inviteCode)
+        {
+            using var qrGenerator = new QRCoder.QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(content, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+
+            // Save to wwwroot/uploads/qrcodes
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "qrcodes");
+            Directory.CreateDirectory(uploadsPath);
+
+            var fileName = $"{inviteCode}.png";
+            var filePath = Path.Combine(uploadsPath, fileName);
+
+            await File.WriteAllBytesAsync(filePath, qrCodeBytes);
+
+            var relativePath = $"uploads/qrcodes/{fileName}";
+            return relativePath;
         }
     }
 }

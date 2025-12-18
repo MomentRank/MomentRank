@@ -61,7 +61,7 @@ export const uploadPhoto = async (imageAsset, setLoading, loadPhotos, currentEve
         let uri = manipulatedImage.uri;
 
         // 2. Base64 Conversion (Handling different URI types)
-        
+
         // Use FileSystem for local file URIs (most performant)
         if (uri.startsWith('file://')) {
             try {
@@ -86,8 +86,8 @@ export const uploadPhoto = async (imageAsset, setLoading, loadPhotos, currentEve
                     reader.readAsDataURL(blob);
                 });
             }
-        } 
-        
+        }
+
         // Use fetch + FileReader for other URIs (e.g., remote or general data URIs)
         else {
             const response = await fetch(uri);
@@ -105,9 +105,9 @@ export const uploadPhoto = async (imageAsset, setLoading, loadPhotos, currentEve
             });
         }
         // 3. Prepare and Send Payload
-        let fileName = imageAsset.fileName || 
-                        imageAsset.uri.split('/').pop() || 
-                        `photo_${new Date().getTime()}.jpg`;
+        let fileName = imageAsset.fileName ||
+            imageAsset.uri.split('/').pop() ||
+            `photo_${new Date().getTime()}.jpg`;
 
         // CRITICAL: Force .jpg extension since we converted to JPEG
         // Replace .heic, .heif, or any other extension with .jpg
@@ -117,13 +117,13 @@ export const uploadPhoto = async (imageAsset, setLoading, loadPhotos, currentEve
             fileName = fileName + '.jpg';
         }
 
-const uploadData = {
-    eventId: parseInt(currentEventId),
-    fileData: base64data,
-    fileName: fileName,
-    contentType: 'image/jpeg', // Always JPEG since we converted it
-    caption: ''
-};
+        const uploadData = {
+            eventId: parseInt(currentEventId),
+            fileData: base64data,
+            fileName: fileName,
+            contentType: 'image/jpeg', // Always JPEG since we converted it
+            caption: ''
+        };
 
         console.log('=== UPLOAD DEBUG ===');
         console.log('fileName:', fileName);
@@ -133,20 +133,19 @@ const uploadData = {
         console.log('uploadData:', { ...uploadData, fileData: `[${base64data.length} chars]` });
 
         const uploadResponse = await axios.post(
-        `${API_URL}/event/photos/upload-base64`,
-        uploadData,
-        {
-            headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            },
-            timeout: 20000, // increase for large uploads
-        }
+            `${API_URL}/event/photos/upload-base64`,
+            uploadData,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                timeout: 20000, // increase for large uploads
+            }
         );
 
         if (uploadResponse.data) {
-            Alert.alert("Success", "Photo uploaded successfully!");
-            await loadPhotos(); 
+            await loadPhotos();
             return uploadResponse.data;
         }
 
@@ -227,9 +226,9 @@ export const uploadGeneralPhoto = async (imageAsset, setLoading, onSuccess, opti
         }
 
         // 3. Prepare and Send Payload
-        let fileName = imageAsset.fileName || 
-                        imageAsset.uri.split('/').pop() || 
-                        `${fileNamePrefix}_${new Date().getTime()}.jpg`;
+        let fileName = imageAsset.fileName ||
+            imageAsset.uri.split('/').pop() ||
+            `${fileNamePrefix}_${new Date().getTime()}.jpg`;
 
         fileName = fileName.replace(/\.(heic|heif|png|gif|bmp)$/i, '.jpg');
         if (!fileName.match(/\.(jpg|jpeg)$/i)) {
@@ -286,7 +285,7 @@ export const uploadGeneralPhoto = async (imageAsset, setLoading, onSuccess, opti
 export const pickGeneralImage = (setLoading, onSuccess, options = {}) => async () => {
     try {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
+
         if (permissionResult.granted === false) {
             Alert.alert("Permission required", "Permission to access camera roll is required!");
             return;
@@ -333,25 +332,25 @@ export const takeGeneralPhoto = (setLoading, onSuccess, options = {}) => async (
 };
 
 
-export const pickCoverImage = (setLoading, setCoverPhotoPath) => 
+export const pickCoverImage = (setLoading, setCoverPhotoPath) =>
     pickGeneralImage(setLoading, setCoverPhotoPath, {
         fileNamePrefix: 'cover_photo',
         successMessage: 'Cover photo uploaded successfully!',
     });
 
-export const takeCoverPhoto = (setLoading, setCoverPhotoPath) => 
+export const takeCoverPhoto = (setLoading, setCoverPhotoPath) =>
     takeGeneralPhoto(setLoading, setCoverPhotoPath, {
         fileNamePrefix: 'cover_photo',
         successMessage: 'Cover photo uploaded successfully!',
     });
 
-export const pickProfileImage = (setLoading, setProfilePhotoPath) => 
+export const pickProfileImage = (setLoading, setProfilePhotoPath) =>
     pickGeneralImage(setLoading, setProfilePhotoPath, {
         fileNamePrefix: 'profile_photo',
         successMessage: 'Profile photo uploaded successfully!',
     });
 
-export const takeProfilePhoto = (setLoading, setProfilePhotoPath) => 
+export const takeProfilePhoto = (setLoading, setProfilePhotoPath) =>
     takeGeneralPhoto(setLoading, setProfilePhotoPath, {
         fileNamePrefix: 'profile_photo',
         successMessage: 'Profile photo uploaded successfully!',
@@ -360,7 +359,7 @@ export const takeProfilePhoto = (setLoading, setProfilePhotoPath) =>
 export const pickImage = (setLoading, loadPhotos, currentEventId) => async () => {
     try {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
+
         if (permissionResult.granted === false) {
             Alert.alert("Permission required", "Permission to access camera roll is required!");
             return;

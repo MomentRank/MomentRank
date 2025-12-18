@@ -66,22 +66,22 @@ export default function FriendsScreen() {
       setFriends(friendsResponse.data || []);
       setReceivedRequests(receivedResponse.data || []);
       setSentRequests(sentResponse.data || []);
-      
+
       // Load event invites separately with error handling
       try {
         const invitesResponse = await axios.post(
-          `${API_URL}/event/invite/list`, 
-          { pageNumber: 1, pageSize: 20 }, 
+          `${API_URL}/event/invite/list`,
+          { pageNumber: 1, pageSize: 20 },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         let invitesData = invitesResponse.data;
         console.log('Raw invites response:', invitesData);
-        
+
         if (!Array.isArray(invitesData)) {
           invitesData = invitesData.items || invitesData.invites || [];
         }
-        
+
         console.log('Processed invites data:', invitesData);
         setEventInvites(invitesData);
       } catch (invitesError) {
@@ -149,7 +149,6 @@ export default function FriendsScreen() {
         { receiverId: userId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert("Success", `Friend request sent to ${username}`);
       // Refresh all data
       loadAllData();
     } catch (error) {
@@ -170,7 +169,6 @@ export default function FriendsScreen() {
         { requestId, accept: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert("Success", "Friend request accepted");
       loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to accept request");
@@ -185,7 +183,6 @@ export default function FriendsScreen() {
         { requestId, accept: false },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert("Success", "Friend request rejected");
       loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to reject request");
@@ -200,7 +197,6 @@ export default function FriendsScreen() {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert("Success", "Friend request cancelled");
       loadAllData();
     } catch (error) {
       Alert.alert("Error", "Failed to cancel request");
@@ -216,7 +212,6 @@ export default function FriendsScreen() {
         { inviteId, accept },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert("Success", accept ? "Invite accepted!" : "Invite declined.");
       setEventInvites(eventInvites.filter(inv => inv.id !== inviteId));
     } catch (error) {
       Alert.alert("Error", "Failed to respond to invite");
@@ -242,7 +237,6 @@ export default function FriendsScreen() {
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
               );
-              Alert.alert("Success", "Friend removed");
               loadAllData();
             } catch (error) {
               Alert.alert("Error", "Failed to remove friend");
@@ -608,23 +602,23 @@ export default function FriendsScreen() {
               activeTab === "friends" && searchQuery.trim()
                 ? searchResults
                 : activeTab === "friends"
-                ? filteredFriends
-                : activeTab === "received"
-                ? receivedRequests
-                : activeTab === "sent"
-                ? sentRequests
-                : eventInvites
+                  ? filteredFriends
+                  : activeTab === "received"
+                    ? receivedRequests
+                    : activeTab === "sent"
+                      ? sentRequests
+                      : eventInvites
             }
             renderItem={
               activeTab === "friends" && searchQuery.trim()
                 ? renderSearchResultItem
                 : activeTab === "friends"
-                ? renderFriendItem
-                : activeTab === "received"
-                ? renderReceivedRequestItem
-                : activeTab === "sent"
-                ? renderSentRequestItem
-                : renderEventInviteItem
+                  ? renderFriendItem
+                  : activeTab === "received"
+                    ? renderReceivedRequestItem
+                    : activeTab === "sent"
+                      ? renderSentRequestItem
+                      : renderEventInviteItem
             }
             keyExtractor={(item, index) =>
               (item.id || item.requestId || item.userId || index).toString()
@@ -638,12 +632,12 @@ export default function FriendsScreen() {
                       ? "Searching..."
                       : "No users found"
                     : activeTab === "friends"
-                    ? "No friends yet"
-                    : activeTab === "received"
-                    ? "No received requests"
-                    : activeTab === "sent"
-                    ? "No sent requests"
-                    : "No pending event invites"}
+                      ? "No friends yet"
+                      : activeTab === "received"
+                        ? "No received requests"
+                        : activeTab === "sent"
+                          ? "No sent requests"
+                          : "No pending event invites"}
                 </Text>
               </View>
             }

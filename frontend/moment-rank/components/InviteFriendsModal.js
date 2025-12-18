@@ -32,7 +32,7 @@ const InviteFriendsModal = ({ visible, onClose, eventId, eventName, eventMembers
 
       // Ensure all friends have valid IDs
       allFriends = allFriends.filter(friend => friend && (friend.id || friend.userId || friend.friendId));
-      
+
       // Normalize IDs
       allFriends = allFriends.map(friend => ({
         ...friend,
@@ -75,8 +75,6 @@ const InviteFriendsModal = ({ visible, onClose, eventId, eventName, eventMembers
         }
       );
 
-      Alert.alert("Success", `${friendUsername} has been invited to ${eventName}!`);
-      
       // Remove invited friend from list
       setFriends(friends.filter(f => f.id !== friendId));
     } catch (error) {

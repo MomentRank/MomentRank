@@ -1,17 +1,17 @@
-import {Button, StyleSheet} from "react-native"
+import { Button, StyleSheet } from "react-native"
 
 export default StyleSheet.create({
   container: {
     backgroundColor: "#FFD280",
     padding: 20,
     justifyContent: 'center',
-    flex:1,
+    flex: 1,
   },
   containerTitle: {
     alignSelf: "center",
     justifyContent: "center",
     marginTop: '10%',
-    marginBottom:'6%',
+    marginBottom: '6%',
     flex: 0,
   },
   containerHor: {
@@ -110,7 +110,7 @@ export default StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    opacity:  0.5,
+    opacity: 0.5,
     backgroundColor: "#000",
   },
   lineText: {

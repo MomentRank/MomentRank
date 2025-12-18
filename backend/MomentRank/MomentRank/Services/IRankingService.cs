@@ -26,8 +26,6 @@ namespace MomentRank.Services
         // Photo Rating Management
         Task<List<PhotoRating>> InitializePhotoRatingsAsync(int photoId, int eventId);
         Task<PhotoRating?> GetPhotoRatingAsync(int photoId, int eventId, RankingCategory category);
-        Task<bool> IsPhotoBootstrappedAsync(int photoId, int eventId, RankingCategory category);
-        Task<bool> IsPhotoStableAsync(int photoId, int eventId, RankingCategory category);
 
         // Validation
         Task<bool> CanUserVoteInEventAsync(User user, int eventId);

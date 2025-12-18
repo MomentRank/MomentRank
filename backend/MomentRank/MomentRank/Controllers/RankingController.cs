@@ -35,28 +35,34 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new MatchupResponse
+            var eventEntity = await _context.Events.FindAsync(request.EventId);
+            if (eventEntity == null)
             {
-                PhotoA = new PhotoForComparisonDto
+                return NotFound("Event not found");
+            }
+
+            if (eventEntity.Status != Enums.EventStatus.Ranking)
+            {
+                return Ok(new NoMatchupAvailableResponse
                 {
-                    Id = 1,
-                    FilePath = "/photos/sample1.jpg",
-                    Caption = "Sample photo A",
-                    UploadedById = 1,
-                    UploaderUsername = "user1"
-                },
-                PhotoB = new PhotoForComparisonDto
+                    Message = "Ranking not available",
+                    Reason = "EventNotInRankingPhase",
+                    SuggestedAction = $"Ranking will be available when the event ends. Current status: {eventEntity.Status}"
+                });
+            }
+
+            var matchup = await _rankingService.GetNextMatchupAsync(user, request);
+            if (matchup == null)
+            {
+                return Ok(new NoMatchupAvailableResponse
                 {
-                    Id = 2,
-                    FilePath = "/photos/sample2.jpg",
-                    Caption = "Sample photo B",
-                    UploadedById = 2,
-                    UploaderUsername = "user2"
-                },
-                Category = request.Category,
-                Prompt = "Which photo do you prefer?",
-                RemainingInSession = 10
-            });
+                    Message = "No matchups available",
+                    Reason = "NoEligiblePhotos",
+                    SuggestedAction = "Check back later when more photos are uploaded"
+                });
+            }
+
+            return Ok(matchup);
         }
 
         [HttpPost("compare")]
@@ -90,13 +96,19 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new ComparisonResultResponse
+            var eventEntity = await _context.Events.FindAsync(request.EventId);
+            if (eventEntity == null || eventEntity.Status != Enums.EventStatus.Ranking)
             {
-                ComparisonId = 1,
-                Recorded = true,
-                RemainingInSession = 9,
-                MoreMatchupsAvailable = true
-            });
+                return BadRequest("Ranking is only available when the event is in ranking phase");
+            }
+
+            var result = await _rankingService.SubmitComparisonAsync(user, request);
+            if (result == null)
+            {
+                return BadRequest("Unable to record comparison");
+            }
+
+            return Ok(result);
         }
 
         [HttpPost("skip")]
@@ -118,13 +130,19 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new ComparisonResultResponse
+            var eventEntity = await _context.Events.FindAsync(request.EventId);
+            if (eventEntity == null || eventEntity.Status != Enums.EventStatus.Ranking)
             {
-                ComparisonId = 1,
-                Recorded = true,
-                RemainingInSession = 9,
-                MoreMatchupsAvailable = true
-            });
+                return BadRequest("Ranking is only available when the event is in ranking phase");
+            }
+
+            var result = await _rankingService.SkipComparisonAsync(user, request);
+            if (result == null)
+            {
+                return BadRequest("Unable to skip comparison");
+            }
+
+            return Ok(result);
         }
 
         [HttpPost("leaderboard")]
@@ -146,42 +164,13 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new RankingsResponse
+            var rankings = await _rankingService.GetRankingsAsync(user, request);
+            if (rankings == null)
             {
-                Category = request.Category,
-                EventId = request.EventId,
-                TotalPhotos = 5,
-                TotalComparisons = 20,
-                Rankings = new List<RankedPhotoDto>
-                {
-                    new RankedPhotoDto
-                    {
-                        Rank = 1,
-                        PhotoId = 1,
-                        FilePath = "/photos/sample1.jpg",
-                        Caption = "Top ranked photo",
-                        EloScore = 1650.0,
-                        ComparisonCount = 10,
-                        WinCount = 8,
-                        WinRate = 0.8,
-                        UploadedById = 1,
-                        UploaderUsername = "user1"
-                    },
-                    new RankedPhotoDto
-                    {
-                        Rank = 2,
-                        PhotoId = 2,
-                        FilePath = "/photos/sample2.jpg",
-                        Caption = "Second ranked photo",
-                        EloScore = 1550.0,
-                        ComparisonCount = 10,
-                        WinCount = 6,
-                        WinRate = 0.6,
-                        UploadedById = 2,
-                        UploaderUsername = "user2"
-                    }
-                }
-            });
+                return NotFound("Rankings not available for this event");
+            }
+
+            return Ok(rankings);
         }
 
         [HttpPost("photo/stats")]
@@ -198,26 +187,13 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new PhotoRankingStatsResponse
+            var stats = await _rankingService.GetPhotoRankingStatsAsync(user, request);
+            if (stats == null)
             {
-                PhotoId = request.PhotoId,
-                FilePath = "/photos/sample.jpg",
-                CategoryStats = new List<CategoryRankingStats>
-                {
-                    new CategoryRankingStats
-                    {
-                        Category = Enums.RankingCategory.BestMoment,
-                        EloScore = 1500.0,
-                        Rank = 3,
-                        TotalInCategory = 10,
-                        ComparisonCount = 5,
-                        WinCount = 3,
-                        WinRate = 0.6,
-                        Uncertainty = 0.25,
-                        IsStable = false
-                    }
-                }
-            });
+                return NotFound("Photo stats not found");
+            }
+
+            return Ok(stats);
         }
 
         [HttpPost("history")]
@@ -234,33 +210,13 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new List<ComparisonHistoryEntryDto>
+            var history = await _rankingService.GetComparisonHistoryAsync(user, request);
+            if (history == null)
             {
-                new ComparisonHistoryEntryDto
-                {
-                    Id = 1,
-                    Category = Enums.RankingCategory.BestMoment,
-                    PhotoAId = 1,
-                    PhotoAPath = "/photos/sample1.jpg",
-                    PhotoBId = 2,
-                    PhotoBPath = "/photos/sample2.jpg",
-                    WinnerPhotoId = 1,
-                    WasSkipped = false,
-                    CreatedAt = DateTime.UtcNow.AddMinutes(-5)
-                },
-                new ComparisonHistoryEntryDto
-                {
-                    Id = 2,
-                    Category = Enums.RankingCategory.BestMoment,
-                    PhotoAId = 3,
-                    PhotoAPath = "/photos/sample3.jpg",
-                    PhotoBId = 4,
-                    PhotoBPath = "/photos/sample4.jpg",
-                    WinnerPhotoId = null,
-                    WasSkipped = true,
-                    CreatedAt = DateTime.UtcNow.AddMinutes(-3)
-                }
-            });
+                return NotFound("Comparison history not available");
+            }
+
+            return Ok(history);
         }
 
         [HttpPost("session/remaining")]
@@ -277,7 +233,12 @@ namespace MomentRank.Controllers
                 return Unauthorized();
             }
 
-            return Ok(new { remainingComparisons = 15 });
+            var remaining = await _rankingService.GetRemainingComparisonsInSessionAsync(
+                user,
+                request.EventId,
+                Enums.RankingCategory.BestMoment);
+
+            return Ok(new { remainingComparisons = remaining });
         }
     }
 }

@@ -5,7 +5,6 @@ namespace MomentRank.DTOs
     public record GetNextMatchupRequest
     {
         public required int EventId { get; init; }
-        public required RankingCategory Category { get; init; }
     }
 
     public record SubmitComparisonRequest

@@ -56,7 +56,7 @@ namespace MomentRank.Services
 
             var (photoA, photoB) = matchup.Value;
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId, category.Value);
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
 
             return new MatchupResponse
             {
@@ -68,13 +68,12 @@ namespace MomentRank.Services
             };
         }
 
-        public async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId, RankingCategory category)
+        public async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId)
         {
             var todayStart = DateTime.UtcNow.Date;
             var sessionComparisons = await _context.PhotoComparisons
                 .CountAsync(pc => pc.VoterId == user.Id
                     && pc.EventId == eventId
-                    && pc.Category == category
                     && pc.CreatedAt >= todayStart);
 
             return Math.Max(0, ComparisonsPerSession - sessionComparisons);
@@ -120,7 +119,7 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId, request.Category);
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
@@ -165,7 +164,7 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId, request.Category);
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
@@ -445,7 +444,7 @@ namespace MomentRank.Services
 
         private async Task<double> CalculateCategoryPriorityAsync(User user, int eventId, RankingCategory category)
         {
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId, category);
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId);
             if (remaining <= 0)
                 return 0;
 
@@ -702,7 +701,7 @@ namespace MomentRank.Services
 
         private async Task<bool> HasMoreMatchupsAvailableAsync(User user, int eventId, RankingCategory category)
         {
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId, category);
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId);
             if (remaining <= 0)
                 return false;
 

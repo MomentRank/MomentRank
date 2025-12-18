@@ -235,8 +235,7 @@ namespace MomentRank.Controllers
 
             var remaining = await _rankingService.GetRemainingComparisonsInSessionAsync(
                 user,
-                request.EventId,
-                Enums.RankingCategory.BestMoment);
+                request.EventId);
 
             return Ok(new { remainingComparisons = remaining });
         }

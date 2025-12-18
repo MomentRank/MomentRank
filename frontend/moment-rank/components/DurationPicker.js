@@ -57,6 +57,7 @@ export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
       }
       
       setTempDate(newDate);
+      // Convert local time to UTC ISO string for backend
       setEndsAt(newDate.toISOString()); 
 
     } else if (Platform.OS === "ios" && event.type === 'dismissed') {

@@ -20,5 +20,9 @@ namespace MomentRank.Services
         Task<PagedResult<EventInvite>?> ListEventInvitesAsync(User user, ListEventInvitesRequest request);
         Task<EventInvite?> CancelEventInviteAsync(User user, CancelEventInviteRequest request);
         Task<bool> HasPendingInviteAsync(int userId, int eventId);
+
+        // Invite link methods
+        Task<GenerateInviteLinkResponse?> GenerateInviteLinkAsync(User user, GenerateInviteLinkRequest request);
+        Task<Event?> JoinEventViaInviteCodeAsync(User user, string inviteCode);
     }
 }

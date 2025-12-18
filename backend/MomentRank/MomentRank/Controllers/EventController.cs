@@ -137,8 +137,8 @@ namespace MomentRank.Controllers
             var events = await _eventService.ListEventsAsync(
                 user: user,
                 request: request);
-                //filterByStatus: statusFilter.HasValue ? (Enums.EventStatus)statusFilter.Value : null);
-            
+            //filterByStatus: statusFilter.HasValue ? (Enums.EventStatus)statusFilter.Value : null);
+
             if (events == null)
             {
                 return StatusCode(500, "Failed to retrieve events");
@@ -327,6 +327,52 @@ namespace MomentRank.Controllers
             }
 
             return Ok(invite);
+        }
+
+        [HttpPost("invite/generate-link")]
+        public async Task<IActionResult> GenerateInviteLink([FromBody] GenerateInviteLinkRequest request)
+        {
+            if (request.EventId <= 0)
+            {
+                return BadRequest("Invalid event ID");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _eventService.GenerateInviteLinkAsync(user, request);
+            if (result == null)
+            {
+                return NotFound("Event not found, you're not authorized, or the event has ended");
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("join-via-code")]
+        public async Task<IActionResult> JoinViaInviteCode([FromBody] JoinViaInviteCodeRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.InviteCode))
+            {
+                return BadRequest("Invite code is required");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _eventService.JoinEventViaInviteCodeAsync(user, request.InviteCode);
+            if (result == null)
+            {
+                return Conflict("Cannot join event - invalid code, event has ended, you're the owner, or you're already a member");
+            }
+
+            return Ok(result);
         }
 
     }

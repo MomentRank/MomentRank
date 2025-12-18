@@ -12,14 +12,35 @@ import defaultImage from "../../assets/event_default.jpg";
 const API_URL = BASE_URL;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin }) => {
+const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
+    const router = useRouter();
+    
     const source = imageSource
         ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
         : defaultImage;
 
     const isOwner = currentUserId && ownerId && Number(currentUserId) === Number(ownerId);
     const isMember = currentUserId && memberIds.some(id => Number(id) === Number(currentUserId));
-    const showJoinButton = accessibility && !isMember && !isOwner && currentUserId;
+    const showJoinButton = accessibility && !isMember && !isOwner && currentUserId && status === 1;
+
+    const getStatusInfo = () => {
+        switch(status) {
+            case 0: return { text: 'Scheduled', color: '#FFA500', button: 'View Details' };
+            case 1: return { text: 'Active', color: '#00cc14ff', button: 'Open' };
+            case 2: return { text: 'Ranking', color: '#9C27B0', button: 'Vote Now' };
+            case 3: return { text: 'Ended', color: '#cc0000ff', button: 'View Results' };
+            case 4: return { text: 'Cancelled', color: '#808080', button: 'Cancelled' };
+            case 5: return { text: 'Archived', color: '#696969', button: 'View Archive' };
+            default: return { text: 'Unknown', color: '#808080', button: 'Open' };
+        }
+    };
+
+    const statusInfo = getStatusInfo();
+    
+    // Override status based on actual time remaining
+    const actualStatus = (timeLeft && timeLeft.total > 0) ? 1 : status;
+    const actualStatusInfo = actualStatus !== status ? getStatusInfo.call({}, actualStatus) : statusInfo;
+    const displayColor = (timeLeft && timeLeft.total > 0) ? '#00cc14ff' : statusInfo.color;
 
     const formatTime = (time) => {
         if (!time || time.total <= 0) return "Ended";
@@ -42,10 +63,10 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
             return `${hours}:${minutes}:${seconds}`;
         }
     };
-
-    const isEnded = !timeLeft || timeLeft.total <= 0;
-
-    let badgeColor = isEnded ? '#cc0000ff' : '#00cc14ff';
+    
+    const isEnded = status >= 2;
+    
+    let badgeColor = displayColor; 
 
     return (
         <View style={styles.contentCard}>
@@ -77,7 +98,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         textAlign: 'center',
                         marginBottom: 1
                     }]}>
-                        {isEnded ? "Status" : "Ends in"}
+                        {timeLeft && timeLeft.total > 0 ? "Ends in" : "Status"}
                     </Text>
                     <Text style={[styles.timerText, {
                         fontSize: 10,
@@ -85,13 +106,14 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         color: '#fff',
                         textAlign: 'center'
                     }]}>
-                        {formatTime(timeLeft)}
+                        {timeLeft && timeLeft.total > 0 ? formatTime(timeLeft) : statusInfo.text}
                     </Text>
                 </View>
             </View>
             <View style={styles.descriptionTextContainer}>
                 <Text style={styles.descriptionText}>{accessibility ? "Public" : "Private"}</Text>
             </View>
+            
             <View style={styles.openButtonContainer}>
                 {showJoinButton ? (
                     <TouchableOpacity
@@ -100,12 +122,27 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                     >
                         <Text style={styles.openButtonText}>Join Event</Text>
                     </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity
-                        onPress={onPress}
-                        style={[styles.openButton, isEnded && { backgroundColor: '#808080' }]}
+                ) : status === 2 ? (
+                    <TouchableOpacity 
+                        onPress={() => onRanking(eventId, name)} 
+                        style={[styles.openButton, { backgroundColor: '#9C27B0' }]}
                     >
-                        <Text style={styles.openButtonText}>{isEnded ? "View Archive" : "Open"}</Text>
+                        <Text style={styles.openButtonText}>Vote Now</Text> 
+                    </TouchableOpacity>
+                ) : status === 3 ? (
+                    <TouchableOpacity 
+                        onPress={() => router.push({ pathname: '/leaderboard', params: { eventId: eventId.toString(), eventName: name } })} 
+                        style={[styles.openButton, { backgroundColor: '#FF9500' }]}
+                    >
+                        <Text style={styles.openButtonText}>View Results</Text> 
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity 
+                        onPress={onPress} 
+                        style={[styles.openButton, status === 4 && { backgroundColor: '#808080' }]}
+                        disabled={status === 4}
+                    >
+                        <Text style={styles.openButtonText}>{statusInfo.button}</Text> 
                     </TouchableOpacity>
                 )}
             </View>
@@ -136,6 +173,13 @@ export default function HomeScreen() {
         router.push("/create-event");
     };
 
+    const handleRanking = (eventId, eventName) => {
+        router.push({
+            pathname: "/ranking",
+            params: { eventId: eventId.toString(), eventName: eventName },
+        });
+    };
+
     const handleJoin = async (eventId, eventName) => {
         try {
             const token = await AsyncStorage.getItem('token');
@@ -155,13 +199,10 @@ export default function HomeScreen() {
 
             Alert.alert("Success", `You've joined ${eventName}!`);
 
-            console.log('Before update - eventId:', eventId, 'currentUserId:', currentUserId);
-
             setCardData(prevData => {
                 const updated = prevData.map(event => {
                     if (event.id === eventId) {
                         const newMemberIds = [...event.memberIds, currentUserId];
-                        console.log('Updated memberIds for event', event.name, ':', newMemberIds);
                         return { ...event, memberIds: newMemberIds };
                     }
                     return event;
@@ -222,18 +263,7 @@ export default function HomeScreen() {
 
             console.log(`Page ${page} Raw Items Array length:`, itemsArray.length);
 
-            const now = new Date().getTime();
-
-            const filteredItems = itemsArray.filter(item => {
-                if (!item.endsAt) return true;
-
-                const endTime = new Date(item.endsAt).getTime();
-                const distance = endTime - now;
-
-                return distance > 0 || distance > -ONE_DAY_IN_MS;
-            });
-
-            const structuredItems = filteredItems.map(item => {
+            const structuredItems = itemsArray.map(item => {
                 return {
                     id: item.id,
                     name: item.name,
@@ -242,6 +272,7 @@ export default function HomeScreen() {
                     endsAt: item.endsAt,
                     memberIds: item.memberIds || [],
                     ownerId: item.ownerId,
+                    status: item.status !== undefined ? item.status : 1,
                 };
             });
 
@@ -306,12 +337,15 @@ export default function HomeScreen() {
     );
 
     useEffect(() => {
-        const interval = setInterval(() => {
+        // Initial calculation - run immediately on mount and when cardData changes
+        const calculateTimeLeft = () => {
             const now = new Date().getTime();
             const updatedTimeLeft = {};
+            let needsRefresh = false;
 
             cardData.forEach(event => {
                 if (event.endsAt) {
+                    // Parse UTC timestamp from backend and convert to milliseconds
                     const endTime = new Date(event.endsAt).getTime();
                     const distance = endTime - now;
 
@@ -330,12 +364,27 @@ export default function HomeScreen() {
                         };
                     } else {
                         updatedTimeLeft[event.id] = { total: distance };
+                        // Event just ended, refresh to get updated status from backend
+                        if (event.status === 1 && distance <= 0 && distance > -5000) {
+                            needsRefresh = true;
+                        }
                     }
                 }
             });
 
             setTimeLeft(updatedTimeLeft);
-        }, 1000);
+            
+            // Refresh events when an active event transitions to ended
+            if (needsRefresh) {
+                getEvents(1, false);
+            }
+        };
+
+        // Calculate immediately
+        calculateTimeLeft();
+
+        // Then set up interval for updates
+        const interval = setInterval(calculateTimeLeft, 1000);
 
         return () => clearInterval(interval);
     }, [cardData]);
@@ -390,8 +439,10 @@ export default function HomeScreen() {
                         memberIds={card.memberIds}
                         ownerId={card.ownerId}
                         currentUserId={currentUserId}
+                        status={card.status}
                         onPress={() => handleOpen(card.id)}
                         onJoin={handleJoin}
+                        onRanking={handleRanking}
                     />
                 ))
             ) : (

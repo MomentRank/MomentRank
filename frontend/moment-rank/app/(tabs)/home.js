@@ -117,27 +117,6 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                 <Text style={styles.descriptionText}>{accessibility ? "Public" : "Private"}</Text>
             </View>
             
-            {/* Show time remaining prominently for active events */}
-            {timeLeft && timeLeft.total > 0 && (
-                <View style={{ 
-                    marginTop: 8, 
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    backgroundColor: '#f0f9ff',
-                    borderRadius: 8,
-                    borderLeftWidth: 3,
-                    borderLeftColor: '#00cc14ff'
-                }}>
-                    <Text style={{ 
-                        fontSize: 13, 
-                        color: '#333',
-                        fontWeight: '600'
-                    }}>
-                        ⏱️ Time Remaining: {formatTime(timeLeft)}
-                    </Text>
-                </View>
-            )}
-            
             <View style={styles.openButtonContainer}>
                 {showJoinButton ? (
                     <TouchableOpacity

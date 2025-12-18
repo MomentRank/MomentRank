@@ -144,12 +144,25 @@ export default function PhotoUploadScreen() {
 
         // Extract members list (excluding owner)
         if (response.data.members && Array.isArray(response.data.members)) {
-          console.log('Members data:', response.data.members);
+          console.log('Members data:', JSON.stringify(response.data.members, null, 2));
           setEventMembers(response.data.members);
         } else if (response.data.memberIds && Array.isArray(response.data.memberIds)) {
-          // If only member IDs are provided, we'll need to fetch member details
-          console.log('Member IDs only:', response.data.memberIds);
-          setEventMembers(response.data.memberIds.map(id => ({ id })));
+          // If only member IDs are provided, fetch member details individually
+          const fetchedMembers = await Promise.all(response.data.memberIds.map(async (id) => {
+            try {
+              const userRes = await axios.get(`${API_URL}/profile/${id}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+              return userRes.data;
+            } catch (e) {
+              console.error(`Failed to fetch profile for ${id}`, e);
+              return { id, username: 'Unknown User' };
+            }
+          }));
+          setEventMembers(fetchedMembers);
         }
       }
     } catch (error) {
@@ -196,6 +209,48 @@ export default function PhotoUploadScreen() {
                 Alert.alert("Error", "Photo not found or you don't have permission to delete it.");
               } else {
                 Alert.alert("Error", "Failed to delete photo");
+              }
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteEvent = async () => {
+    Alert.alert(
+      "Delete Event",
+      "Are you sure you want to delete this entire event? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
+              }
+
+              await axios.post(`${API_URL}/event/delete`, {
+                id: parseInt(currentEventId)
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              // Navigate back to home on success
+              router.replace('/(tabs)/home');
+            } catch (error) {
+              console.error('Delete event error:', error);
+              if (error.response?.status === 403) {
+                Alert.alert("Error", "You do not have permission to delete this event.");
+              } else {
+                Alert.alert("Error", "Failed to delete event");
               }
             }
           }
@@ -409,6 +464,20 @@ export default function PhotoUploadScreen() {
               No photos uploaded yet
             </Text>
           )}
+
+          <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 20 }}>
+            <TouchableOpacity
+              onPress={handleDeleteEvent}
+              style={{
+                backgroundColor: '#FF3B30',
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 20,
+              }}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Delete Event</Text>
+            </TouchableOpacity>
+          </View>
 
         </ScrollView>
       </View>

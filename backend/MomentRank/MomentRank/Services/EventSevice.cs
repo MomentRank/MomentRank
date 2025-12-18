@@ -85,7 +85,7 @@ namespace MomentRank.Services
             }
         }
 
-        public async Task<EventDetailsResponse?> ReadEventAsync(User user, ReadEventRequest request)
+        public async Task<EventResponse?> ReadEventAsync(User user, ReadEventRequest request)
         {
             try
             {
@@ -104,7 +104,7 @@ namespace MomentRank.Services
                     .Select(u => new EventMemberInfo(u.Id, u.Username))
                     .ToListAsync();
 
-                return new EventDetailsResponse
+                return new EventResponse
                 {
                     Id = existingEvent.Id,
                     Name = existingEvent.Name,

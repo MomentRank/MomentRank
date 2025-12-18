@@ -4,7 +4,7 @@ namespace MomentRank.DTOs
 {
     public record EventMemberInfo(int Id, string Username);
 
-    public record EventDetailsResponse
+    public record EventResponse
     {
         public int Id { get; init; }
         public string Name { get; init; } = string.Empty;

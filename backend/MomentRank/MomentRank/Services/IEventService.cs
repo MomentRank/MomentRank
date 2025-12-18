@@ -9,7 +9,7 @@ namespace MomentRank.Services
     {
         Task<Event?> CreateEventAsync(User user, CreateEventRequest request);
         Task<Event?> DeleteEventAsync(User user, DeleteEventRequest request);
-        Task<EventDetailsResponse?> ReadEventAsync(User user, ReadEventRequest request);
+        Task<EventResponse?> ReadEventAsync(User user, ReadEventRequest request);
         Task<Event?> UpdateEventCoverPhotoAsync(User user, UpdateEventCoverPhotoRequest request);
         Task<PagedResult<Event>?> ListEventsAsync(User user, ListEventsRequest request);
         Task<Event?> JoinEventAsync(User user, JoinEventRequest request);

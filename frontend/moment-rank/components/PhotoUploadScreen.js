@@ -204,6 +204,48 @@ export default function PhotoUploadScreen() {
     );
   };
 
+  const handleDeleteEvent = async () => {
+    Alert.alert(
+      "Delete Event",
+      "Are you sure you want to delete this entire event? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
+              }
+
+              await axios.post(`${API_URL}/event/delete`, {
+                id: parseInt(currentEventId)
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              // Navigate back to home on success
+              router.replace('/(tabs)/home');
+            } catch (error) {
+              console.error('Delete event error:', error);
+              if (error.response?.status === 403) {
+                Alert.alert("Error", "You do not have permission to delete this event.");
+              } else {
+                Alert.alert("Error", "Failed to delete event");
+              }
+            }
+          }
+        }
+      ]
+    );
+  };
+
   // Poll for new photos every 5 seconds
   React.useEffect(() => {
     loadEventDetails();
@@ -409,6 +451,20 @@ export default function PhotoUploadScreen() {
               No photos uploaded yet
             </Text>
           )}
+
+          <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 20 }}>
+            <TouchableOpacity
+              onPress={handleDeleteEvent}
+              style={{
+                backgroundColor: '#FF3B30',
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 20,
+              }}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Delete Event</Text>
+            </TouchableOpacity>
+          </View>
 
         </ScrollView>
       </View>

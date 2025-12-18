@@ -79,29 +79,43 @@ namespace MomentRank.Services
 
                 return existingEvent;
             }
-            catch(Exception) {
+            catch (Exception)
+            {
                 return null;
             }
         }
 
-        public async Task<Event?> ReadEventAsync(User user, ReadEventRequest request)
+        public async Task<EventDetailsResponse?> ReadEventAsync(User user, ReadEventRequest request)
         {
             try
             {
-                // Check if event exists, and if the user is the owner
                 var existingEvent = await _context.Events
                     .FirstOrDefaultAsync(e => e.Id == request.Id && e.MemberIds.Contains(user.Id));
 
                 if (existingEvent == null)
                 {
-                    return null; // Event doesnt exist
+                    return null;
                 }
 
-                // Track event views in memory using concurrent collection
                 _eventViews.AddOrUpdate(request.Id, 1, (key, count) => count + 1);
 
+                var members = await _context.Users
+                    .Where(u => existingEvent.MemberIds.Contains(u.Id))
+                    .Select(u => new EventMemberInfo(u.Id, u.Username))
+                    .ToListAsync();
 
-                return existingEvent;
+                return new EventDetailsResponse
+                {
+                    Id = existingEvent.Id,
+                    Name = existingEvent.Name,
+                    OwnerId = existingEvent.OwnerId,
+                    Public = existingEvent.Public,
+                    CoverPhoto = existingEvent.CoverPhoto,
+                    EndsAt = existingEvent.EndsAt,
+                    CreatedAt = existingEvent.CreatedAt,
+                    Status = existingEvent.Status,
+                    Members = members
+                };
             }
             catch (Exception)
             {
@@ -140,7 +154,7 @@ namespace MomentRank.Services
             {
                 // Limit pageSize to maximum of 32
                 var pageSize = Math.Min(request.PageSize, 32);
-                
+
                 // Start with public events query
                 var query = _context.Events.AsQueryable();
 
@@ -172,7 +186,7 @@ namespace MomentRank.Services
                     .Take(pageSize)
                     .ToListAsync();
 
-                
+
                 return new PagedResult<Event>(events, totalCount, request.PageNumber, pageSize);
             }
             catch (Exception)
@@ -217,8 +231,8 @@ namespace MomentRank.Services
 
                     // Mark the invitation as accepted
                     var invite = await _context.EventInvites
-                        .FirstOrDefaultAsync(ei => ei.EventId == request.Id && 
-                                                   ei.InviteeId == user.Id && 
+                        .FirstOrDefaultAsync(ei => ei.EventId == request.Id &&
+                                                   ei.InviteeId == user.Id &&
                                                    ei.Status == Enums.EventInviteStatus.Pending);
                     if (invite != null)
                     {
@@ -242,8 +256,8 @@ namespace MomentRank.Services
         public async Task<bool> HasPendingInviteAsync(int userId, int eventId)
         {
             return await _context.EventInvites
-                .AnyAsync(ei => ei.EventId == eventId && 
-                               ei.InviteeId == userId && 
+                .AnyAsync(ei => ei.EventId == eventId &&
+                               ei.InviteeId == userId &&
                                ei.Status == Enums.EventInviteStatus.Pending);
         }
 
@@ -295,8 +309,8 @@ namespace MomentRank.Services
 
                 // Check if there's already a pending invite
                 var existingInvite = await _context.EventInvites
-                    .FirstOrDefaultAsync(ei => ei.EventId == request.EventId && 
-                                               ei.InviteeId == request.InviteeId && 
+                    .FirstOrDefaultAsync(ei => ei.EventId == request.EventId &&
+                                               ei.InviteeId == request.InviteeId &&
                                                ei.Status == Enums.EventInviteStatus.Pending);
 
                 if (existingInvite != null)
@@ -331,7 +345,7 @@ namespace MomentRank.Services
                 // Find the invite
                 var invite = await _context.EventInvites
                     .Include(ei => ei.Event)
-                    .FirstOrDefaultAsync(ei => ei.Id == request.InviteId && 
+                    .FirstOrDefaultAsync(ei => ei.Id == request.InviteId &&
                                                ei.InviteeId == user.Id &&
                                                ei.Status == Enums.EventInviteStatus.Pending);
 
@@ -343,7 +357,7 @@ namespace MomentRank.Services
                 if (request.Accept)
                 {
                     invite.Status = Enums.EventInviteStatus.Accepted;
-                    
+
                     // Add user to event members
                     if (!invite.Event.MemberIds.Contains(user.Id))
                     {
@@ -399,7 +413,7 @@ namespace MomentRank.Services
             {
                 // Find the invite - only the sender can cancel
                 var invite = await _context.EventInvites
-                    .FirstOrDefaultAsync(ei => ei.Id == request.InviteId && 
+                    .FirstOrDefaultAsync(ei => ei.Id == request.InviteId &&
                                                ei.SenderId == user.Id &&
                                                ei.Status == Enums.EventInviteStatus.Pending);
 

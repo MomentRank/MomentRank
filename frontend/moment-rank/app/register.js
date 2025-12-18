@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, Alert, Text, TouchableOpacity } from "react-native";
+import { View, TextInput, Alert, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import styles from "../Styles/main";
 import AppHeader from "../components/AppHeader";
@@ -40,7 +40,7 @@ export default function RegisterScreen() {
     const hasLower = /[a-z]/.test(pwd);
     const hasDigit = /\d/.test(pwd);
     const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd);
-    
+
     return hasLength && hasUpper && hasLower && hasDigit && hasSpecial;
   };
 
@@ -53,11 +53,11 @@ export default function RegisterScreen() {
     if (!username || username.length < 3 || username.length > 20) return false;
     if (!/^[a-zA-Z0-9]/.test(username)) return false;
     if (!/^[a-zA-Z0-9_-]+$/.test(username)) return false;
-    
+
     // Check for consecutive special characters
     for (let i = 1; i < username.length; i++) {
-      if ((username[i] === '_' || username[i] === '-') && 
-          (username[i-1] === '_' || username[i-1] === '-')) {
+      if ((username[i] === '_' || username[i] === '-') &&
+        (username[i - 1] === '_' || username[i - 1] === '-')) {
         return false;
       }
     }
@@ -91,17 +91,17 @@ export default function RegisterScreen() {
         email,
         password
       });
-      
+
       // Automatically log in the user after successful registration
       const loginResponse = await axios.post(`${API_URL}/auth/login`, {
         email,
         password
       });
-      
+
       // Store the token
       const { access_token } = loginResponse.data;
       await AsyncStorage.setItem("token", access_token);
-      
+
       console.log("Registration and login successful, navigating to first-time login...");
       router.replace(`/first-time-login?username=${encodeURIComponent(username)}`);
     } catch (err) {
@@ -119,101 +119,110 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.backgroundWhiteBox} />
-      <AppHeader />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <AppHeader />
 
-      <View style={styles.signinContainer}>
-        <Text style={styles.h2}>Create an account</Text>
-        
-        <Text style={styles.text}>Username</Text>
-        <TextInput
-          style={[
-            styles.input, 
-            {color: username ? "#000000" : "rgba(0,0,0,0.3)"},
-            username && !usernameValid ? {borderColor: 'red', borderWidth: 1} : {}
-          ]}
-          placeholder="Enter your username"
-          placeholderTextColor={"rgba(0,0,0,0.3)"}
-          value={username}
-          onChangeText={(text) => {
-            setUsername(text);
-            setUsernameValid(validateUsername(text));
-          }}
-          autoCapitalize="none"
-        />
+          <View style={styles.signinContainer}>
+            <Text style={styles.h2}>Create an account</Text>
 
-        <Text style={styles.text}>Email</Text>
-        <TextInput
-          style={[
-            styles.input, 
-            {color: email ? "#000000" : "rgba(0,0,0,0.3)"},
-            email && !emailValid ? {borderColor: 'red', borderWidth: 1} : {}
-          ]}
-          placeholder="Enter your email"
-          placeholderTextColor={"rgba(0,0,0,0.3)"}
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            setEmailValid(validateEmail(text));
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+            <Text style={styles.text}>Username</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: username ? "#000000" : "rgba(0,0,0,0.3)" },
+                username && !usernameValid ? { borderColor: 'red', borderWidth: 1 } : {}
+              ]}
+              placeholder="Enter your username"
+              placeholderTextColor={"rgba(0,0,0,0.3)"}
+              value={username}
+              onChangeText={(text) => {
+                setUsername(text);
+                setUsernameValid(validateUsername(text));
+              }}
+              autoCapitalize="none"
+            />
 
-        <Text style={styles.text}>Password</Text>
-        <TextInput
-          style={[
-            styles.input, 
-            {color: password ? "#000000" : "rgba(0,0,0,0.3)"},
-            password && !passwordValid ? {borderColor: 'red', borderWidth: 1} : {}
-          ]}
-          placeholder="Enter your password"
-          placeholderTextColor={"rgba(0,0,0,0.3)"}
-          secureTextEntry
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            setPasswordValid(validatePassword(text));
-          }}
-        />
+            <Text style={styles.text}>Email</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: email ? "#000000" : "rgba(0,0,0,0.3)" },
+                email && !emailValid ? { borderColor: 'red', borderWidth: 1 } : {}
+              ]}
+              placeholder="Enter your email"
+              placeholderTextColor={"rgba(0,0,0,0.3)"}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailValid(validateEmail(text));
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
 
-        <Text style={styles.text}>Confirm password</Text>
-        <TextInput
-          style={[
-            styles.input, 
-            {color: confirmPassword ? "#000000" : "rgba(0,0,0,0.3)"},
-            confirmPassword && password !== confirmPassword ? {borderColor: 'red', borderWidth: 1} : {}
-          ]}
-          placeholder="Confirm your password"
-          placeholderTextColor={"rgba(0,0,0,0.3)"}
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+            <Text style={styles.text}>Password</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: password ? "#000000" : "rgba(0,0,0,0.3)" },
+                password && !passwordValid ? { borderColor: 'red', borderWidth: 1 } : {}
+              ]}
+              placeholder="Enter your password"
+              placeholderTextColor={"rgba(0,0,0,0.3)"}
+              secureTextEntry
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setPasswordValid(validatePassword(text));
+              }}
+            />
 
-        <View style={styles.passwordRequirements}>
-          <Text style={styles.requirementText}>Password Requirements:</Text>
-          <Text style={[styles.requirementText, password.length >= 8 ? styles.validRequirement : styles.invalidRequirement]}>
-            • At least 8 characters
-          </Text>
-          <Text style={[styles.requirementText, /[A-Z]/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
-            • At least one uppercase letter (A-Z)
-          </Text>
-          <Text style={[styles.requirementText, /[a-z]/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
-            • At least one lowercase letter (a-z)
-          </Text>
-          <Text style={[styles.requirementText, /\d/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
-            • At least one number (0-9)
-          </Text>
-          <Text style={[styles.requirementText, /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
-            • At least one special character (!@#$%^&*)
-          </Text>
-        </View>
+            <Text style={styles.text}>Confirm password</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: confirmPassword ? "#000000" : "rgba(0,0,0,0.3)" },
+                confirmPassword && password !== confirmPassword ? { borderColor: 'red', borderWidth: 1 } : {}
+              ]}
+              placeholder="Confirm your password"
+              placeholderTextColor={"rgba(0,0,0,0.3)"}
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
 
-        <TouchableOpacity onPress={handleSubmit} style={styles.buttonBig}> 
-          <Text style={styles.buttonBigText}>SIGN UP</Text>
-        </TouchableOpacity>
-      </View>
+            <View style={styles.passwordRequirements}>
+              <Text style={styles.requirementText}>Password Requirements:</Text>
+              <Text style={[styles.requirementText, password.length >= 8 ? styles.validRequirement : styles.invalidRequirement]}>
+                • At least 8 characters
+              </Text>
+              <Text style={[styles.requirementText, /[A-Z]/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
+                • At least one uppercase letter (A-Z)
+              </Text>
+              <Text style={[styles.requirementText, /[a-z]/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
+                • At least one lowercase letter (a-z)
+              </Text>
+              <Text style={[styles.requirementText, /\d/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
+                • At least one number (0-9)
+              </Text>
+              <Text style={[styles.requirementText, /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? styles.validRequirement : styles.invalidRequirement]}>
+                • At least one special character (!@#$%^&*)
+              </Text>
+            </View>
 
+            <TouchableOpacity onPress={handleSubmit} style={styles.buttonBig}>
+              <Text style={styles.buttonBigText}>SIGN UP</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

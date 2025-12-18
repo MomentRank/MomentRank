@@ -15,7 +15,7 @@ const ParticipantsModal = ({ visible, onClose, eventId, eventName, owner, member
     try {
       // Combine owner and members with owner marked separately
       const allParticipants = [];
-      
+
       if (owner) {
         allParticipants.push({
           ...owner,
@@ -58,7 +58,6 @@ const ParticipantsModal = ({ visible, onClose, eventId, eventName, owner, member
 
               // TODO: Implement actual remove endpoint when available
               // For now, just remove from local state
-              Alert.alert("Success", `${participantUsername} has been removed`);
               setParticipants(participants.filter(p => p.id !== participantId));
             } catch (error) {
               console.error('Remove participant error:', error);
@@ -126,7 +125,7 @@ const ParticipantsModal = ({ visible, onClose, eventId, eventName, owner, member
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                   <Text style={{ fontSize: 16, fontWeight: '600', marginRight: 8 }}>
-                    {item.username}
+                    {item.username || item.name || item.email || "Unknown User"}
                   </Text>
                   {item.isOwner && (
                     <View style={{
@@ -141,7 +140,6 @@ const ParticipantsModal = ({ visible, onClose, eventId, eventName, owner, member
                     </View>
                   )}
                 </View>
-                <Text style={{ fontSize: 14, color: '#666' }}>{item.email}</Text>
               </View>
               {!item.isOwner && (
                 <TouchableOpacity

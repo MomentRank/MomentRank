@@ -7,8 +7,8 @@ const API_URL = BASE_URL;
 
 // Configure Google Sign-In
 GoogleSignin.configure({
-  iosClientId: '755918280086-cnt76mvrp4j7323c0qiujelule7mbn6k.apps.googleusercontent.com',
-  webClientId: '755918280086-lg9aqpg6o5pb9dq4ra5didcd3vbfjste.apps.googleusercontent.com',
+  iosClientId: '734920707150-emfei8cufj25tlk703s4l4gmcvgnkcfh.apps.googleusercontent.com',
+  webClientId: '734920707150-th7t3n3n8ah9ftsfta2m1id4opm8d4gm.apps.googleusercontent.com',
   offlineAccess: true,
   scopes: ['profile', 'email'],
 });
@@ -17,23 +17,24 @@ export const loginWithGoogle = async () => {
   try {
     // Check if device supports Google Play Services (Android)
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    
+
     // Sign in with Google
     const response = await GoogleSignin.signIn();
-    
+
     console.log('Google sign-in response:', response);
-    
+
     // Extract user and token from response
     const user = response.data?.user || response.user;
     const googleIdToken = response.data?.idToken || response.idToken;
-    
+
     if (!user || !googleIdToken) {
-      throw new Error('Failed to get user information or token from Google');
+      console.error('Failed to get user information or token from Google');
+      return { success: false, error: 'Failed to get user information' };
     }
-    
+
     console.log('Google user info:', user);
     console.log('Google ID token received');
-    
+
     // Prepare user profile
     const userProfile = {
       id: user.id,
@@ -43,14 +44,14 @@ export const loginWithGoogle = async () => {
       familyName: user.familyName,
       photo: user.photo,
     };
-    
+
     // Authenticate with your backend
     const { appToken, firstTimeLogin, username } = await authenticateWithBackend(googleIdToken, userProfile);
-    
+
     // Store tokens
     await AsyncStorage.setItem('token', appToken);
     await AsyncStorage.setItem('googleToken', googleIdToken);
-    
+
     return {
       success: true,
       user: userProfile,
@@ -60,7 +61,7 @@ export const loginWithGoogle = async () => {
     };
   } catch (error) {
     console.error('Google Sign-In error:', error);
-    
+
     if (error.code === 'SIGN_IN_CANCELLED') {
       throw new Error('Sign in was cancelled');
     } else if (error.code === 'IN_PROGRESS') {
@@ -117,7 +118,7 @@ const authenticateWithBackend = async (googleIdToken, userProfile) => {
         photo: userProfile.photo,
       },
     });
-    
+
     return {
       appToken: response.data.token,
       firstTimeLogin: response.data.firstTimeLogin || false,

@@ -10,7 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import defaultImage from "../../assets/event_default.jpg";
 
 const API_URL = BASE_URL;
-const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000; 
+const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
     const router = useRouter();
@@ -19,8 +19,8 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     console.log(`ContentCard for ${name}: timeLeft=`, timeLeft, 'status=', status);
     
     const source = imageSource
-    ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
-    : defaultImage;
+        ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
+        : defaultImage;
 
     const isOwner = currentUserId && ownerId && Number(currentUserId) === Number(ownerId);
     const isMember = currentUserId && memberIds.some(id => Number(id) === Number(currentUserId));
@@ -140,11 +140,11 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
             
             <View style={styles.openButtonContainer}>
                 {showJoinButton ? (
-                    <TouchableOpacity 
-                        onPress={() => onJoin(eventId, name)} 
+                    <TouchableOpacity
+                        onPress={() => onJoin(eventId, name)}
                         style={[styles.openButton, { backgroundColor: '#28a745' }]}
                     >
-                        <Text style={styles.openButtonText}>Join Event</Text> 
+                        <Text style={styles.openButtonText}>Join Event</Text>
                     </TouchableOpacity>
                 ) : status === 2 ? (
                     <TouchableOpacity 
@@ -222,7 +222,7 @@ export default function HomeScreen() {
             });
 
             Alert.alert("Success", `You've joined ${eventName}!`);
-            
+
             console.log('Before update - eventId:', eventId, 'currentUserId:', currentUserId);
 
             setCardData(prevData => {
@@ -251,7 +251,7 @@ export default function HomeScreen() {
         if (!loadingMore && !isLoadingMore && hasMoreData) {
             setLoadingMore(true);
             setIsLoadingMore(true);
-            
+
 
             setCurrentPage(prevPage => {
                 const nextPage = prevPage + 1;
@@ -265,9 +265,9 @@ export default function HomeScreen() {
         try {
             const token = await AsyncStorage.getItem("token");
             if (!token) {
-                Alert.alert("Error", "Please login first");
+                console.log("No token, redirecting to login");
                 setLoading(false);
-                router.replace("/login");
+                router.replace("/");
                 return;
             }
 
@@ -284,17 +284,17 @@ export default function HomeScreen() {
             });
 
             let rawItems = response.data;
-            const itemsArray = (rawItems && Array.isArray(rawItems.items)) 
-                               ? rawItems.items 
-                               : (Array.isArray(rawItems) ? rawItems : []);
-            
+            const itemsArray = (rawItems && Array.isArray(rawItems.items))
+                ? rawItems.items
+                : (Array.isArray(rawItems) ? rawItems : []);
+
             console.log(`Page ${page} Raw Items Array length:`, itemsArray.length);
 
             const structuredItems = itemsArray.map(item => {
                 return {
                     id: item.id,
                     name: item.name,
-                    public: item.public === true || item.public === 1, 
+                    public: item.public === true || item.public === 1,
                     imageSource: item.coverPhoto ? `${API_URL}/${item.coverPhoto}` : (item.imageSource || undefined),
                     endsAt: item.endsAt,
                     memberIds: item.memberIds || [],
@@ -316,7 +316,7 @@ export default function HomeScreen() {
 
 
             const totalCount = rawItems.totalCount;
-            const newHasMoreData = totalCount 
+            const newHasMoreData = totalCount
                 ? (page * 5) < totalCount
                 : (itemsArray.length === 5 && page < 10);
 
@@ -421,7 +421,7 @@ export default function HomeScreen() {
     const handleScroll = (event) => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
 
-        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20; 
+        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
 
         if (isCloseToBottom && !loadingMore && !isLoadingMore && hasMoreData) {
 
@@ -447,7 +447,7 @@ export default function HomeScreen() {
             </View>
         );
     }
-    
+
     const renderEventSection = (events, title) => (
         <>
             <View style={styles.lineContainer}>
@@ -541,7 +541,7 @@ export default function HomeScreen() {
                             </View>
                         </View>
                     )}
-                    
+
 
                     {!hasMoreData && cardData.length > 0 && (
                         <View style={{ alignItems: 'center', marginVertical: 20 }}>

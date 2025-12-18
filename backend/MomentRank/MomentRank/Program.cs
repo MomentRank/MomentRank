@@ -15,6 +15,7 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddScoped<IFriendService, FriendService>();
+builder.Services.AddScoped<IRankingService, RankingService>();
 builder.Services.AddHttpClient<IGoogleService, GoogleService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();

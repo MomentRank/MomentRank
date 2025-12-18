@@ -9,23 +9,6 @@ import styles from '../Styles/main';
 const API_URL = BASE_URL;
 const { width, height } = Dimensions.get('window');
 
-// ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
-const USE_MOCK_DATA = true;
-const MOCK_MATCHUP = {
-    photoA: {
-        id: 1,
-        filePath: 'https://picsum.photos/400/600',
-        uploaderUsername: 'john_doe'
-    },
-    photoB: {
-        id: 2,
-        filePath: 'https://picsum.photos/400/601',
-        uploaderUsername: 'jane_smith'
-    }
-};
-const MOCK_REMAINING = 15;
-// ========== END MOCK DATA ==========
-
 export default function RankingScreen() {
     const router = useRouter();
     const { eventId, eventName } = useLocalSearchParams();
@@ -181,21 +164,12 @@ export default function RankingScreen() {
         try {
             setLoading(true);
             
-            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
-            if (USE_MOCK_DATA) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                setMatchup(MOCK_MATCHUP);
-                setPhotoA(MOCK_MATCHUP.photoA);
-                setPhotoB(MOCK_MATCHUP.photoB);
-                setLoading(false);
-                return;
-            }
-            // ========== END MOCK DATA ==========
-            
             const token = await AsyncStorage.getItem('token');
             if (!token) {
                 Alert.alert('Error', 'Please login first');
-                router.back();
+                setLoading(false);
+                setPhotoA(null);
+                setPhotoB(null);
                 return;
             }
 
@@ -209,20 +183,36 @@ export default function RankingScreen() {
             });
 
             if (response.data) {
-                setMatchup(response.data);
-                setPhotoA(response.data.photoA);
-                setPhotoB(response.data.photoB);
+                // Check if response indicates no matchups available
+                if (response.data.message || response.data.reason) {
+                    const message = response.data.message || 'No matchups available';
+                    const suggestedAction = response.data.suggestedAction || 'Please try again later';
+                    const reason = response.data.reason || 'Unknown';
+                    
+                    console.log('No matchup available:', { message, reason, suggestedAction });
+                    
+                    // Don't close the screen, just clear matchup data to show leaderboard
+                    setPhotoA(null);
+                    setPhotoB(null);
+                    return;
+                }
+                
+                // Valid matchup data
+                if (response.data.photoA && response.data.photoB) {
+                    setMatchup(response.data);
+                    setPhotoA(response.data.photoA);
+                    setPhotoB(response.data.photoB);
+                } else {
+                    // Invalid data, show leaderboard view
+                    setPhotoA(null);
+                    setPhotoB(null);
+                }
             }
         } catch (error) {
             console.error('Load matchup error:', error);
-            if (error.response?.status === 404) {
-                Alert.alert('Voting Complete', 'You have voted on all available matchups!', [
-                    { text: 'View Leaderboard', onPress: () => router.push({ pathname: '/leaderboard', params: { eventId } }) },
-                    { text: 'Go Back', onPress: () => router.back() }
-                ]);
-            } else {
-                Alert.alert('Error', 'Failed to load voting matchup');
-            }
+            // On any error, show leaderboard view instead of closing
+            setPhotoA(null);
+            setPhotoB(null);
         } finally {
             setLoading(false);
         }
@@ -230,13 +220,6 @@ export default function RankingScreen() {
 
     const loadRemainingComparisons = async () => {
         try {
-            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
-            if (USE_MOCK_DATA) {
-                setRemainingComparisons(MOCK_REMAINING);
-                return;
-            }
-            // ========== END MOCK DATA ==========
-            
             const token = await AsyncStorage.getItem('token');
             if (!token) return;
 
@@ -260,16 +243,6 @@ export default function RankingScreen() {
     const handleVote = async (winnerPhotoId, loserPhotoId) => {
         try {
             setComparing(true);
-            
-            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
-            if (USE_MOCK_DATA) {
-                await new Promise(resolve => setTimeout(resolve, 800));
-                setRemainingComparisons(prev => Math.max(0, prev - 1));
-                await loadNextMatchup();
-                setComparing(false);
-                return;
-            }
-            // ========== END MOCK DATA ==========
             
             const token = await AsyncStorage.getItem('token');
             if (!token) {
@@ -397,7 +370,7 @@ export default function RankingScreen() {
                     >
                         <View style={{ width: '100%', aspectRatio: 3/4, position: 'relative' }}>
                             <Image 
-                                source={{ uri: USE_MOCK_DATA ? photoA.filePath : `${API_URL}/${photoA.filePath}` }}
+                                source={{ uri: `${API_URL}/${photoA.filePath}` }}
                                 style={{ width: '100%', height: '100%', borderRadius: 10 }}
                                 resizeMode="cover"
                             />
@@ -431,7 +404,7 @@ export default function RankingScreen() {
                     >
                         <View style={{ width: '100%', aspectRatio: 3/4, position: 'relative' }}>
                             <Image 
-                                source={{ uri: USE_MOCK_DATA ? photoB.filePath : `${API_URL}/${photoB.filePath}` }}
+                                source={{ uri: `${API_URL}/${photoB.filePath}` }}
                                 style={{ width: '100%', height: '100%', borderRadius: 10 }}
                                 resizeMode="cover"
                             />

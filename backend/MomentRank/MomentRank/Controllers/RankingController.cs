@@ -43,6 +43,7 @@ namespace MomentRank.Controllers
 
             if (eventEntity.Status != Enums.EventStatus.Ranking)
             {
+                Console.WriteLine($"[RankingController] GetNextMatchup blocked: Event {request}, Status {eventEntity.Status}");
                 return Ok(new NoMatchupAvailableResponse
                 {
                     Message = "Ranking not available",
@@ -54,6 +55,7 @@ namespace MomentRank.Controllers
             var matchup = await _rankingService.GetNextMatchupAsync(user, request);
             if (matchup == null)
             {
+                Console.WriteLine($"[RankingController] No matchup found for User {user.Id}, Event {request}");
                 return Ok(new NoMatchupAvailableResponse
                 {
                     Message = "No matchups available",

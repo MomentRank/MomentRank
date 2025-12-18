@@ -13,6 +13,11 @@ const API_URL = BASE_URL;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000; 
 
 const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
+    const router = useRouter();
+    
+    // Debug logging
+    console.log(`ContentCard for ${name}: timeLeft=`, timeLeft, 'status=', status);
+    
     const source = imageSource
     ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
     : defaultImage;
@@ -33,12 +38,17 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
         }
     };
 
-    const statusInfo = getStatusInfo(); 
+    const statusInfo = getStatusInfo();
+    
+    // Override status based on actual time remaining
+    const actualStatus = (timeLeft && timeLeft.total > 0) ? 1 : status;
+    const actualStatusInfo = actualStatus !== status ? getStatusInfo.call({}, actualStatus) : statusInfo;
+    const displayColor = (timeLeft && timeLeft.total > 0) ? '#00cc14ff' : statusInfo.color;
 
     const formatTime = (time) => {
         if (!time || time.total <= 0) return "Ended";
 
-        if (time.total < 0) {s
+        if (time.total < 0) {
             return "Recently Ended";
         }
 
@@ -59,7 +69,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     
     const isEnded = status >= 2;
     
-    let badgeColor = statusInfo.color; 
+    let badgeColor = displayColor; 
 
     return (
         <View style={styles.contentCard}>
@@ -91,7 +101,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         textAlign: 'center',
                         marginBottom: 1
                     }]}>
-                        {status === 1 ? "Ends in" : "Status"}
+                        {timeLeft && timeLeft.total > 0 ? "Ends in" : "Status"}
                     </Text>
                     <Text style={[styles.timerText, {
                         fontSize: 10,
@@ -99,13 +109,35 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         color: '#fff',
                         textAlign: 'center'
                     }]}>
-                        {status === 1 ? formatTime(timeLeft) : statusInfo.text}
+                        {timeLeft && timeLeft.total > 0 ? formatTime(timeLeft) : statusInfo.text}
                     </Text>
                 </View>
             </View>
             <View style={styles.descriptionTextContainer}>
                 <Text style={styles.descriptionText}>{accessibility ? "Public" : "Private"}</Text>
             </View>
+            
+            {/* Show time remaining prominently for active events */}
+            {timeLeft && timeLeft.total > 0 && (
+                <View style={{ 
+                    marginTop: 8, 
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    backgroundColor: '#f0f9ff',
+                    borderRadius: 8,
+                    borderLeftWidth: 3,
+                    borderLeftColor: '#00cc14ff'
+                }}>
+                    <Text style={{ 
+                        fontSize: 13, 
+                        color: '#333',
+                        fontWeight: '600'
+                    }}>
+                        ⏱️ Time Remaining: {formatTime(timeLeft)}
+                    </Text>
+                </View>
+            )}
+            
             <View style={styles.openButtonContainer}>
                 {showJoinButton ? (
                     <TouchableOpacity 
@@ -121,10 +153,17 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                     >
                         <Text style={styles.openButtonText}>Vote Now</Text> 
                     </TouchableOpacity>
+                ) : status === 3 ? (
+                    <TouchableOpacity 
+                        onPress={() => router.push({ pathname: '/leaderboard', params: { eventId: eventId.toString(), eventName: name } })} 
+                        style={[styles.openButton, { backgroundColor: '#FF9500' }]}
+                    >
+                        <Text style={styles.openButtonText}>View Results</Text> 
+                    </TouchableOpacity>
                 ) : (
                     <TouchableOpacity 
                         onPress={onPress} 
-                        style={[styles.openButton, status >= 3 && { backgroundColor: '#808080' }]}
+                        style={[styles.openButton, status === 4 && { backgroundColor: '#808080' }]}
                         disabled={status === 4}
                     >
                         <Text style={styles.openButtonText}>{statusInfo.button}</Text> 
@@ -251,18 +290,7 @@ export default function HomeScreen() {
             
             console.log(`Page ${page} Raw Items Array length:`, itemsArray.length);
 
-            const now = new Date().getTime();
-            
-            const filteredItems = itemsArray.filter(item => {
-                if (!item.endsAt) return true;
-
-                const endTime = new Date(item.endsAt).getTime();
-                const distance = endTime - now;
-
-                return distance > 0 || distance > -ONE_DAY_IN_MS;
-            });
-
-            const structuredItems = filteredItems.map(item => {
+            const structuredItems = itemsArray.map(item => {
                 return {
                     id: item.id,
                     name: item.name,
@@ -336,14 +364,19 @@ export default function HomeScreen() {
     );
 
     useEffect(() => {
-        const interval = setInterval(() => {
+        // Initial calculation - run immediately on mount and when cardData changes
+        const calculateTimeLeft = () => {
             const now = new Date().getTime();
             const updatedTimeLeft = {};
+            let needsRefresh = false;
 
             cardData.forEach(event => {
                 if (event.endsAt) {
+                    // Parse UTC timestamp from backend and convert to milliseconds
                     const endTime = new Date(event.endsAt).getTime();
                     const distance = endTime - now;
+
+                    console.log(`Event ${event.name}: endsAt=${event.endsAt}, distance=${distance}ms`);
 
                     if (distance > 0) {
                         const days = Math.floor(distance / ONE_DAY_IN_MS);
@@ -360,12 +393,27 @@ export default function HomeScreen() {
                         };
                     } else {
                         updatedTimeLeft[event.id] = { total: distance };
+                        // Event just ended, refresh to get updated status from backend
+                        if (event.status === 1 && distance <= 0 && distance > -5000) {
+                            needsRefresh = true;
+                        }
                     }
                 }
             });
 
             setTimeLeft(updatedTimeLeft);
-        }, 1000);
+            
+            // Refresh events when an active event transitions to ended
+            if (needsRefresh) {
+                getEvents(1, false);
+            }
+        };
+
+        // Calculate immediately
+        calculateTimeLeft();
+
+        // Then set up interval for updates
+        const interval = setInterval(calculateTimeLeft, 1000);
 
         return () => clearInterval(interval);
     }, [cardData]);

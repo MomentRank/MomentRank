@@ -8,62 +8,6 @@ import styles from '../Styles/main';
 
 const API_URL = BASE_URL;
 
-// ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
-const USE_MOCK_DATA = true;
-const MOCK_LEADERBOARD = [
-    {
-        photo: {
-            id: 1,
-            filePath: 'https://picsum.photos/400/600',
-            uploaderUsername: 'alice_wonder'
-        },
-        score: 1456.78,
-        wins: 23,
-        losses: 5
-    },
-    {
-        photo: {
-            id: 2,
-            filePath: 'https://picsum.photos/400/601',
-            uploaderUsername: 'bob_builder'
-        },
-        score: 1389.45,
-        wins: 21,
-        losses: 7
-    },
-    {
-        photo: {
-            id: 3,
-            filePath: 'https://picsum.photos/400/602',
-            uploaderUsername: 'charlie_chap'
-        },
-        score: 1254.32,
-        wins: 19,
-        losses: 9
-    },
-    {
-        photo: {
-            id: 4,
-            filePath: 'https://picsum.photos/400/603',
-            uploaderUsername: 'diana_prince'
-        },
-        score: 1123.89,
-        wins: 17,
-        losses: 11
-    },
-    {
-        photo: {
-            id: 5,
-            filePath: 'https://picsum.photos/400/604',
-            uploaderUsername: 'evan_almighty'
-        },
-        score: 1056.23,
-        wins: 15,
-        losses: 13
-    },
-];
-// ========== END MOCK DATA ==========
-
 export default function LeaderboardScreen() {
     const router = useRouter();
     const { eventId, eventName } = useLocalSearchParams();
@@ -85,15 +29,6 @@ export default function LeaderboardScreen() {
     const loadLeaderboard = async () => {
         try {
             setLoading(true);
-            
-            // ========== MOCK DATA - REMOVE WHEN BACKEND IS READY ==========
-            if (USE_MOCK_DATA) {
-                await new Promise(resolve => setTimeout(resolve, 600));
-                setLeaderboard(MOCK_LEADERBOARD);
-                setLoading(false);
-                return;
-            }
-            // ========== END MOCK DATA ==========
             
             const token = await AsyncStorage.getItem('token');
             if (!token) {

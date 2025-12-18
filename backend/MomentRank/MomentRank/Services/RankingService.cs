@@ -528,9 +528,13 @@ namespace MomentRank.Services
 
         private async Task<List<Photo>> GetEligiblePhotosForMatchupAsync(User user, int eventId)
         {
-            return await _context.Photos
+            var photos = await _context.Photos
                 .Where(p => p.EventId == eventId && p.UploadedById != user.Id)
                 .ToListAsync();
+            
+            Console.WriteLine($"[RankingService] GetEligiblePhotos: User {user.Id}, Event {eventId}, Found {photos.Count} eligible photos");
+            
+            return photos;
         }
 
         private async Task<HashSet<(int, int)>> GetRecentComparisonPairsAsync(User user, int eventId, RankingCategory category)

@@ -61,8 +61,8 @@ export default function LeaderboardScreen() {
                 }
             });
 
-            if (response.data && Array.isArray(response.data)) {
-                setLeaderboards(prev => ({ ...prev, [categoryId]: response.data }));
+            if (response.data && response.data.rankings && Array.isArray(response.data.rankings)) {
+                setLeaderboards(prev => ({ ...prev, [categoryId]: response.data.rankings }));
             }
         } catch (error) {
             console.error('Load leaderboard error:', error);
@@ -75,6 +75,10 @@ export default function LeaderboardScreen() {
     const renderLeaderboardItem = ({ item, index: idx }) => {
         const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
         const medal = idx < 3 ? medalColors[idx] : null;
+        // Use rank from API if available, otherwise use index
+        const displayRank = item.rank || (idx + 1);
+        // Calculate losses from comparison count and win count
+        const losses = (item.comparisonCount || 0) - (item.winCount || 0);
 
         return (
             <View style={{
@@ -100,27 +104,37 @@ export default function LeaderboardScreen() {
                         fontWeight: 'bold',
                         color: medal ? '#fff' : '#666'
                     }}>
-                        {idx + 1}
+                        {displayRank}
                     </Text>
                 </View>
 
                 <Image
-                    source={{ uri: `${API_URL}/${item.photo.filePath}` }}
+                    source={{ uri: `${API_URL}/${item.filePath}` }}
                     style={{ width: 60, height: 80, borderRadius: 6, marginRight: 12 }}
                     resizeMode="cover"
                 />
 
                 <View style={{ flex: 1 }}>
                     <Text style={[styles.text, { fontWeight: 'bold', marginBottom: 4 }]}>
-                        {item.photo.uploaderUsername || 'Unknown'}
+                        {item.uploaderUsername || 'Unknown'}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {item.caption && (
+                        <Text style={[styles.text, { fontSize: 11, color: '#888', marginBottom: 4 }]} numberOfLines={1}>
+                            {item.caption}
+                        </Text>
+                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                         <Text style={[styles.text, { fontSize: 12, color: '#666', marginRight: 8 }]}>
-                            Score: {item.score.toFixed(2)}
+                            ELO: {(item.eloScore || 0).toFixed(1)}
                         </Text>
-                        <Text style={[styles.text, { fontSize: 12, color: '#999' }]}>
-                            {item.wins}W / {item.losses}L
+                        <Text style={[styles.text, { fontSize: 12, color: '#999', marginRight: 8 }]}>
+                            {item.winCount || 0}W / {losses}L
                         </Text>
+                        {item.winRate !== undefined && (
+                            <Text style={[styles.text, { fontSize: 12, color: '#28a745' }]}>
+                                {(item.winRate * 100).toFixed(0)}%
+                            </Text>
+                        )}
                     </View>
                 </View>
             </View>
@@ -145,7 +159,7 @@ export default function LeaderboardScreen() {
             <FlatList
                 data={data}
                 renderItem={renderLeaderboardItem}
-                keyExtractor={(item, index) => `${item.photo.id}-${index}`}
+                keyExtractor={(item, index) => `${item.photoId}-${index}`}
                 contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 10 }}
                 ListEmptyComponent={
                     <View style={{ alignItems: 'center', marginTop: 50, padding: 20 }}>

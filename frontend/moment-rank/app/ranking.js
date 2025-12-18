@@ -209,6 +209,10 @@ export default function RankingScreen() {
                     setMatchup(response.data);
                     setPhotoA(response.data.photoA);
                     setPhotoB(response.data.photoB);
+                    // Update remaining comparisons from matchup response
+                    if (response.data.remainingInSession !== undefined) {
+                        setRemainingComparisons(response.data.remainingInSession);
+                    }
                 } else {
                     // Invalid data, show leaderboard view
                     setPhotoA(null);
@@ -241,8 +245,8 @@ export default function RankingScreen() {
                 }
             });
 
-            if (response.data !== undefined) {
-                setRemainingComparisons(response.data);
+            if (response.data && response.data.remainingComparisons !== undefined) {
+                setRemainingComparisons(response.data.remainingComparisons);
             }
         } catch (error) {
             console.error('Load remaining comparisons error:', error);
@@ -259,9 +263,9 @@ export default function RankingScreen() {
                 return;
             }
 
-            await axios.post(`${API_URL}/ranking/compare`, {
+            const compareResponse = await axios.post(`${API_URL}/ranking/compare`, {
                 eventId: parseInt(eventId),
-                category: 0,  // 0 = BestMoment
+                category: matchup?.category ?? 0,  // Use category from matchup or default to BestMoment
                 photoAId: photoA.id,
                 photoBId: photoB.id,
                 winnerPhotoId: winnerPhotoId
@@ -272,7 +276,18 @@ export default function RankingScreen() {
                 }
             });
 
-            // await loadRemainingComparisons(); // Temporarily disabled
+            // Update remaining comparisons from response
+            if (compareResponse.data && compareResponse.data.remainingInSession !== undefined) {
+                setRemainingComparisons(compareResponse.data.remainingInSession);
+            }
+
+            // Check if more matchups are available
+            if (compareResponse.data && compareResponse.data.moreMatchupsAvailable === false) {
+                setPhotoA(null);
+                setPhotoB(null);
+                return;
+            }
+
             await loadNextMatchup();
         } catch (error) {
             console.error('Vote error:', error);
@@ -291,9 +306,9 @@ export default function RankingScreen() {
                 return;
             }
 
-            await axios.post(`${API_URL}/ranking/skip`, {
+            const skipResponse = await axios.post(`${API_URL}/ranking/skip`, {
                 eventId: parseInt(eventId),
-                category: 0,  // 0 = BestMoment
+                category: matchup?.category ?? 0,  // Use category from matchup or default to BestMoment
                 photoAId: photoA.id,
                 photoBId: photoB.id
             }, {
@@ -302,6 +317,18 @@ export default function RankingScreen() {
                     'Content-Type': 'application/json',
                 }
             });
+
+            // Update remaining comparisons from response
+            if (skipResponse.data && skipResponse.data.remainingInSession !== undefined) {
+                setRemainingComparisons(skipResponse.data.remainingInSession);
+            }
+
+            // Check if more matchups are available
+            if (skipResponse.data && skipResponse.data.moreMatchupsAvailable === false) {
+                setPhotoA(null);
+                setPhotoB(null);
+                return;
+            }
 
             await loadNextMatchup();
         } catch (error) {
@@ -351,14 +378,33 @@ export default function RankingScreen() {
         );
     }
 
+    // Get category name for display
+    const getCategoryName = (category) => {
+        const categories = {
+            0: 'Best Moment',
+            1: 'Funniest',
+            2: 'Most Beautiful',
+            3: 'Most Creative',
+            4: 'Most Emotional'
+        };
+        return categories[category] || 'Best Moment';
+    };
+
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
                 <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 10 }}>
                     <Text style={{ fontSize: 16, color: '#007bff' }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.h2, { marginBottom: 15 }]}>{eventName || 'Event Ranking'}</Text>
-                <Text style={[styles.h2, { fontSize: 18, marginBottom: 5 }]}>Which photo is better?</Text>
+                <Text style={[styles.h2, { marginBottom: 10 }]}>{eventName || 'Event Ranking'}</Text>
+                {matchup?.category !== undefined && (
+                    <Text style={{ fontSize: 14, color: '#FF9500', fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
+                        Category: {getCategoryName(matchup.category)}
+                    </Text>
+                )}
+                <Text style={[styles.h2, { fontSize: 18, marginBottom: 5 }]}>
+                    {matchup?.prompt || 'Which photo is better?'}
+                </Text>
                 {remainingComparisons !== null && (
                     <Text style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
                         Remaining votes: {remainingComparisons}

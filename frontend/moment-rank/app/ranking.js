@@ -157,7 +157,7 @@ export default function RankingScreen() {
 
     useEffect(() => {
         loadNextMatchup();
-        loadRemainingComparisons();
+        // loadRemainingComparisons(); // Temporarily disabled - causing 500 errors
     }, []);
 
     const loadNextMatchup = async () => {
@@ -189,11 +189,18 @@ export default function RankingScreen() {
                     const suggestedAction = response.data.suggestedAction || 'Please try again later';
                     const reason = response.data.reason || 'Unknown';
                     
-                    console.log('No matchup available:', { message, reason, suggestedAction });
-                    
-                    // Don't close the screen, just clear matchup data to show leaderboard
-                    setPhotoA(null);
-                    setPhotoB(null);
+                    // Show alert with detailed information
+                    Alert.alert(
+                        'Ranking Not Available',
+                        `${message}\n\n${suggestedAction}`,
+                        [
+                            { text: 'View Leaderboard', onPress: () => {
+                                setPhotoA(null);
+                                setPhotoB(null);
+                            }},
+                            { text: 'Go Back', onPress: () => router.back() }
+                        ]
+                    );
                     return;
                 }
                 
@@ -210,6 +217,8 @@ export default function RankingScreen() {
             }
         } catch (error) {
             console.error('Load matchup error:', error);
+            console.error('Error response:', error.response?.data);
+            console.error('Error status:', error.response?.status);
             // On any error, show leaderboard view instead of closing
             setPhotoA(null);
             setPhotoB(null);
@@ -252,8 +261,10 @@ export default function RankingScreen() {
 
             await axios.post(`${API_URL}/ranking/compare`, {
                 eventId: parseInt(eventId),
-                winnerPhotoId: winnerPhotoId,
-                loserPhotoId: loserPhotoId
+                category: 0,  // 0 = BestMoment
+                photoAId: photoA.id,
+                photoBId: photoB.id,
+                winnerPhotoId: winnerPhotoId
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -261,7 +272,7 @@ export default function RankingScreen() {
                 }
             });
 
-            await loadRemainingComparisons();
+            // await loadRemainingComparisons(); // Temporarily disabled
             await loadNextMatchup();
         } catch (error) {
             console.error('Vote error:', error);
@@ -282,6 +293,7 @@ export default function RankingScreen() {
 
             await axios.post(`${API_URL}/ranking/skip`, {
                 eventId: parseInt(eventId),
+                category: 0,  // 0 = BestMoment
                 photoAId: photoA.id,
                 photoBId: photoB.id
             }, {

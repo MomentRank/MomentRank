@@ -15,9 +15,6 @@ const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
     const router = useRouter();
     
-    // Debug logging
-    console.log(`ContentCard for ${name}: timeLeft=`, timeLeft, 'status=', status);
-    
     const source = imageSource
         ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
         : defaultImage;
@@ -202,13 +199,10 @@ export default function HomeScreen() {
 
             Alert.alert("Success", `You've joined ${eventName}!`);
 
-            console.log('Before update - eventId:', eventId, 'currentUserId:', currentUserId);
-
             setCardData(prevData => {
                 const updated = prevData.map(event => {
                     if (event.id === eventId) {
                         const newMemberIds = [...event.memberIds, currentUserId];
-                        console.log('Updated memberIds for event', event.name, ':', newMemberIds);
                         return { ...event, memberIds: newMemberIds };
                     }
                     return event;
@@ -354,8 +348,6 @@ export default function HomeScreen() {
                     // Parse UTC timestamp from backend and convert to milliseconds
                     const endTime = new Date(event.endsAt).getTime();
                     const distance = endTime - now;
-
-                    console.log(`Event ${event.name}: endsAt=${event.endsAt}, distance=${distance}ms`);
 
                     if (distance > 0) {
                         const days = Math.floor(distance / ONE_DAY_IN_MS);

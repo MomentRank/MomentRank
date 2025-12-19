@@ -2,7 +2,7 @@ import { Button, StyleSheet } from "react-native"
 
 export default StyleSheet.create({
   container: {
-    backgroundColor: "#fdfbd8ff",
+    backgroundColor: "#ffffffff",
     padding: 0,
     justifyContent: 'center',
     flex: 1,
@@ -169,7 +169,7 @@ export default StyleSheet.create({
   },
   backgroundWhiteBox: {
     flex: 1,
-    backgroundColor: '#fdfbd8ff',
+    backgroundColor: '#ffffffff',
   },
   scrollContainer: {
     flex: 1,

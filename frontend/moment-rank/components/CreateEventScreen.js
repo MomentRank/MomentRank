@@ -105,12 +105,12 @@ export default function CreateEventScreen() {
 
     return (
         // 1. Outer container (takes full screen, background color)
-        <View style={{ backgroundColor: '#FFFFFF', overflow: 'hidden', flex: 1 }}>
+        <View style={{ backgroundColor: '#ffffffff', overflow: 'hidden', flex: 1 }}>
 
             {/* 2. White rounded content container 
             Uses flex: 1 to take all space, and 'space-between' to push the button down. */}
             <View style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: '#ffffffff',
                 borderRadius: 0,
                 marginBottom: 0,
                 marginTop: '12.4%',

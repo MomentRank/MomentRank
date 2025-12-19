@@ -19,7 +19,7 @@ export default function TabsLayout() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: '#fdfbd8ff',
+          backgroundColor: '#ffffffff',
           borderTopLeftRadius: 0,
           borderTopRightRadius: 0,
           height: 100,

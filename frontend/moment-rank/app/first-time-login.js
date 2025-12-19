@@ -175,105 +175,95 @@ export default function FirstTimeLoginScreen() {
 
   return (
     <View style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, justifyContent: 'center' }}
-          showsVerticalScrollIndicator={false}
-        >
-          <AppHeader />
 
-          <View style={styles.signinContainer}>
-            <Text style={styles.h2}>First Time Log-in</Text>
+      <AppHeader />
 
-            <View style={{ alignSelf: 'center', marginBottom: 20, position: 'relative' }}>
-              <Image
-                source={
-                  profilePhoto
-                    ? { uri: profilePhoto }
-                    : require('../assets/profile-icon.png')
-                }
-                style={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: 60,
-                  borderWidth: 5,
-                  borderColor: '#FFD280',
-                }}
-              />
-              <TouchableOpacity
-                onPress={handleSelectPhoto}
-                disabled={isSubmitting}
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  backgroundColor: isSubmitting ? '#ccc' : '#FF9500',
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 3,
-                  borderColor: '#fff',
-                }}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>✎</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+      <View style={styles.signinContainer}>
+        <Text style={styles.h2}>First Time Log-in</Text>
 
-            <Text style={styles.text}>Name</Text>
-            <TextInput
-              style={[styles.input, { color: name ? "#000000" : "rgba(0,0,0,0.3)" }]}
-              placeholder="Enter your name"
-              placeholderTextColor={"rgba(0,0,0,0.3)"}
-              value={name}
-              onChangeText={setName}
-            />
+        <View style={{ alignSelf: 'center', marginBottom: 20, position: 'relative' }}>
+          <Image
+            source={
+              profilePhoto
+                ? { uri: profilePhoto }
+                : require('../assets/profile-icon.png')
+            }
+            style={{
+              width: 120,
+              height: 120,
+              borderRadius: 60,
+            }}
+          />
+          <TouchableOpacity
+            onPress={handleSelectPhoto}
+            disabled={isSubmitting}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              backgroundColor: isSubmitting ? '#ccc' : '#FF9500',
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 3,
+              borderColor: '#fff',
+            }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>✎</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-            <Text style={styles.text}>Username</Text>
-            <TextInput
-              style={[
-                styles.input,
-                { color: username ? "#000000" : "rgba(0,0,0,0.3)" },
-                passedUsername ? { backgroundColor: "#f5f5f5", color: "#666666" } : {}
-              ]}
-              placeholder="Enter your username"
-              placeholderTextColor={"rgba(0,0,0,0.3)"}
-              value={username}
-              onChangeText={passedUsername ? undefined : setUsername}
-              autoCapitalize="none"
-              editable={!passedUsername}
-            />
+        <Text style={styles.text}>Name</Text>
+        <TextInput
+          style={[styles.input, { color: name ? "#000000" : "rgba(0,0,0,0.3)" }]}
+          placeholder="Enter your name"
+          placeholderTextColor={"rgba(0,0,0,0.3)"}
+          value={name}
+          onChangeText={setName}
+        />
 
-            <Text style={styles.text}>Bio</Text>
-            <TextInput
-              style={[styles.input, styles.bioInput, { color: bio ? "#000000" : "rgba(0,0,0,0.3)" }]}
-              placeholder="Tell us about yourself"
-              placeholderTextColor={"rgba(0,0,0,0.3)"}
-              multiline
-              numberOfLines={4}
-              scrollEnabled={true}
-              textAlignVertical="top"
-              value={bio}
-              onChangeText={setBio}
-            />
+        <Text style={styles.text}>Username</Text>
+        <TextInput
+          style={[
+            styles.input,
+            { color: username ? "#000000" : "rgba(0,0,0,0.3)" },
+            passedUsername ? { backgroundColor: "#f5f5f5", color: "#666666" } : {}
+          ]}
+          placeholder="Enter your username"
+          placeholderTextColor={"rgba(0,0,0,0.3)"}
+          value={username}
+          onChangeText={passedUsername ? undefined : setUsername}
+          autoCapitalize="none"
+          editable={!passedUsername}
+        />
 
-            <TouchableOpacity onPress={handleSubmit} disabled={isSubmitting} style={styles.buttonBig}>
-              <Text style={styles.buttonBigText}>
-                {isSubmitting ? 'SIGNING UP...' : 'SIGN UP'}
-              </Text>
-            </TouchableOpacity>
+        <Text style={styles.text}>Bio</Text>
+        <TextInput
+          style={[styles.input, styles.bioInput, { color: bio ? "#000000" : "rgba(0,0,0,0.3)" }]}
+          placeholder="Tell us about yourself"
+          placeholderTextColor={"rgba(0,0,0,0.3)"}
+          multiline
+          numberOfLines={4}
+          scrollEnabled={true}
+          textAlignVertical="top"
+          value={bio}
+          onChangeText={setBio}
+        />
 
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <TouchableOpacity onPress={handleSubmit} disabled={isSubmitting} style={styles.buttonBig}>
+          <Text style={styles.buttonBigText}>
+            {isSubmitting ? 'SIGNING UP...' : 'SIGN UP'}
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+
     </View>
   );
 }

@@ -8,7 +8,9 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import styles from "../../Styles/main";
 import AppHeader from "../../components/AppHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,11 +29,33 @@ export default function FriendsScreen() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
 
   useEffect(() => {
     loadAllData();
   }, []);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadAllData(false); // Don't show full loading overlay on focus return
+    }, [])
+  );
+
+  // Automatic polling for Received and Invites tabs
+  useEffect(() => {
+    let intervalId;
+    if (activeTab === "received" || activeTab === "invites") {
+      intervalId = setInterval(() => {
+        loadAllData(false); // Background refresh
+      }, 10000); // Every 10 seconds
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [activeTab]);
 
   // Debounced search effect
   useEffect(() => {
@@ -47,8 +71,8 @@ export default function FriendsScreen() {
     }
   }, [searchQuery, activeTab]);
 
-  const loadAllData = async () => {
-    setLoading(true);
+  const loadAllData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
@@ -94,8 +118,14 @@ export default function FriendsScreen() {
       Alert.alert("Error", "Failed to load data");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadAllData(false);
+  }, []);
 
   const loadFriends = async (token) => {
     const response = await axios.get(`${API_URL}/friends`, {
@@ -642,6 +672,14 @@ export default function FriendsScreen() {
               </View>
             }
             style={{ flex: 1 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["#FF9500"]} // Android
+                tintColor="#FF9500" // iOS
+              />
+            }
           />
         )}
       </View>

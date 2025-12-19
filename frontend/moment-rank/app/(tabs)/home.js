@@ -22,6 +22,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     const isOwner = currentUserId && ownerId && Number(currentUserId) === Number(ownerId);
     const isMember = currentUserId && memberIds.some(id => Number(id) === Number(currentUserId));
     const showJoinButton = accessibility && !isMember && !isOwner && currentUserId && status === 1;
+    const showArchiveButton = isOwner && status === 3;
 
     const getStatusInfo = () => {
         switch(status) {
@@ -143,6 +144,14 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         disabled={status === 4}
                     >
                         <Text style={styles.openButtonText}>{statusInfo.button}</Text> 
+                    </TouchableOpacity>
+                )}
+                {showArchiveButton ? (
+                    <TouchableOpacity
+                        onPress={() => onArchive(eventId)}
+                        style={[styles.openButton, { backgroundColor: '#28a745' }]}
+                    >
+                        <Text style={styles.openButtonText}>Archive Event</Text>
                     </TouchableOpacity>
                 )}
             </View>

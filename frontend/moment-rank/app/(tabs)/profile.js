@@ -95,7 +95,7 @@ export default function ProfileScreen() {
 
             const userArchivedEvents = eventsData.filter(event => {
                 const endsAtDate = new Date(event.endsAt);
-                const hasEnded = !isNaN(endsAtDate.getTime()) && endsAtDate < currentDate;
+                const isArchived = event.isArchived;
                 const isOwner = event.ownerId === currentUserId;
                 const isMember = event.memberIds && Array.isArray(event.memberIds) && event.memberIds.includes(currentUserId);
 
@@ -118,7 +118,6 @@ export default function ProfileScreen() {
         } catch (error) {
             console.warn("Failed to fetch events:", error.response?.data || error.message);
             if (!append) setEvents([]);
-            Alert.alert("Error", "Failed to load events archive.");
             setHasMoreData(false); 
         } finally {
             if (!append) setLoading(false);
@@ -160,7 +159,6 @@ export default function ProfileScreen() {
             setEventPhotos(photos);
         } catch (error) {
             console.error("Failed to load event photos:", error.response?.data || error.message);
-            Alert.alert("Error", "Failed to load event photos");
             setEventPhotos([]);
         }
     };
@@ -219,8 +217,6 @@ export default function ProfileScreen() {
             if (err.response?.status === 401) {
                  Alert.alert("Session Expired", "Please log in again.");
                  router.replace("/");
-            } else {
-                 Alert.alert("Error", "Failed to load profile data.");
             }
         } finally {
             setLoading(false);
@@ -269,7 +265,6 @@ export default function ProfileScreen() {
             }
         } catch (error) {
             console.error("Error selecting photo:", error);
-            Alert.alert("Error", "Failed to select photo.");
         }
     };
 
@@ -332,10 +327,8 @@ export default function ProfileScreen() {
                     );
 
                     setProfilePhoto(filePath);
-                    Alert.alert("Success", "Profile photo updated!");
                 } catch (error) {
                     console.error("Failed to upload or update photo:", error);
-                    Alert.alert("Error", "Failed to update profile photo.");
                 } finally {
                     setIsSaving(false);
                 }
@@ -343,7 +336,6 @@ export default function ProfileScreen() {
             
             reader.onerror = () => {
                 console.error("Failed to read file");
-                Alert.alert("Error", "Failed to read image file.");
                 setIsSaving(false);
             };
             
@@ -351,7 +343,6 @@ export default function ProfileScreen() {
             
         } catch (error) {
             console.error("Failed to process photo:", error);
-            Alert.alert("Error", "Failed to process profile photo.");
             setIsSaving(false);
         }
     };
@@ -359,7 +350,6 @@ export default function ProfileScreen() {
     // Save edit changes
     const handleSaveEdit = async () => {
         if (!editValue.trim() && editType !== 'photo') {
-            Alert.alert("Error", `${editType === 'name' ? 'Name' : 'Bio'} cannot be empty.`);
             return;
         }
 

@@ -623,7 +623,7 @@ export default function FriendsScreen() {
             keyExtractor={(item, index) =>
               (item.id || item.requestId || item.userId || index).toString()
             }
-            contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 10 }}
+            contentContainerStyle={{ paddingTop: 10, paddingBottom: 120 }}
             ListEmptyComponent={
               <View style={{ padding: 20, alignItems: "center" }}>
                 <Text style={[styles.text, { color: "#999" }]}>

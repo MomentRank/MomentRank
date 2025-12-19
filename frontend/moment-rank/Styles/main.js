@@ -2,10 +2,11 @@ import { Button, StyleSheet } from "react-native"
 
 export default StyleSheet.create({
   container: {
-    backgroundColor: "#FFD280",
-    padding: 20,
+    backgroundColor: "#fdfbd8ff",
+    padding: 0,
     justifyContent: 'center',
     flex: 1,
+    paddingHorizontal: '5%',
   },
   containerTitle: {
     alignSelf: "center",
@@ -168,21 +169,7 @@ export default StyleSheet.create({
   },
   backgroundWhiteBox: {
     flex: 1,
-    position: 'absolute',
-    top: '6%',
-    left: '1.6%',
-    right: '1.6%',
-    bottom: '6%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 50,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5, // Android shadow
+    backgroundColor: '#fdfbd8ff',
   },
   scrollContainer: {
     flex: 1,
@@ -197,7 +184,6 @@ export default StyleSheet.create({
   contentCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 25,
-    marginHorizontal: 20,
     marginBottom: 20,
     padding: 0,
     overflow: "hidden",
@@ -232,14 +218,12 @@ export default StyleSheet.create({
     lineHeight: 22,
   },
   openButtonContainer: {
-    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   openButton: {
     backgroundColor: "#FF9500",
     borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 20,
     marginHorizontal: 20,
     marginBottom: 20,
     alignItems: "center",

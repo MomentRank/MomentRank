@@ -14,7 +14,7 @@ const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
     const router = useRouter();
-    
+
     const source = imageSource
         ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
         : defaultImage;
@@ -24,7 +24,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     const showJoinButton = accessibility && !isMember && !isOwner && currentUserId && status === 1;
 
     const getStatusInfo = () => {
-        switch(status) {
+        switch (status) {
             case 0: return { text: 'Scheduled', color: '#FFA500', button: 'View Details' };
             case 1: return { text: 'Active', color: '#00cc14ff', button: 'Open' };
             case 2: return { text: 'Ranking', color: '#9C27B0', button: 'Vote Now' };
@@ -36,7 +36,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     };
 
     const statusInfo = getStatusInfo();
-    
+
     // Override status based on actual time remaining
     const actualStatus = (timeLeft && timeLeft.total > 0) ? 1 : status;
     const actualStatusInfo = actualStatus !== status ? getStatusInfo.call({}, actualStatus) : statusInfo;
@@ -63,10 +63,10 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
             return `${hours}:${minutes}:${seconds}`;
         }
     };
-    
+
     const isEnded = status >= 2;
-    
-    let badgeColor = displayColor; 
+
+    let badgeColor = displayColor;
 
     return (
         <View style={styles.contentCard}>
@@ -83,7 +83,6 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                 <View style={[styles.timerBadge, {
                     backgroundColor: badgeColor,
                     borderRadius: 12,
-                    paddingHorizontal: 6,
                     opacity: 0.8,
                     marginRight: 10,
                     paddingVertical: 2,
@@ -113,7 +112,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
             <View style={styles.descriptionTextContainer}>
                 <Text style={styles.descriptionText}>{accessibility ? "Public" : "Private"}</Text>
             </View>
-            
+
             <View style={styles.openButtonContainer}>
                 {showJoinButton ? (
                     <TouchableOpacity
@@ -123,26 +122,26 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         <Text style={styles.openButtonText}>Join Event</Text>
                     </TouchableOpacity>
                 ) : status === 2 ? (
-                    <TouchableOpacity 
-                        onPress={() => onRanking(eventId, name)} 
+                    <TouchableOpacity
+                        onPress={() => onRanking(eventId, name)}
                         style={[styles.openButton, { backgroundColor: '#9C27B0' }]}
                     >
-                        <Text style={styles.openButtonText}>Vote Now</Text> 
+                        <Text style={styles.openButtonText}>Vote Now</Text>
                     </TouchableOpacity>
                 ) : status === 3 ? (
-                    <TouchableOpacity 
-                        onPress={() => router.push({ pathname: '/leaderboard', params: { eventId: eventId.toString(), eventName: name } })} 
+                    <TouchableOpacity
+                        onPress={() => router.push({ pathname: '/leaderboard', params: { eventId: eventId.toString(), eventName: name } })}
                         style={[styles.openButton, { backgroundColor: '#FF9500' }]}
                     >
-                        <Text style={styles.openButtonText}>View Results</Text> 
+                        <Text style={styles.openButtonText}>View Results</Text>
                     </TouchableOpacity>
                 ) : (
-                    <TouchableOpacity 
-                        onPress={onPress} 
+                    <TouchableOpacity
+                        onPress={onPress}
                         style={[styles.openButton, status === 4 && { backgroundColor: '#808080' }]}
                         disabled={status === 4}
                     >
-                        <Text style={styles.openButtonText}>{statusInfo.button}</Text> 
+                        <Text style={styles.openButtonText}>{statusInfo.button}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -373,7 +372,7 @@ export default function HomeScreen() {
             });
 
             setTimeLeft(updatedTimeLeft);
-            
+
             // Refresh events when an active event transitions to ended
             if (needsRefresh) {
                 getEvents(1, false);
@@ -482,7 +481,8 @@ export default function HomeScreen() {
                             {
                                 marginVertical: 10,
                                 alignSelf: "center",
-                                width: "80%",
+                                width: "100%",
+                                marginHorizontal: 0,
                                 height: 50,
                                 justifyContent: "center",
                                 borderRadius: 10,
@@ -521,7 +521,7 @@ export default function HomeScreen() {
                             </Text>
                         </View>
                     )}
-                    <View style={{ height: 50 }} />
+                    <View style={{ height: 120 }} />
                 </ScrollView>
             </View>
         </View>

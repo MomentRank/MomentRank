@@ -16,15 +16,14 @@ export default function TabsLayout() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: 'absolute',
-          bottom: '5%',
-          left: '1.6%',
-          right: '1.6%',
-          backgroundColor: '#FFFFFF',
-          borderBottomLeftRadius: 50,
-          borderBottomRightRadius: 50,
-          borderTopLeftRadius: 0, // Ensure top isn't rounded if not desired in original
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#fdfbd8ff',
+          borderTopLeftRadius: 0,
           borderTopRightRadius: 0,
-          height: 80,
+          height: 100,
+          paddingBottom: 20,
           shadowColor: '#000',
           shadowOffset: {
             width: 0,

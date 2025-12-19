@@ -1,10 +1,10 @@
 import React, { useState, useRef } from "react";
-import { 
-    View, 
-    Text, 
-    TextInput, 
-    TouchableOpacity, 
-    Image, 
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    Image,
     Alert,
     ScrollView,
     Dimensions
@@ -16,7 +16,7 @@ import BASE_URL from "../Config";
 import Style from "../Styles/main";
 import AppHeader from './AppHeader';
 import { useRouter } from "expo-router";
-import {takePhoto, pickImage, pickCoverImage, takeCoverPhoto, updateCoverPhoto} from "./CameraFunctions" 
+import { takePhoto, pickImage, pickCoverImage, takeCoverPhoto, updateCoverPhoto } from "./CameraFunctions"
 import VisibilityToggle from "./PrivacyToggle";
 import DurationPicker from "./DurationPicker";
 
@@ -35,11 +35,11 @@ export default function CreateEventScreen() {
     const [coverPhotoPath, setCoverPhotoPath] = useState(null);
     const scrollViewRef = useRef(null);
 
-const payload = {
-  name,
-  public: isPublic,
-  endsAt,
-};
+    const payload = {
+        name,
+        public: isPublic,
+        endsAt,
+    };
 
     const handleCreateEvent = async () => {
         if (!name.trim()) {
@@ -93,8 +93,6 @@ const payload = {
                     return;
                 }
             }
-
-            Alert.alert("Success", "Event created successfully!");
             router.back();
 
         } catch (error) {
@@ -105,169 +103,169 @@ const payload = {
         }
     };
 
-return (
-    // 1. Outer container (takes full screen, background color)
-    <View style={{backgroundColor:'#FFD280', overflow: 'hidden', flex: 1}}> 
-        
-        {/* 2. White rounded content container 
+    return (
+        // 1. Outer container (takes full screen, background color)
+        <View style={{ backgroundColor: '#FFFFFF', overflow: 'hidden', flex: 1 }}>
+
+            {/* 2. White rounded content container 
             Uses flex: 1 to take all space, and 'space-between' to push the button down. */}
-        <View style={{
-            backgroundColor:'#FFFFFF', 
-            borderRadius: 50, 
-            marginBottom:'10%', 
-            marginTop:'12.4%', 
-            marginHorizontal:'1.5%', 
-            flex: 1, 
-            // Important: Use Flex direction column (default) and space-between
-            justifyContent: 'space-between',
-        }}>
-            
-            {/* --- Start Header/Top Content --- */}
-            <AppHeader />
-            <Text style={[Style.h2, {textAlign: 'center', marginVertical: 10}]}>
-                Create a new Event
-            </Text>
-            {/* --- End Header/Top Content --- */}
+            <View style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 0,
+                marginBottom: 0,
+                marginTop: '12.4%',
+                marginHorizontal: 0,
+                flex: 1,
+                // Important: Use Flex direction column (default) and space-between
+                justifyContent: 'space-between',
+            }}>
 
-            {/* 3. SCROLLABLE AREA - Must take the remaining space (flex: 1) */}
-            <View style={{ flex: 1, paddingHorizontal: 20 }}> 
-                <ScrollView 
-                    contentContainerStyle={{ paddingBottom: 20 }} 
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    ref={scrollViewRef}
-                >
-                    {/* Event Name */}
-                    <Text style={{ marginTop: 20, marginBottom:10, fontWeight: "bold" }}>Event Name</Text>
-                    <TextInput
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Enter event name"
-                        style={Style.input}
-                    />
+                {/* --- Start Header/Top Content --- */}
+                <AppHeader />
+                <Text style={[Style.h2, { textAlign: 'center', marginVertical: 10 }]}>
+                    Create a new Event
+                </Text>
+                {/* --- End Header/Top Content --- */}
 
-                    {/* Public / Private Toggle */}
-                    <VisibilityToggle isPublic={isPublic} setIsPublic={setIsPublic} />
+                {/* 3. SCROLLABLE AREA - Must take the remaining space (flex: 1) */}
+                <View style={{ flex: 1, paddingHorizontal: 20 }}>
+                    <ScrollView
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        ref={scrollViewRef}
+                    >
+                        {/* Event Name */}
+                        <Text style={{ marginTop: 20, marginBottom: 10, fontWeight: "bold" }}>Event Name</Text>
+                        <TextInput
+                            value={name}
+                            onChangeText={setName}
+                            placeholder="Enter event name"
+                            style={Style.input}
+                        />
 
-                    {/* Duration */}
-                    <DurationPicker duration={duration} 
-                        setEndsAt={setEndsAt} 
-                        endsAt={endsAt} 
-                        onOpenPicker={() => {
-                            setTimeout(() => {
-                                scrollViewRef.current?.scrollToEnd({ animated: true }); 
-                            }, 100);
-                        }}
-                    />
+                        {/* Public / Private Toggle */}
+                        <VisibilityToggle isPublic={isPublic} setIsPublic={setIsPublic} />
 
-                    {/* Image Picker */}
-                    <Text style={{ marginTop: 20, fontWeight: "bold" }}>Event Image</Text>
-                    
-                    {coverPhotoPath && (
-                        <View style={{ 
-                            marginTop: 15, 
-                            alignItems: 'center',
-                        }}>
+                        {/* Duration */}
+                        <DurationPicker duration={duration}
+                            setEndsAt={setEndsAt}
+                            endsAt={endsAt}
+                            onOpenPicker={() => {
+                                setTimeout(() => {
+                                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                                }, 100);
+                            }}
+                        />
+
+                        {/* Image Picker */}
+                        <Text style={{ marginTop: 20, fontWeight: "bold" }}>Event Image</Text>
+
+                        {coverPhotoPath && (
                             <View style={{
-                                borderRadius: 12,
-                                overflow: 'hidden',
-                                borderWidth: 2,
-                                borderColor: '#FF9500',
+                                marginTop: 15,
+                                alignItems: 'center',
                             }}>
-                                <Image 
-                                    source={{ uri: `${API_URL}/${coverPhotoPath}` }}
-                                    style={{ 
-                                        width: 120, 
-                                        height: 120, 
-                                        borderRadius: 10,
-                                    }}
-                                    resizeMode="cover"
-                                />
+                                <View style={{
+                                    borderRadius: 12,
+                                    overflow: 'hidden',
+                                    borderWidth: 2,
+                                    borderColor: '#FF9500',
+                                }}>
+                                    <Image
+                                        source={{ uri: `${API_URL}/${coverPhotoPath}` }}
+                                        style={{
+                                            width: 120,
+                                            height: 120,
+                                            borderRadius: 10,
+                                        }}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setCoverPhotoPath(null)}
+                                    style={{ marginTop: 8 }}
+                                >
+                                    <Text style={{ color: '#999', fontSize: 12 }}>Remove</Text>
+                                </TouchableOpacity>
                             </View>
-                            <TouchableOpacity 
-                                onPress={() => setCoverPhotoPath(null)}
-                                style={{ marginTop: 8 }}
+                        )}
+
+                        <View
+                            style={{
+                                marginTop: 20,
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                gap: 20,
+                                zIndex: 900
+                            }}
+                            // Kept this property, but it's a potential area for bugs
+                            pointerEvents="box-none"
+                        >
+                            {/* Upload Button */}
+                            <TouchableOpacity
+                                onPress={pickCoverImage(setLoading, setCoverPhotoPath)}
+                                disabled={loading}
+                                style={{
+                                    flex: 1,
+                                    backgroundColor: loading ? '#666' : '#333',
+                                    paddingVertical: 14,
+                                    borderRadius: 24,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexDirection: 'row',
+                                }}
                             >
-                                <Text style={{ color: '#999', fontSize: 12 }}>Remove</Text>
+                                <Image
+                                    source={require('../assets/icon_upload.png')}
+                                    style={{ width: 22, height: 22, marginRight: 10, tintColor: 'white' }}
+                                />
+                                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                                    {loading ? 'Uploading...' : coverPhotoPath ? 'Uploaded' : 'Upload'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Camera Button */}
+                            <TouchableOpacity
+                                onPress={takeCoverPhoto(setLoading, setCoverPhotoPath)}
+                                disabled={loading}
+                                style={{
+                                    flex: 1,
+                                    backgroundColor: loading ? '#CC7700' : '#FF9500',
+                                    paddingVertical: 14,
+                                    borderRadius: 24,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexDirection: 'row'
+                                }}
+                            >
+                                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                                    {loading ? 'Uploading...' : coverPhotoPath ? 'Captured' : 'Camera'}
+                                </Text>
+                                <Image
+                                    source={require('../assets/icon_camera.png')}
+                                    style={{ width: 22, height: 22, marginLeft: 10, tintColor: 'white' }}
+                                />
                             </TouchableOpacity>
                         </View>
-                    )}
+                    </ScrollView>
+                </View>
 
-                    <View 
-                        style={{
-                            marginTop: 20,
-                            flexDirection: 'row',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: 20,  
-                            zIndex: 900
-                        }}
-                        // Kept this property, but it's a potential area for bugs
-                        pointerEvents="box-none" 
+                {/* 4. FIXED FOOTER/BUTTON - Positioned outside ScrollView */}
+                <View style={{ paddingHorizontal: 20, paddingBottom: 30, paddingTop: 10 }}>
+                    <TouchableOpacity
+                        onPress={handleCreateEvent}
+                        style={[Style.openButton, {
+                            height: 50,
+                            justifyContent: "center",
+                        }]}
                     >
-                        {/* Upload Button */}
-                        <TouchableOpacity
-                            onPress={pickCoverImage(setLoading, setCoverPhotoPath)}
-                            disabled={loading}
-                            style={{
-                                flex: 1,
-                                backgroundColor: loading ? '#666' : '#333',
-                                paddingVertical: 14,
-                                borderRadius: 24,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexDirection: 'row',
-                            }}
-                        >
-                            <Image 
-                                source={require('../assets/icon_upload.png')} 
-                                style={{ width: 22, height: 22, marginRight: 10, tintColor: 'white' }} 
-                            />
-                            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                                {loading ? 'Uploading...' : coverPhotoPath ? 'Uploaded' : 'Upload'}
-                            </Text>
-                        </TouchableOpacity>
+                        <Text style={[Style.buttonAuthText, { color: "#fff" }]}>Create</Text>
+                    </TouchableOpacity>
+                </View>
 
-                        {/* Camera Button */}
-                        <TouchableOpacity
-                            onPress={takeCoverPhoto(setLoading, setCoverPhotoPath)}
-                            disabled={loading}
-                            style={{
-                                flex: 1,
-                                backgroundColor: loading ? '#CC7700' : '#FF9500',
-                                paddingVertical: 14,
-                                borderRadius: 24,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexDirection: 'row'
-                            }}
-                        >
-                            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                                {loading ? 'Uploading...' : coverPhotoPath ? 'Captured' : 'Camera'}
-                            </Text>
-                            <Image 
-                                source={require('../assets/icon_camera.png')} 
-                                style={{ width: 22, height: 22, marginLeft: 10, tintColor: 'white' }} 
-                            />
-                        </TouchableOpacity>
-                    </View>
-                </ScrollView>
             </View>
-            
-            {/* 4. FIXED FOOTER/BUTTON - Positioned outside ScrollView */}
-            <View style={{ paddingHorizontal: 20, paddingBottom: 30, paddingTop: 10 }}>
-                <TouchableOpacity 
-                    onPress={handleCreateEvent} 
-                    style={[Style.openButton, { 
-                        height: 50,
-                        justifyContent: "center",
-                    }]}
-                >
-                    <Text style={[Style.buttonAuthText, {color: "#fff"}]}>Create</Text>
-                </TouchableOpacity>
-            </View>
-
         </View>
-    </View>
-);
+    );
 }

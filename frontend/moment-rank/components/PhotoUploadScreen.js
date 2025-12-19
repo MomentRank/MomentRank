@@ -360,8 +360,8 @@ export default function PhotoUploadScreen() {
   }, [selectedPhotoIndex, photos]);
 
   return (
-    <View style={{ backgroundColor: '#FFD280', overflow: 'hidden', flex: 1 }}>
-      <View style={{ backgroundColor: '#FFFFFF', borderRadius: 50, paddingBottom: 50, marginBottom: '10%', marginTop: '12.4%', marginHorizontal: '1.5%', flex: 1 }}>
+    <View style={{ backgroundColor: '#fdfbd8ff', overflow: 'hidden', flex: 1 }}>
+      <View style={{ backgroundColor: '#fdfbd8ff', borderRadius: 0, paddingBottom: 50, marginBottom: 0, marginTop: '12.4%', marginHorizontal: 0, flex: 1 }}>
 
         <AppHeader />
 

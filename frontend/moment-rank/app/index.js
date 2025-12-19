@@ -49,7 +49,7 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, justifyContent: 'center' }}
           showsVerticalScrollIndicator={false}
         >
           <AppHeader />

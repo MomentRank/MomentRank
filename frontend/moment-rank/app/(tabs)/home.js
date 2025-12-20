@@ -8,6 +8,7 @@ import AppHeader from "../../components/AppHeader";
 import BASE_URL from "../../Config";
 import { useFocusEffect } from '@react-navigation/native';
 import defaultImage from "../../assets/event_default.jpg";
+import JoinViaCodeModal from "../../components/JoinViaCodeModal";
 
 const API_URL = BASE_URL;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -159,6 +160,8 @@ export default function HomeScreen() {
     const [hasMoreData, setHasMoreData] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [joinModalVisible, setJoinModalVisible] = useState(false);
+    const [joinLoading, setJoinLoading] = useState(false);
     const scrollViewRef = useRef(null);
 
     const handleOpen = (cardId) => {
@@ -209,12 +212,43 @@ export default function HomeScreen() {
                 return updated;
             });
         } catch (error) {
-            console.error('Join event error:', error);
-            if (error.response?.status === 409) {
-                Alert.alert("Info", "You're already a member of this event");
-            } else {
-                Alert.alert("Error", "Failed to join event");
+        }
+    };
+
+    const handleJoinWithCode = async (inviteCode) => {
+        try {
+            setJoinLoading(true);
+            const token = await AsyncStorage.getItem('token');
+            if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
             }
+
+            const response = await axios.post(`${API_URL}/event/join-via-code`, {
+                inviteCode: inviteCode
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            Alert.alert("Success", `You've joined ${response.data.name || 'the event'}!`);
+            setJoinModalVisible(false);
+
+            // Refresh events
+            getEvents(1, false);
+        } catch (error) {
+            console.error('Join via code error:', error);
+            if (error.response?.status === 409) {
+                Alert.alert("Info", "You're already a member of this event or the code is invalid");
+            } else if (error.response?.status === 404) {
+                Alert.alert("Error", "Invalid invite code");
+            } else {
+                Alert.alert("Error", "Failed to join event with this code");
+            }
+        } finally {
+            setJoinLoading(false);
         }
     };
 
@@ -495,6 +529,30 @@ export default function HomeScreen() {
                         </Text>
                     </TouchableOpacity>
 
+                    <TouchableOpacity
+                        onPress={() => setJoinModalVisible(true)}
+                        style={[
+                            styles.openButton,
+                            {
+                                marginVertical: 0,
+                                alignSelf: "center",
+                                width: "100%",
+                                marginHorizontal: 0,
+                                height: 50,
+                                justifyContent: "center",
+                                borderRadius: 10,
+                                marginBottom: 30,
+                                backgroundColor: '#FFF',
+                                borderWidth: 2,
+                                borderColor: '#FF9500'
+                            },
+                        ]}
+                    >
+                        <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "600", color: '#FF9500' }]}>
+                            Join with Code
+                        </Text>
+                    </TouchableOpacity>
+
 
 
                     {renderEventSection(privateEvents, "Private Events")}
@@ -524,6 +582,13 @@ export default function HomeScreen() {
                     <View style={{ height: 120 }} />
                 </ScrollView>
             </View>
+
+            <JoinViaCodeModal
+                visible={joinModalVisible}
+                onClose={() => setJoinModalVisible(false)}
+                onJoin={handleJoinWithCode}
+                loading={joinLoading}
+            />
         </View>
     );
 }

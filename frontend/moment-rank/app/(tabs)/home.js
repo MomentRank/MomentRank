@@ -146,7 +146,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         <Text style={styles.openButtonText}>{statusInfo.button}</Text>
                     </TouchableOpacity>
                 )}
-                {showArchiveButton ? (
+                {showArchiveButton && (
                     <TouchableOpacity
                         onPress={() => onArchive(eventId)}
                         style={[styles.openButton, { backgroundColor: '#28a745' }]}

@@ -118,7 +118,6 @@ export default function ProfileScreen() {
         } catch (error) {
             console.warn("Failed to fetch events:", error.response?.data || error.message);
             if (!append) setEvents([]);
-            Alert.alert("Error", "Failed to load events archive.");
             setHasMoreData(false);
         } finally {
             if (!append) setLoading(false);

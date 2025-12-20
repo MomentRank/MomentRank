@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, FlatList, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Image, FlatList, ActivityIndicator, Alert, Dimensions, Modal, ScrollView, BackHandler } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import axios from 'axios';
 import BASE_URL from '../Config';
 import styles from '../Styles/main';
+import AppHeader from '../components/AppHeader';
 
 const API_URL = BASE_URL;
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function LeaderboardScreen() {
     const router = useRouter();
@@ -20,6 +21,11 @@ export default function LeaderboardScreen() {
     const [loading, setLoading] = useState({
         0: true, 1: false, 2: false, 3: false, 4: false
     });
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [photos, setPhotos] = useState([]);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
+    const [aspectRatios, setAspectRatios] = useState({});
+    const flatListRef = useRef(null);
 
     const [routes] = useState([
         { key: '0', title: 'Best Moment' },
@@ -29,6 +35,19 @@ export default function LeaderboardScreen() {
         { key: '4', title: 'Emotional' },
     ]);
 
+    useFocusEffect(
+        React.useCallback(() => {
+            const onBackPress = () => {
+                router.replace('/(tabs)/home');
+                return true;
+            };
+
+            const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+            return () => subscription.remove();
+        }, [])
+    );
+
     useEffect(() => {
         loadLeaderboard(index);
     }, [index]);
@@ -36,6 +55,100 @@ export default function LeaderboardScreen() {
     useEffect(() => {
         loadLeaderboard(0);
     }, []);
+
+    const loadPhotos = async () => {
+        try {
+            const token = await AsyncStorage.getItem('token');
+            if (!token) {
+                Alert.alert('Error', 'Please login first');
+                return;
+            }
+
+            const response = await axios.post(`${API_URL}/event/photos/list`, {
+                eventId: parseInt(eventId)
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.data) {
+                setPhotos(response.data);
+            }
+        } catch (error) {
+            console.error('Load photos error:', error);
+            Alert.alert('Error', 'Failed to load photos');
+        }
+    };
+
+    const handleViewPhotos = () => {
+        loadPhotos();
+        setShowPhotoModal(true);
+    };
+
+    const openPhotoViewer = (index) => {
+        setSelectedPhotoIndex(index);
+    };
+
+    const closePhotoViewer = () => {
+        setSelectedPhotoIndex(null);
+    };
+
+    const renderFullScreenItem = ({ item: photo, index: idx }) => {
+        const ratio = aspectRatios[idx];
+        const maxBoxWidth = width * 0.95;
+        const maxBoxHeight = height * 0.95;
+        const boxWidth = Math.min(maxBoxWidth, (maxBoxHeight * 3) / 4);
+        const boxHeight = (boxWidth * 4) / 3;
+
+        let imageHeight;
+        if (ratio) {
+            imageHeight = Math.min(boxHeight, boxWidth / ratio);
+        } else {
+            imageHeight = boxHeight * 0.95;
+        }
+
+        return (
+            <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ width: boxWidth, height: boxHeight, backgroundColor: 'black', borderRadius: 4, position: 'absolute' }} />
+                <Image
+                    source={{ uri: `${API_URL}/${photo.filePath}` }}
+                    style={{ width: boxWidth, height: imageHeight }}
+                    resizeMode="contain"
+                />
+            </View>
+        );
+    };
+
+    useEffect(() => {
+        if (selectedPhotoIndex !== null && flatListRef.current) {
+            setTimeout(() => {
+                try {
+                    flatListRef.current.scrollToIndex({ index: selectedPhotoIndex, animated: false });
+                } catch (e) {
+                    try {
+                        flatListRef.current.scrollToOffset({ offset: selectedPhotoIndex * width, animated: false });
+                    } catch (e2) {
+                        // ignore
+                    }
+                }
+            }, 50);
+        }
+    }, [selectedPhotoIndex]);
+
+    useEffect(() => {
+        if (selectedPhotoIndex !== null && photos[selectedPhotoIndex]) {
+            const uri = `${API_URL}/${photos[selectedPhotoIndex].filePath}`;
+            if (!aspectRatios[selectedPhotoIndex]) {
+                Image.getSize(uri, (w, h) => {
+                    setAspectRatios(prev => ({ ...prev, [selectedPhotoIndex]: w / h }));
+                }, (err) => {
+                    setAspectRatios(prev => ({ ...prev, [selectedPhotoIndex]: 1.5 }));
+                });
+            }
+        }
+    }, [selectedPhotoIndex, photos]);
 
     const loadLeaderboard = async (categoryId) => {
         if (leaderboards[categoryId].length > 0) return;
@@ -100,7 +213,7 @@ export default function LeaderboardScreen() {
                     marginRight: 12
                 }}>
                     <Text style={{
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: 'bold',
                         color: medal ? '#fff' : '#666'
                     }}>
@@ -176,10 +289,8 @@ export default function LeaderboardScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 10 }}>
-                <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 16, color: '#FF9500' }}>← Back to Event</Text>
-                </TouchableOpacity>
+            <AppHeader/>
+            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingBottom: 10 }}>
                 <Text style={[styles.h2, { marginBottom: 5 }]}>{eventName || 'Event'} Leaderboard</Text>
             </View>
 
@@ -201,6 +312,137 @@ export default function LeaderboardScreen() {
                     />
                 )}
             />
+            <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 50 }}>
+                <TouchableOpacity
+                    onPress={handleViewPhotos}
+                    style={[
+                        styles.openButton,
+                        {
+                            width: "80%",
+                            height: 50,
+                            justifyContent: "center",
+                            borderRadius: 10,
+                        }
+                    ]}
+                >
+                    <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "bold" }]}>
+                        View Photos
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Photo Viewer Modal */}
+            <Modal
+                visible={showPhotoModal}
+                animationType="slide"
+                onRequestClose={() => setShowPhotoModal(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+                    <View style={{ backgroundColor: '#FFFFFF', flex: 1, marginHorizontal: 15 }}>
+                        {/* Header */}
+                        <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
+                            <Text style={[styles.h2, { marginBottom: 5, textAlign: 'center' }]}>{eventName || 'Event'} Photos</Text>
+                        </View>
+
+                        {/* Photos Grid */}
+                        <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 10, paddingBottom: 20 }}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                                {photos.map((photo, idx) => (
+                                    <View key={`${photo.id}-${idx}`} style={{ width: '48%', marginBottom: 15 }}>
+                                        <TouchableOpacity onPress={() => openPhotoViewer(idx)}>
+                                            <Image
+                                                source={{ uri: `${API_URL}/${photo.filePath}` }}
+                                                style={{ width: '100%', height: 200, borderRadius: 8 }}
+                                                resizeMode="cover"
+                                            />
+                                        </TouchableOpacity>
+                                        <Text style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
+                                            {photo.caption || 'No caption'}
+                                        </Text>
+                                        <Text style={{ fontSize: 10, color: '#999' }}>
+                                            by {photo.uploadedByUsername}
+                                        </Text>
+                                    </View>
+                                ))}
+                                {photos.length === 0 && (
+                                    <View style={{ width: '100%', alignItems: 'center', marginTop: 50 }}>
+                                        <Text style={{ fontSize: 16, color: '#999' }}>No photos uploaded yet</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </ScrollView>
+
+                        {/* Back Button */}
+                        <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 50 }}>
+                            <TouchableOpacity 
+                                style={[
+                                    styles.openButton,
+                                    {
+                                        width: "90%",
+                                        height: 50,
+                                        justifyContent: "center",
+                                        borderRadius: 10,
+                                    }
+                                ]} 
+                                onPress={() => setShowPhotoModal(false)}
+                            >
+                                <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "bold" }]}>Back</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Full Screen Photo Viewer */}
+                        {selectedPhotoIndex !== null && (
+                            <View
+                                pointerEvents="box-none"
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    zIndex: 1000,
+                                }}
+                            >
+                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)' }} />
+                                <View style={{ flex: 1, overflow: 'hidden' }}>
+                                    <FlatList
+                                        ref={flatListRef}
+                                        data={photos}
+                                        horizontal
+                                        pagingEnabled
+                                        showsHorizontalScrollIndicator={false}
+                                        keyExtractor={(item, idx) => String(item.id ?? idx)}
+                                        getItemLayout={(data, index) => (
+                                            { length: width, offset: width * index, index }
+                                        )}
+                                        initialScrollIndex={selectedPhotoIndex}
+                                        renderItem={renderFullScreenItem}
+                                        style={{ flex: 1 }}
+                                        contentContainerStyle={{ height }}
+                                        snapToInterval={width}
+                                        decelerationRate="fast"
+                                        initialNumToRender={1}
+                                        maxToRenderPerBatch={2}
+                                        windowSize={3}
+                                        removeClippedSubviews={true}
+                                    />
+                                    <TouchableOpacity
+                                        onPress={closePhotoViewer}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 40,
+                                            right: 20,
+                                            padding: 10,
+                                        }}
+                                    >
+                                        <Text style={{ color: 'white', fontSize: 30 }}>×</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }

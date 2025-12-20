@@ -157,7 +157,7 @@ export default function RankingScreen() {
 
     useEffect(() => {
         loadNextMatchup();
-        // loadRemainingComparisons(); // Temporarily disabled - causing 500 errors
+        loadRemainingComparisons();
     }, []);
 
     const loadNextMatchup = async () => {
@@ -185,22 +185,8 @@ export default function RankingScreen() {
             if (response.data) {
                 // Check if response indicates no matchups available
                 if (response.data.message || response.data.reason) {
-                    const message = response.data.message || 'No matchups available';
-                    const suggestedAction = response.data.suggestedAction || 'Please try again later';
-                    const reason = response.data.reason || 'Unknown';
-                    
-                    // Show alert with detailed information
-                    Alert.alert(
-                        'Ranking Not Available',
-                        `${message}\n\n${suggestedAction}`,
-                        [
-                            { text: 'View Leaderboard', onPress: () => {
-                                setPhotoA(null);
-                                setPhotoB(null);
-                            }},
-                            { text: 'Go Back', onPress: () => router.back() }
-                        ]
-                    );
+                    setPhotoA(null);
+                    setPhotoB(null);
                     return;
                 }
                 
@@ -265,7 +251,7 @@ export default function RankingScreen() {
 
             const compareResponse = await axios.post(`${API_URL}/ranking/compare`, {
                 eventId: parseInt(eventId),
-                category: matchup?.category ?? 0,  // Use category from matchup or default to BestMoment
+                category: matchup?.category ?? 0,
                 photoAId: photoA.id,
                 photoBId: photoB.id,
                 winnerPhotoId: winnerPhotoId
@@ -279,6 +265,15 @@ export default function RankingScreen() {
             // Update remaining comparisons from response
             if (compareResponse.data && compareResponse.data.remainingInSession !== undefined) {
                 setRemainingComparisons(compareResponse.data.remainingInSession);
+                
+                // Navigate to leaderboard if no votes remaining
+                if (compareResponse.data.remainingInSession === 0) {
+                    router.push({
+                        pathname: '/leaderboard',
+                        params: { eventId: eventId.toString(), eventName: eventName }
+                    });
+                    return;
+                }
             }
 
             // Check if more matchups are available
@@ -321,6 +316,15 @@ export default function RankingScreen() {
             // Update remaining comparisons from response
             if (skipResponse.data && skipResponse.data.remainingInSession !== undefined) {
                 setRemainingComparisons(skipResponse.data.remainingInSession);
+                
+                // Navigate to leaderboard if no votes remaining
+                if (skipResponse.data.remainingInSession === 0) {
+                    router.push({
+                        pathname: '/leaderboard',
+                        params: { eventId: eventId.toString(), eventName: eventName }
+                    });
+                    return;
+                }
             }
 
             // Check if more matchups are available
@@ -356,26 +360,11 @@ export default function RankingScreen() {
     }
 
     if (!photoA || !photoB) {
-        return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>No More Matchups</Text>
-                <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 30 }}>
-                    You've voted on all available photo matchups!
-                </Text>
-                <TouchableOpacity 
-                    style={[styles.openButton, { width: 200 }]}
-                    onPress={handleViewLeaderboard}
-                >
-                    <Text style={styles.openButtonText}>View Leaderboard</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.openButton, { width: 200, backgroundColor: '#6c757d', marginTop: 10 }]}
-                    onPress={() => router.back()}
-                >
-                    <Text style={styles.openButtonText}>Go Back</Text>
-                </TouchableOpacity>
-            </View>
-        );
+        router.push({
+            pathname: '/leaderboard',
+            params: { eventId: eventId.toString(), eventName: eventName }
+        });
+        return null;
     }
 
     // Get category name for display
@@ -393,9 +382,6 @@ export default function RankingScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
-                <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 16, color: '#007bff' }}>← Back</Text>
-                </TouchableOpacity>
                 <Text style={[styles.h2, { marginBottom: 10 }]}>{eventName || 'Event Ranking'}</Text>
                 {matchup?.category !== undefined && (
                     <Text style={{ fontSize: 14, color: '#FF9500', fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>

@@ -56,7 +56,7 @@ export default StyleSheet.create({
   },
   buttonBig: {
     backgroundColor: "#FF9500",
-    borderRadius: 8,
+    borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 20,
     width: '100%',
@@ -181,19 +181,19 @@ export default StyleSheet.create({
     flexGrow: 1,
   },
   contentCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 25,
+    backgroundColor: "#FEFEFE",
+    borderRadius: 10,
     marginBottom: 20,
     padding: 0,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#000000",
+    borderColor: "#252525ff",
   },
   stockImage: {
     width: "100%",
     height: 200,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25
+    borderTopLeftRadius: 9,
+    borderTopRightRadius: 9
   },
   descriptionLabelContainer: {
     paddingHorizontal: 20,
@@ -217,7 +217,7 @@ export default StyleSheet.create({
     lineHeight: 22,
   },
   openButtonContainer: {
-    paddingBottom: 20,
+    paddingBottom: 5,
   },
   openButton: {
     backgroundColor: "#FF9500",

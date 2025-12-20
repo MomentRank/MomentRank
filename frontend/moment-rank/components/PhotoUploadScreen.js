@@ -400,7 +400,6 @@ export default function PhotoUploadScreen() {
 
         <AppHeader />
 
-        {/* --- HEADER ROW --- */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -411,28 +410,27 @@ export default function PhotoUploadScreen() {
           minHeight: 40
         }}>
 
-          {/* Left Button: Participants (Only if Private) */}
           {isPublic ? (
-            <View style={{ width: 40 }} />
+            <View style={{ width: 80 }} />
           ) : (
-            <TouchableOpacity
-              onPress={handleViewParticipants}
-              style={{ padding: 5, width: 40, alignItems: 'flex-start' }}
-            >
-              <Image
-                source={require('../assets/icon_friends.png')} // Replace with Participants Icon
-                style={{ width: 24, height: 24, tintColor: '#333' }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+            <View style={{ width: 80, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+              <TouchableOpacity
+                onPress={handleViewParticipants}
+                style={{ padding: 5 }}
+              >
+                <Image
+                  source={require('../assets/icon_friends.png')} // Replace with Participants Icon
+                  style={{ width: 24, height: 24, tintColor: '#333' }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
           )}
 
-          {/* Center: Event Name */}
           <Text style={[Style.h2, { textAlign: 'center', flex: 1, marginHorizontal: 5 }]} numberOfLines={1}>
             {eventName}
           </Text>
 
-          {/* Right Button(s): Invite Friend & QR (Only if Private) */}
           {isPublic ? (
             <View style={{ width: 80 }} />
           ) : (
@@ -460,11 +458,9 @@ export default function PhotoUploadScreen() {
             </View>
           )}
         </View>
-        {/* --- HEADER ROW END --- */}
 
 
         <ScrollView scrollEnabled={selectedPhotoIndex === null} contentContainerStyle={{ padding: 0, paddingBottom: 100 }}>
-          {/* Photos Grid */}
           <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 120, marginHorizontal: "3%" }}>
             {photos.map((photo, index) => (
               <View key={photo.id} style={{ width: '48%', marginBottom: 15 }}>
@@ -511,20 +507,6 @@ export default function PhotoUploadScreen() {
               No photos uploaded yet
             </Text>
           )}
-
-          <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 20 }}>
-            <TouchableOpacity
-              onPress={handleDeleteEvent}
-              style={{
-                backgroundColor: '#FF3B30',
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 20,
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>Delete Event</Text>
-            </TouchableOpacity>
-          </View>
 
         </ScrollView>
       </View>

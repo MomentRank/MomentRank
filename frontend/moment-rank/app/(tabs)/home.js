@@ -9,11 +9,12 @@ import BASE_URL from "../../Config";
 import { useFocusEffect } from '@react-navigation/native';
 import defaultImage from "../../assets/event_default.jpg";
 import JoinViaCodeModal from "../../components/JoinViaCodeModal";
+import EventSettingsModal from "../../components/EventSettingsModal";
 
 const API_URL = BASE_URL;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
+const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking, onSettings, eventData }) => {
     const router = useRouter();
 
     const source = imageSource
@@ -82,9 +83,24 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                 <View style={[styles.descriptionLabelContainer, { flex: 1, marginRight: 10 }]}>
                     <Text style={styles.descriptionLabel} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
                 </View>
+                {isOwner && (
+                    <TouchableOpacity
+                        onPress={() => onSettings && onSettings(eventData)}
+                        style={{
+                            padding: 6,
+                            marginRight: 5,
+                        }}
+                    >
+                        <Image
+                            source={require('../../assets/icon_settings.png')}
+                            style={{ width: 22, height: 22, opacity: 0.9 }}
+                            resizeMode="contain"
+                        />
+                    </TouchableOpacity>
+                )}
                 <View style={[styles.timerBadge, {
                     backgroundColor: badgeColor,
-                    borderRadius: 12,
+                    borderRadius: 10,
                     opacity: 0.8,
                     marginRight: 10,
                     paddingVertical: 2,
@@ -171,6 +187,8 @@ export default function HomeScreen() {
     const [currentUserId, setCurrentUserId] = useState(null);
     const [joinModalVisible, setJoinModalVisible] = useState(false);
     const [joinLoading, setJoinLoading] = useState(false);
+    const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
     const scrollViewRef = useRef(null);
 
     const handleOpen = (cardId) => {
@@ -178,6 +196,11 @@ export default function HomeScreen() {
             pathname: "/photo-upload",
             params: { eventId: cardId.toString() },
         });
+    };
+
+    const handleSettings = (eventData) => {
+        setSelectedEvent(eventData);
+        setSettingsModalVisible(true);
     };
 
     const handleCreate = () => {
@@ -481,6 +504,8 @@ export default function HomeScreen() {
                         onPress={() => handleOpen(card.id)}
                         onJoin={handleJoin}
                         onRanking={handleRanking}
+                        onSettings={handleSettings}
+                        eventData={card}
                     />
                 ))
             ) : (
@@ -506,7 +531,6 @@ export default function HomeScreen() {
                     scrollEventThrottle={16}
                 >
 
-                    {/* CREATE EVENT SECTION */}
                     <View style={styles.lineContainer}>
                         <View style={styles.line} />
                         <Text style={styles.lineText}>Create Your Event</Text>
@@ -593,6 +617,16 @@ export default function HomeScreen() {
                 onClose={() => setJoinModalVisible(false)}
                 onJoin={handleJoinWithCode}
                 loading={joinLoading}
+            />
+
+            <EventSettingsModal
+                visible={settingsModalVisible}
+                onClose={() => setSettingsModalVisible(false)}
+                event={selectedEvent}
+                onUpdate={() => {
+                    setSettingsModalVisible(false);
+                    getEvents(1, false);
+                }}
             />
         </View>
     );

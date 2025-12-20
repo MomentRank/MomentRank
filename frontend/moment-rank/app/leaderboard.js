@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, FlatList, ActivityIndicator, Alert, Dimensions, Modal, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, FlatList, ActivityIndicator, Alert, Dimensions, Modal, ScrollView, BackHandler } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import axios from 'axios';
 import BASE_URL from '../Config';
 import styles from '../Styles/main';
+import AppHeader from '../components/AppHeader';
 
 const API_URL = BASE_URL;
 const { width, height } = Dimensions.get('window');
@@ -33,6 +34,19 @@ export default function LeaderboardScreen() {
         { key: '3', title: 'Creative' },
         { key: '4', title: 'Emotional' },
     ]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const onBackPress = () => {
+                router.replace('/(tabs)/home');
+                return true;
+            };
+
+            const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+            return () => subscription.remove();
+        }, [])
+    );
 
     useEffect(() => {
         loadLeaderboard(index);
@@ -199,7 +213,7 @@ export default function LeaderboardScreen() {
                     marginRight: 12
                 }}>
                     <Text style={{
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: 'bold',
                         color: medal ? '#fff' : '#666'
                     }}>
@@ -275,7 +289,8 @@ export default function LeaderboardScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 10 }}>
+            <AppHeader/>
+            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingBottom: 10 }}>
                 <Text style={[styles.h2, { marginBottom: 5 }]}>{eventName || 'Event'} Leaderboard</Text>
             </View>
 
@@ -300,14 +315,19 @@ export default function LeaderboardScreen() {
             <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 50 }}>
                 <TouchableOpacity
                     onPress={handleViewPhotos}
-                    style={{
-                        backgroundColor: '#FF9500',
-                        paddingHorizontal: 20,
-                        paddingVertical: 10,
-                        borderRadius: 20,
-                    }}
+                    style={[
+                        styles.openButton,
+                        {
+                            width: "80%",
+                            height: 50,
+                            justifyContent: "center",
+                            borderRadius: 10,
+                        }
+                    ]}
                 >
-                    <Text style={{ color: 'white', fontWeight: 'bold' }}>View Photos</Text>
+                    <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "bold" }]}>
+                        View Photos
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -317,18 +337,15 @@ export default function LeaderboardScreen() {
                 animationType="slide"
                 onRequestClose={() => setShowPhotoModal(false)}
             >
-                <View style={{ flex: 1, backgroundColor: '#FFD280' }}>
-                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 50, paddingBottom: 50, marginBottom: '10%', marginTop: '12.4%', marginHorizontal: '1.5%', flex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+                    <View style={{ backgroundColor: '#FFFFFF', flex: 1, marginHorizontal: 15 }}>
                         {/* Header */}
                         <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}>
-                            <TouchableOpacity onPress={() => setShowPhotoModal(false)} style={{ marginBottom: 10 }}>
-                                <Text style={{ fontSize: 16, color: '#FF9500' }}>← Back to Leaderboard</Text>
-                            </TouchableOpacity>
                             <Text style={[styles.h2, { marginBottom: 5, textAlign: 'center' }]}>{eventName || 'Event'} Photos</Text>
                         </View>
 
                         {/* Photos Grid */}
-                        <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 10, paddingBottom: 100 }}>
+                        <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 10, paddingBottom: 20 }}>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                                 {photos.map((photo, idx) => (
                                     <View key={`${photo.id}-${idx}`} style={{ width: '48%', marginBottom: 15 }}>
@@ -354,6 +371,24 @@ export default function LeaderboardScreen() {
                                 )}
                             </View>
                         </ScrollView>
+
+                        {/* Back Button */}
+                        <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 50 }}>
+                            <TouchableOpacity 
+                                style={[
+                                    styles.openButton,
+                                    {
+                                        width: "90%",
+                                        height: 50,
+                                        justifyContent: "center",
+                                        borderRadius: 10,
+                                    }
+                                ]} 
+                                onPress={() => setShowPhotoModal(false)}
+                            >
+                                <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "bold" }]}>Back</Text>
+                            </TouchableOpacity>
+                        </View>
 
                         {/* Full Screen Photo Viewer */}
                         {selectedPhotoIndex !== null && (

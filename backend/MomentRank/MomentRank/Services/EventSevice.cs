@@ -176,8 +176,10 @@ namespace MomentRank.Services
                 //    query = query.Where(e => e.Status == filterByStatus.Value);
                 //}
 
-                // Sort by private first, then public events
-                query = query.OrderBy(e => e.Public);
+                // Sort by ownership then accesibility and time of creation
+                query = query.OrderByDescending(e => e.OwnerId == user.Id)
+                             .ThenBy(e => e.Public)
+                             .ThenByDescending(e => e.CreatedAt);
 
                 var totalCount = await query.CountAsync();
 

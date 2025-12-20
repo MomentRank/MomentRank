@@ -8,13 +8,14 @@ import AppHeader from "../../components/AppHeader";
 import BASE_URL from "../../Config";
 import { useFocusEffect } from '@react-navigation/native';
 import defaultImage from "../../assets/event_default.jpg";
+import JoinViaCodeModal from "../../components/JoinViaCodeModal";
 
 const API_URL = BASE_URL;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeLeft, memberIds = [], ownerId, currentUserId, onJoin, status = 1, onRanking }) => {
     const router = useRouter();
-    
+
     const source = imageSource
         ? (typeof imageSource === "string" ? { uri: imageSource } : defaultImage)
         : defaultImage;
@@ -24,7 +25,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     const showJoinButton = accessibility && !isMember && !isOwner && currentUserId && status === 1;
 
     const getStatusInfo = () => {
-        switch(status) {
+        switch (status) {
             case 0: return { text: 'Scheduled', color: '#FFA500', button: 'View Details' };
             case 1: return { text: 'Active', color: '#00cc14ff', button: 'Open' };
             case 2: return { text: 'Ranking', color: '#9C27B0', button: 'Vote Now' };
@@ -36,7 +37,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
     };
 
     const statusInfo = getStatusInfo();
-    
+
     // Override status based on actual time remaining
     const actualStatus = (timeLeft && timeLeft.total > 0) ? 1 : status;
     const actualStatusInfo = actualStatus !== status ? getStatusInfo.call({}, actualStatus) : statusInfo;
@@ -63,10 +64,10 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
             return `${hours}:${minutes}:${seconds}`;
         }
     };
-    
+
     const isEnded = status >= 2;
-    
-    let badgeColor = displayColor; 
+
+    let badgeColor = displayColor;
 
     return (
         <View style={styles.contentCard}>
@@ -83,7 +84,6 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                 <View style={[styles.timerBadge, {
                     backgroundColor: badgeColor,
                     borderRadius: 12,
-                    paddingHorizontal: 6,
                     opacity: 0.8,
                     marginRight: 10,
                     paddingVertical: 2,
@@ -113,7 +113,7 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
             <View style={styles.descriptionTextContainer}>
                 <Text style={styles.descriptionText}>{accessibility ? "Public" : "Private"}</Text>
             </View>
-            
+
             <View style={styles.openButtonContainer}>
                 {showJoinButton ? (
                     <TouchableOpacity
@@ -123,26 +123,26 @@ const ContentCard = ({ imageSource, name, accessibility, onPress, eventId, timeL
                         <Text style={styles.openButtonText}>Join Event</Text>
                     </TouchableOpacity>
                 ) : status === 2 ? (
-                    <TouchableOpacity 
-                        onPress={() => onRanking(eventId, name)} 
+                    <TouchableOpacity
+                        onPress={() => onRanking(eventId, name)}
                         style={[styles.openButton, { backgroundColor: '#9C27B0' }]}
                     >
-                        <Text style={styles.openButtonText}>Vote Now</Text> 
+                        <Text style={styles.openButtonText}>Vote Now</Text>
                     </TouchableOpacity>
                 ) : status === 3 ? (
-                    <TouchableOpacity 
-                        onPress={() => router.push({ pathname: '/leaderboard', params: { eventId: eventId.toString(), eventName: name } })} 
+                    <TouchableOpacity
+                        onPress={() => router.push({ pathname: '/leaderboard', params: { eventId: eventId.toString(), eventName: name } })}
                         style={[styles.openButton, { backgroundColor: '#FF9500' }]}
                     >
-                        <Text style={styles.openButtonText}>View Results</Text> 
+                        <Text style={styles.openButtonText}>View Results</Text>
                     </TouchableOpacity>
                 ) : (
-                    <TouchableOpacity 
-                        onPress={onPress} 
+                    <TouchableOpacity
+                        onPress={onPress}
                         style={[styles.openButton, status === 4 && { backgroundColor: '#808080' }]}
                         disabled={status === 4}
                     >
-                        <Text style={styles.openButtonText}>{statusInfo.button}</Text> 
+                        <Text style={styles.openButtonText}>{statusInfo.button}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -160,6 +160,8 @@ export default function HomeScreen() {
     const [hasMoreData, setHasMoreData] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [joinModalVisible, setJoinModalVisible] = useState(false);
+    const [joinLoading, setJoinLoading] = useState(false);
     const scrollViewRef = useRef(null);
 
     const handleOpen = (cardId) => {
@@ -197,8 +199,6 @@ export default function HomeScreen() {
                 }
             });
 
-            Alert.alert("Success", `You've joined ${eventName}!`);
-
             setCardData(prevData => {
                 const updated = prevData.map(event => {
                     if (event.id === eventId) {
@@ -210,12 +210,41 @@ export default function HomeScreen() {
                 return updated;
             });
         } catch (error) {
-            console.error('Join event error:', error);
-            if (error.response?.status === 409) {
-                Alert.alert("Info", "You're already a member of this event");
-            } else {
-                Alert.alert("Error", "Failed to join event");
+        }
+    };
+
+    const handleJoinWithCode = async (inviteCode) => {
+        try {
+            setJoinLoading(true);
+            const token = await AsyncStorage.getItem('token');
+            if (!token) {
+                Alert.alert("Error", "Please login first");
+                return;
             }
+
+            const response = await axios.post(`${API_URL}/event/join-via-code`, {
+                inviteCode: inviteCode
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+            setJoinModalVisible(false);
+
+            // Refresh events
+            getEvents(1, false);
+        } catch (error) {
+            console.error('Join via code error:', error);
+            if (error.response?.status === 409) {
+                Alert.alert("Info", "You're already a member of this event or the code is invalid");
+            } else if (error.response?.status === 404) {
+                Alert.alert("Error", "Invalid invite code");
+            } else {
+                Alert.alert("Error", "Failed to join event with this code");
+            }
+        } finally {
+            setJoinLoading(false);
         }
     };
 
@@ -373,7 +402,7 @@ export default function HomeScreen() {
             });
 
             setTimeLeft(updatedTimeLeft);
-            
+
             // Refresh events when an active event transitions to ended
             if (needsRefresh) {
                 getEvents(1, false);
@@ -482,7 +511,8 @@ export default function HomeScreen() {
                             {
                                 marginVertical: 10,
                                 alignSelf: "center",
-                                width: "80%",
+                                width: "100%",
+                                marginHorizontal: 0,
                                 height: 50,
                                 justifyContent: "center",
                                 borderRadius: 10,
@@ -492,6 +522,30 @@ export default function HomeScreen() {
                     >
                         <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "600" }]}>
                             Create New Event
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setJoinModalVisible(true)}
+                        style={[
+                            styles.openButton,
+                            {
+                                marginVertical: 0,
+                                alignSelf: "center",
+                                width: "100%",
+                                marginHorizontal: 0,
+                                height: 50,
+                                justifyContent: "center",
+                                borderRadius: 10,
+                                marginBottom: 30,
+                                backgroundColor: '#FFF',
+                                borderWidth: 2,
+                                borderColor: '#FF9500'
+                            },
+                        ]}
+                    >
+                        <Text style={[styles.openButtonText, { fontSize: 18, fontWeight: "600", color: '#FF9500' }]}>
+                            Join with Code
                         </Text>
                     </TouchableOpacity>
 
@@ -521,9 +575,16 @@ export default function HomeScreen() {
                             </Text>
                         </View>
                     )}
-                    <View style={{ height: 50 }} />
+                    <View style={{ height: 120 }} />
                 </ScrollView>
             </View>
+
+            <JoinViaCodeModal
+                visible={joinModalVisible}
+                onClose={() => setJoinModalVisible(false)}
+                onJoin={handleJoinWithCode}
+                loading={joinLoading}
+            />
         </View>
     );
 }

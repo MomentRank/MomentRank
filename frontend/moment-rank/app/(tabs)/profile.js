@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-    View, 
-    Text, 
-    TouchableOpacity, 
-    Image, 
-    Alert, 
-    ScrollView, 
-    Modal, 
-    FlatList, 
-    Dimensions, 
-    ActivityIndicator, 
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    Image,
+    Alert,
+    ScrollView,
+    Modal,
+    FlatList,
+    Dimensions,
+    ActivityIndicator,
     RefreshControl,
     TextInput
 } from "react-native";
@@ -25,7 +25,7 @@ import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
 const API_URL = BASE_URL;
 
 export default function ProfileScreen() {
-    const router = useRouter(); 
+    const router = useRouter();
 
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
@@ -33,22 +33,22 @@ export default function ProfileScreen() {
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [userId, setUserId] = useState(null);
     const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true); 
+    const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [eventPhotos, setEventPhotos] = useState([]);
-    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0); 
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    
+
     // Edit modal states
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [editType, setEditType] = useState(null); // 'username', 'bio', or 'photo'
     const [editValue, setEditValue] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const flatListRef = useRef(null);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
     };
 
     const fetchEvents = async (token, currentUserId, page = 1, append = false) => {
-        if (loadingMore && append) return; 
+        if (loadingMore && append) return;
 
         if (!append) setLoading(true);
         else setLoadingMore(true);
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
                 if (!append) setLoading(false);
                 setLoadingMore(false);
                 router.replace("/");
-                return; 
+                return;
             }
 
             const response = await axios.post(`${API_URL}/event/list`, {
@@ -88,8 +88,8 @@ export default function ProfileScreen() {
 
             const rawItems = response.data;
             const eventsData = (rawItems && Array.isArray(rawItems.items))
-                               ? rawItems.items
-                               : (Array.isArray(rawItems) ? rawItems : []);
+                ? rawItems.items
+                : (Array.isArray(rawItems) ? rawItems : []);
 
             const currentDate = new Date();
 
@@ -112,14 +112,14 @@ export default function ProfileScreen() {
                 setEvents(userArchivedEvents);
             }
 
-            const newHasMoreData = eventsData.length === 4; 
+            const newHasMoreData = eventsData.length === 4;
             setHasMoreData(newHasMoreData);
 
         } catch (error) {
             console.warn("Failed to fetch events:", error.response?.data || error.message);
             if (!append) setEvents([]);
             Alert.alert("Error", "Failed to load events archive.");
-            setHasMoreData(false); 
+            setHasMoreData(false);
         } finally {
             if (!append) setLoading(false);
             setLoadingMore(false);
@@ -130,7 +130,7 @@ export default function ProfileScreen() {
     const loadMoreEvents = () => {
         if (!loadingMore && hasMoreData && userId) {
             setLoadingMore(true);
-            
+
             setCurrentPage(prevPage => {
                 const nextPage = prevPage + 1;
                 fetchEvents(null, userId, nextPage, true);
@@ -141,8 +141,8 @@ export default function ProfileScreen() {
 
     const openEventAlbum = async (event) => {
         setSelectedEvent(event);
-        setEventPhotos([]); 
-        setSelectedPhotoIndex(0); 
+        setEventPhotos([]);
+        setSelectedPhotoIndex(0);
         setModalVisible(true);
 
         try {
@@ -155,7 +155,7 @@ export default function ProfileScreen() {
                     'Content-Type': 'application/json',
                 },
             });
-            
+
             let photos = Array.isArray(response.data) ? response.data : (response.data?.photos || []);
             setEventPhotos(photos);
         } catch (error) {
@@ -217,10 +217,10 @@ export default function ProfileScreen() {
         } catch (err) {
             console.warn("Failed to fetch profile or initial events:", err.message);
             if (err.response?.status === 401) {
-                 Alert.alert("Session Expired", "Please log in again.");
-                 router.replace("/");
+                Alert.alert("Session Expired", "Please log in again.");
+                router.replace("/");
             } else {
-                 Alert.alert("Error", "Failed to load profile data.");
+                Alert.alert("Error", "Failed to load profile data.");
             }
         } finally {
             setLoading(false);
@@ -250,7 +250,7 @@ export default function ProfileScreen() {
         try {
             // Request permission
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            
+
             if (permissionResult.granted === false) {
                 Alert.alert("Permission Required", "Please allow access to your photo library.");
                 return;
@@ -278,22 +278,22 @@ export default function ProfileScreen() {
         setIsSaving(true);
         try {
             const token = await AsyncStorage.getItem("token");
-            
+
             // Read the file as base64
             const filename = uri.split('/').pop();
             const match = /\.(\w+)$/.exec(filename);
             const extension = match ? match[1] : 'jpg';
             const contentType = `image/${extension}`;
-            
+
             // Fetch the file and convert to base64
             const response = await fetch(uri);
             const blob = await response.blob();
             const reader = new FileReader();
-            
+
             reader.onloadend = async () => {
                 try {
                     const base64data = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
-                    
+
                     // Step 1: Upload photo to get FilePath
                     const uploadResponse = await axios.post(
                         `${API_URL}/photo/upload`,
@@ -340,15 +340,15 @@ export default function ProfileScreen() {
                     setIsSaving(false);
                 }
             };
-            
+
             reader.onerror = () => {
                 console.error("Failed to read file");
                 Alert.alert("Error", "Failed to read image file.");
                 setIsSaving(false);
             };
-            
+
             reader.readAsDataURL(blob);
-            
+
         } catch (error) {
             console.error("Failed to process photo:", error);
             Alert.alert("Error", "Failed to process profile photo.");
@@ -367,7 +367,7 @@ export default function ProfileScreen() {
         try {
             const token = await AsyncStorage.getItem("token");
             const updateData = {};
-            
+
             if (editType === 'name') {
                 updateData.name = editValue.trim();
             } else if (editType === 'bio') {
@@ -405,7 +405,7 @@ export default function ProfileScreen() {
     useFocusEffect(
         React.useCallback(() => {
             fetchProfileAndEvents();
-            return () => {};
+            return () => { };
         }, [])
     );
 
@@ -416,27 +416,27 @@ export default function ProfileScreen() {
     };
 
     if (loading) {
-         return (
-             <View style={styles.container}>
-                 <View style={styles.backgroundWhiteBox}>
-                     <AppHeader />
-                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginBottom: '20%'}}>
-                         <ActivityIndicator size="large" color="#007bff" />
-                         <Text style={[styles.text, { marginTop: 10, color: '#666' }]}>
-                             Loading profile...
-                         </Text>
-                     </View>
-                 </View>
-             </View>
-         );
+        return (
+            <View style={styles.container}>
+                <View style={styles.backgroundWhiteBox}>
+                    <AppHeader />
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginBottom: '20%' }}>
+                        <ActivityIndicator size="large" color="#007bff" />
+                        <Text style={[styles.text, { marginTop: 10, color: '#666' }]}>
+                            Loading profile...
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        );
     }
 
     return (
         <View style={styles.container}>
             <View style={styles.backgroundWhiteBox}>
                 <AppHeader />
-                <ScrollView 
-                    style={{ flex: 1, marginBottom: '20%'}} 
+                <ScrollView
+                    style={{ flex: 1, marginBottom: '20%' }}
                     contentContainerStyle={{ paddingBottom: 150 }}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -447,7 +447,7 @@ export default function ProfileScreen() {
                         <View style={{ alignSelf: 'center', marginTop: 20, position: 'relative' }}>
                             <Image
                                 source={
-                                    profilePhoto 
+                                    profilePhoto
                                         ? { uri: `${API_URL}/${profilePhoto}` }
                                         : require("../../assets/profile-icon.png")
                                 }
@@ -518,7 +518,7 @@ export default function ProfileScreen() {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                        
+
                         <TouchableOpacity
                             onPress={handleLogout}
                             style={[
@@ -526,7 +526,7 @@ export default function ProfileScreen() {
                                 {
                                     marginVertical: 10,
                                     alignSelf: "center",
-                                    width: "80%",
+                                    width: "100%",
                                     height: 50,
                                     justifyContent: "center",
                                     borderRadius: 10,
@@ -540,7 +540,7 @@ export default function ProfileScreen() {
 
                         <View style={styles.lineContainer}>
                             <View style={styles.line} />
-                                <Text style={styles.lineText}>My Events ({events.length})</Text>
+                            <Text style={styles.lineText}>My Events ({events.length})</Text>
                             <View style={styles.line} />
                         </View>
                     </View>
@@ -549,7 +549,6 @@ export default function ProfileScreen() {
                             data={events}
                             keyExtractor={(item) => item.id.toString()}
                             numColumns={2}
-                            contentContainerStyle={{ paddingHorizontal: 10 }}
                             scrollEnabled={false}
                             onEndReached={loadMoreEvents}
                             onEndReachedThreshold={0.5}
@@ -571,8 +570,8 @@ export default function ProfileScreen() {
                                 >
                                     <Image
                                         source={
-                                            item.coverPhoto 
-                                                ? { uri: `${API_URL}/${item.coverPhoto}` } 
+                                            item.coverPhoto
+                                                ? { uri: `${API_URL}/${item.coverPhoto}` }
                                                 : (item.imageSource ? { uri: item.imageSource } : require("../../assets/event_default.jpg"))
                                         }
                                         style={{
@@ -605,7 +604,7 @@ export default function ProfileScreen() {
                             No events found.
                         </Text>
                     )}
-                    
+
                     {!hasMoreData && events.length > 0 && !loadingMore && (
                         <View style={{ alignItems: 'center', marginVertical: 20 }}>
                             <Text style={[styles.text, { color: '#666' }]}>
@@ -625,17 +624,17 @@ export default function ProfileScreen() {
                     onRequestClose={closeEditModal}
                 >
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                        <View style={{ 
-                            backgroundColor: '#fff', 
-                            borderRadius: 12, 
-                            padding: 20, 
+                        <View style={{
+                            backgroundColor: '#fff',
+                            borderRadius: 12,
+                            padding: 20,
                             width: '85%',
                             maxWidth: 400,
                         }}>
                             <Text style={[styles.h2, { marginBottom: 15 }]}>
                                 Edit {editType === 'name' ? 'Name' : 'Bio'}
                             </Text>
-                            
+
                             <TextInput
                                 style={{
                                     borderWidth: 1,
@@ -697,7 +696,7 @@ export default function ProfileScreen() {
                 <Modal
                     visible={modalVisible}
                     animationType="slide"
-                    onRequestClose={closePhotoViewer} 
+                    onRequestClose={closePhotoViewer}
                 >
                     <View style={{ flex: 1, backgroundColor: '#000' }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, paddingTop: 50 }}>
@@ -708,7 +707,7 @@ export default function ProfileScreen() {
                                 {eventPhotos.length > 0 ? `${selectedPhotoIndex + 1} / ${eventPhotos.length}` : '0 / 0'}
                             </Text>
                             <TouchableOpacity
-                                onPress={closePhotoViewer} 
+                                onPress={closePhotoViewer}
                                 style={{ padding: 10 }}
                             >
                                 <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>✕</Text>
@@ -722,7 +721,7 @@ export default function ProfileScreen() {
                                 horizontal
                                 pagingEnabled
                                 showsHorizontalScrollIndicator={false}
-                                keyExtractor={(item, idx) => String(item.id || item.url || idx)} 
+                                keyExtractor={(item, idx) => String(item.id || item.url || idx)}
                                 getItemLayout={(data, index) => (
                                     { length: windowWidth, offset: windowWidth * index, index }
                                 )}
@@ -730,12 +729,12 @@ export default function ProfileScreen() {
                                     <View style={{ width: windowWidth, justifyContent: 'center', alignItems: 'center' }}>
                                         <Image
                                             source={{ uri: item.url || item.imageUrl || (item.filePath ? `${API_URL}/${item.filePath}` : '') }}
-                                            style={{ width: windowWidth * 0.95, height: windowHeight * 0.75 }} 
+                                            style={{ width: windowWidth * 0.95, height: windowHeight * 0.75 }}
                                             resizeMode="contain"
                                         />
                                     </View>
                                 )}
-                                onMomentumScrollEnd={onMomentumScrollEnd} 
+                                onMomentumScrollEnd={onMomentumScrollEnd}
                                 style={{ flex: 1 }}
                                 snapToInterval={windowWidth}
                                 decelerationRate="fast"

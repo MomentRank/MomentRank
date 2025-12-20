@@ -9,6 +9,7 @@ import AppHeader from './AppHeader';
 import { takePhoto, pickImage } from "./CameraFunctions"
 import InviteFriendsModal from './InviteFriendsModal';
 import ParticipantsModal from './ParticipantsModal';
+import QrInviteModal from './QrInviteModal';
 
 const API_URL = BASE_URL;
 
@@ -21,6 +22,9 @@ export default function PhotoUploadScreen() {
   const [isPublic, setIsPublic] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrData, setQrData] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
   const [eventOwner, setEventOwner] = useState(null);
   const [eventMembers, setEventMembers] = useState([]);
 
@@ -282,6 +286,37 @@ export default function PhotoUploadScreen() {
     setShowInviteModal(true);
   };
 
+  const handleGenerateQrInvite = async () => {
+    try {
+      setQrLoading(true);
+      setShowQrModal(true);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      const response = await axios.post(`${API_URL}/event/invite/generate-link`, {
+        eventId: parseInt(currentEventId)
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data) {
+        setQrData({
+          qrCodeUrl: `${API_URL}/${response.data.qrCodePath}`,
+          inviteCode: response.data.inviteCode,
+          eventName: response.data.eventName
+        });
+      }
+    } catch (error) {
+      console.error('Error generating QR invite:', error);
+      Alert.alert("Error", "Failed to generate QR invitation");
+      setShowQrModal(false);
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
   // Memoized renderItem for FlatList (must be declared unconditionally)
   const renderFullScreenItem = React.useCallback(({ item: photo, index }) => {
     const ratio = aspectRatios[index];
@@ -360,8 +395,8 @@ export default function PhotoUploadScreen() {
   }, [selectedPhotoIndex, photos]);
 
   return (
-    <View style={{ backgroundColor: '#FFD280', overflow: 'hidden', flex: 1 }}>
-      <View style={{ backgroundColor: '#FFFFFF', borderRadius: 50, paddingBottom: 50, marginBottom: '10%', marginTop: '12.4%', marginHorizontal: '1.5%', flex: 1 }}>
+    <View style={{ backgroundColor: '#ffffffff', overflow: 'hidden', flex: 1 }}>
+      <View style={{ backgroundColor: '#ffffffff', borderRadius: 0, paddingBottom: 50, marginBottom: 0, marginTop: '12.4%', marginHorizontal: 0, flex: 1 }}>
 
         <AppHeader />
 
@@ -397,20 +432,32 @@ export default function PhotoUploadScreen() {
             {eventName}
           </Text>
 
-          {/* Right Button: Invite Friend (Only if Private) */}
+          {/* Right Button(s): Invite Friend & QR (Only if Private) */}
           {isPublic ? (
-            <View style={{ width: 40 }} />
+            <View style={{ width: 80 }} />
           ) : (
-            <TouchableOpacity
-              onPress={handleInviteFriend}
-              style={{ padding: 5, width: 40, alignItems: 'flex-end' }}
-            >
-              <Image
-                source={require('../assets/icon_add.png')} // Replace with Invite Icon
-                style={{ width: 24, height: 24, tintColor: '#333' }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', width: 80, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={handleGenerateQrInvite}
+                style={{ padding: 5, marginRight: 5 }}
+              >
+                <Image
+                  source={require('../assets/icon_qr.png')}
+                  style={{ width: 24, height: 24, tintColor: '#333' }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleInviteFriend}
+                style={{ padding: 5 }}
+              >
+                <Image
+                  source={require('../assets/icon_add.png')}
+                  style={{ width: 24, height: 24, tintColor: '#333' }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
           )}
         </View>
         {/* --- HEADER ROW END --- */}
@@ -596,6 +643,13 @@ export default function PhotoUploadScreen() {
           members={eventMembers}
         />
       )}
+      {/* QR Invite Modal */}
+      <QrInviteModal
+        visible={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        qrData={qrData}
+        loading={qrLoading}
+      />
 
     </View>
   );

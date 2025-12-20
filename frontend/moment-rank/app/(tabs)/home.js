@@ -199,8 +199,6 @@ export default function HomeScreen() {
                 }
             });
 
-            Alert.alert("Success", `You've joined ${eventName}!`);
-
             setCardData(prevData => {
                 const updated = prevData.map(event => {
                     if (event.id === eventId) {
@@ -232,8 +230,6 @@ export default function HomeScreen() {
                     'Content-Type': 'application/json',
                 }
             });
-
-            Alert.alert("Success", `You've joined ${response.data.name || 'the event'}!`);
             setJoinModalVisible(false);
 
             // Refresh events

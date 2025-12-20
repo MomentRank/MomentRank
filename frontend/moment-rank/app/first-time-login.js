@@ -74,7 +74,7 @@ export default function FirstTimeLoginScreen() {
   const handleSelectPhoto = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (permissionResult.granted === false) {
         Alert.alert("Permission Required", "Please allow access to your photo library.");
         return;
@@ -103,17 +103,17 @@ export default function FirstTimeLoginScreen() {
       const match = /\.(\w+)$/.exec(filename);
       const extension = match ? match[1] : 'jpg';
       const contentType = `image/${extension}`;
-      
+
       const response = await fetch(uri);
       const blob = await response.blob();
-      
+
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        
+
         reader.onloadend = async () => {
           try {
             const base64data = reader.result.split(',')[1];
-            
+
             // Step 1: Upload photo to get FilePath
             const uploadResponse = await axios.post(
               `${API_URL}/photo/upload`,
@@ -158,13 +158,13 @@ export default function FirstTimeLoginScreen() {
             reject(error);
           }
         };
-        
+
         reader.onerror = () => {
           console.error("Failed to read file");
           Alert.alert("Error", "Failed to read image file.");
           reject(new Error("Failed to read file"));
         };
-        
+
         reader.readAsDataURL(blob);
       });
     } catch (error) {
@@ -175,19 +175,19 @@ export default function FirstTimeLoginScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.backgroundWhiteBox} />
+
       <AppHeader />
 
       <View style={styles.signinContainer}>
         <Text style={styles.h2}>First Time Log-in</Text>
-        
+
         <View style={{ alignSelf: 'center', marginBottom: 20, position: 'relative' }}>
-          <Image 
+          <Image
             source={
-              profilePhoto 
+              profilePhoto
                 ? { uri: profilePhoto }
                 : require('../assets/profile-icon.png')
-            } 
+            }
             style={{
               width: 120,
               height: 120,
@@ -221,7 +221,7 @@ export default function FirstTimeLoginScreen() {
 
         <Text style={styles.text}>Name</Text>
         <TextInput
-          style={[styles.input, {color: name ? "#000000" : "rgba(0,0,0,0.3)"}]}
+          style={[styles.input, { color: name ? "#000000" : "rgba(0,0,0,0.3)" }]}
           placeholder="Enter your name"
           placeholderTextColor={"rgba(0,0,0,0.3)"}
           value={name}
@@ -231,9 +231,9 @@ export default function FirstTimeLoginScreen() {
         <Text style={styles.text}>Username</Text>
         <TextInput
           style={[
-            styles.input, 
-            {color: username ? "#000000" : "rgba(0,0,0,0.3)"},
-            passedUsername ? {backgroundColor: "#f5f5f5", color: "#666666"} : {}
+            styles.input,
+            { color: username ? "#000000" : "rgba(0,0,0,0.3)" },
+            passedUsername ? { backgroundColor: "#f5f5f5", color: "#666666" } : {}
           ]}
           placeholder="Enter your username"
           placeholderTextColor={"rgba(0,0,0,0.3)"}
@@ -245,7 +245,7 @@ export default function FirstTimeLoginScreen() {
 
         <Text style={styles.text}>Bio</Text>
         <TextInput
-          style={[styles.input, styles.bioInput, {color: bio ? "#000000" : "rgba(0,0,0,0.3)"}]}
+          style={[styles.input, styles.bioInput, { color: bio ? "#000000" : "rgba(0,0,0,0.3)" }]}
           placeholder="Tell us about yourself"
           placeholderTextColor={"rgba(0,0,0,0.3)"}
           multiline
@@ -256,7 +256,7 @@ export default function FirstTimeLoginScreen() {
           onChangeText={setBio}
         />
 
-        <TouchableOpacity onPress={handleSubmit} disabled={isSubmitting} style={styles.buttonBig}> 
+        <TouchableOpacity onPress={handleSubmit} disabled={isSubmitting} style={styles.buttonBig}>
           <Text style={styles.buttonBigText}>
             {isSubmitting ? 'SIGNING UP...' : 'SIGN UP'}
           </Text>

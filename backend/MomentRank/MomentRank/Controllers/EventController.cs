@@ -212,7 +212,7 @@ namespace MomentRank.Controllers
             // Check if user can view photos for this event (different rules for public vs private)
             if (!await _photoService.CanUserViewEventPhotosAsync(user, request.EventId))
             {
-                return Forbid("You don't have access to view photos for this event");
+                return StatusCode(403, "You don't have access to view photos for this event");
             }
 
             var photos = await _photoService.ListPhotosAsync(request.EventId);
@@ -236,7 +236,7 @@ namespace MomentRank.Controllers
             var result = await _photoService.DeletePhotoAsync(user, request.PhotoId);
             if (!result)
             {
-                return Forbid("You can only delete your own photos or photos from events you own");
+                return StatusCode(403, "You can only delete your own photos or photos from events you own");
             }
 
             return Ok(new { message = "Photo deleted successfully" });

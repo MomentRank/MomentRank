@@ -69,7 +69,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // JWT
-var key = Encoding.ASCII.GetBytes("LabaiSlaptasRaktasKurioNiekasNezino!");
+var jwtSecret = builder.Configuration["JwtSettings:Secret"]
+    ?? throw new InvalidOperationException("JWT secret not configured in appsettings.json");
+var key = Encoding.ASCII.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -87,14 +89,6 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = false,
         ValidateAudience = false
     };
-})
-.AddFacebook(options =>
-{
-    options.AppId = builder.Configuration["Authentication:Facebook:AppId"];
-    options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
-    options.Fields.Add("email");
-    options.Fields.Add("picture");
-    options.SaveTokens = true;
 });
 
 var app = builder.Build();

@@ -17,10 +17,12 @@ namespace MomentRank.Services
     public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
-        private readonly string _jwtSecret = "LabaiSlaptasRaktasKurioNiekasNezino!";
-        public AuthService(ApplicationDbContext context)
+        private readonly IConfiguration _configuration;
+
+        public AuthService(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         public async Task<User?> RegisterAsync(RegisterRequest request)
@@ -104,22 +106,22 @@ namespace MomentRank.Services
                 if (user == null)
                 {
                     isNewUser = true;
-                    
+
                     // Generate a valid username from email (before @ symbol)
                     string baseUsername = request.Email.Split('@')[0]
                         .Replace(".", "")
                         .Replace("+", "")
                         .Replace("-", "_");
-                    
+
                     // Ensure username is valid length (3-20 characters)
                     if (baseUsername.Length > 20)
                         baseUsername = baseUsername.Substring(0, 20);
                     else if (baseUsername.Length < 3)
                         baseUsername = baseUsername + "_user";
-                    
+
                     // Remove any trailing underscores or hyphens
                     baseUsername = baseUsername.TrimEnd('_', '-');
-                    
+
                     // Check if username exists and add suffix if needed
                     string username = baseUsername;
                     int suffix = 1;
@@ -130,7 +132,7 @@ namespace MomentRank.Services
                             username = $"{baseUsername.Substring(0, 17)}{suffix}";
                         suffix++;
                     }
-                    
+
                     var registerRequest = new RegisterRequest
                     {
                         Email = request.Email.ToLower(),
@@ -193,7 +195,8 @@ namespace MomentRank.Services
 
         private string GenerateJwtToken(User user)
         {
-            string jwtSecret = _jwtSecret;
+            string jwtSecret = _configuration["JwtSettings:Secret"]
+                ?? throw new InvalidOperationException("JWT secret not configured in appsettings.json");
 
             var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

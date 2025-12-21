@@ -60,19 +60,19 @@ namespace MomentRank.Services
 
             var (photoA, photoB) = matchup.Value;
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
+            // var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
 
             return new MatchupResponse
             {
                 PhotoA = await MapToPhotoForComparisonDto(photoA),
                 PhotoB = await MapToPhotoForComparisonDto(photoB),
                 Category = category.Value,
-                Prompt = CategoryPrompts.GetValueOrDefault(category.Value, "Which photo do you prefer?"),
-                RemainingInSession = remaining
+                Prompt = CategoryPrompts.GetValueOrDefault(category.Value, "Which photo do you prefer?")
+                // RemainingInSession = remaining
             };
         }
 
-        public async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId)
+        private async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId)
         {
             var eligiblePhotos = await GetEligiblePhotosForMatchupAsync(user, eventId);
 
@@ -130,14 +130,14 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
+            // var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
             {
                 ComparisonId = comparison.Id,
                 Recorded = true,
-                RemainingInSession = remaining,
+                // RemainingInSession = remaining,
                 MoreMatchupsAvailable = moreAvailable
             };
         }
@@ -175,14 +175,14 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
+            // var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
             {
                 ComparisonId = comparison.Id,
                 Recorded = true,
-                RemainingInSession = remaining,
+                // RemainingInSession = remaining,
                 MoreMatchupsAvailable = moreAvailable
             };
         }

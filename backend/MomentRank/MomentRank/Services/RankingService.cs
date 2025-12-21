@@ -70,13 +70,19 @@ namespace MomentRank.Services
 
         public async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId)
         {
-            var todayStart = DateTime.UtcNow.Date;
-            var sessionComparisons = await _context.PhotoComparisons
-                .CountAsync(pc => pc.VoterId == user.Id
-                    && pc.EventId == eventId
-                    && pc.CreatedAt >= todayStart);
+            var eligiblePhotos = await GetEligiblePhotosForMatchupAsync(user, eventId);
 
-            return Math.Max(0, ComparisonsPerSession - sessionComparisons);
+            if (eligiblePhotos.Count < 2)
+                return 0;
+
+            var uniquePairs = eligiblePhotos.Count * (eligiblePhotos.Count - 1) / 2;
+            var categoryCount = Enum.GetValues<RankingCategory>().Length;
+            var totalPossibleMatchups = uniquePairs * categoryCount;
+
+            var completedComparisons = await _context.PhotoComparisons
+                .CountAsync(pc => pc.VoterId == user.Id && pc.EventId == eventId);
+
+            return Math.Max(0, totalPossibleMatchups - completedComparisons);
         }
 
         public async Task<ComparisonResultResponse?> SubmitComparisonAsync(User user, SubmitComparisonRequest request)
@@ -444,9 +450,6 @@ namespace MomentRank.Services
 
         private async Task<double> CalculateCategoryPriorityAsync(User user, int eventId, RankingCategory category)
         {
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId);
-            if (remaining <= 0)
-                return 0;
 
             var highUncertaintyCount = await _context.PhotoRatings
                 .CountAsync(pr => pr.EventId == eventId
@@ -701,15 +704,12 @@ namespace MomentRank.Services
 
         private async Task<bool> HasMoreMatchupsAvailableAsync(User user, int eventId, RankingCategory category)
         {
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId);
-            if (remaining <= 0)
-                return false;
-
             var eligiblePhotos = await GetEligiblePhotosForMatchupAsync(user, eventId);
             if (eligiblePhotos.Count < 2)
                 return false;
 
-            return true;
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId);
+            return remaining > 0;
         }
 
         private async Task<PhotoRating> GetOrCreatePhotoRatingAsync(int photoId, int eventId, RankingCategory category)

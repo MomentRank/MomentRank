@@ -60,7 +60,6 @@ namespace MomentRank.Services
 
             var (photoA, photoB) = matchup.Value;
 
-            // var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
 
             return new MatchupResponse
             {
@@ -68,7 +67,6 @@ namespace MomentRank.Services
                 PhotoB = await MapToPhotoForComparisonDto(photoB),
                 Category = category.Value,
                 Prompt = CategoryPrompts.GetValueOrDefault(category.Value, "Which photo do you prefer?")
-                // RemainingInSession = remaining
             };
         }
 
@@ -79,7 +77,6 @@ namespace MomentRank.Services
             if (eligiblePhotos.Count < 2)
                 return 0;
 
-            // Budget-based: each user gets limited comparisons per category
             var targetPerCategory = Math.Min(eligiblePhotos.Count * TargetComparisonsPerPhoto / 2, MaxComparisonsPerUserPerCategory);
             var categoryCount = Enum.GetValues<RankingCategory>().Length;
             var totalBudget = targetPerCategory * categoryCount;
@@ -130,14 +127,12 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            // var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
             {
                 ComparisonId = comparison.Id,
                 Recorded = true,
-                // RemainingInSession = remaining,
                 MoreMatchupsAvailable = moreAvailable
             };
         }
@@ -175,14 +170,12 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            // var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
             {
                 ComparisonId = comparison.Id,
                 Recorded = true,
-                // RemainingInSession = remaining,
                 MoreMatchupsAvailable = moreAvailable
             };
         }
@@ -546,7 +539,7 @@ namespace MomentRank.Services
             var userComparedPairs = await GetUserComparedPairsAsync(user, eventId, category);
             var globalVoteCounts = await GetGlobalVoteCountsAsync(eventId, category);
 
-            // Score each pair by: uncertainty × (1 / (globalVotes + 1))
+            // Score each pair by: TotalUncertainty / (1 + GlobalVoteCount)
             // This prioritizes uncertain pairs that haven't been voted on much globally
             var scoredPairs = overlappingPairs
                 .Where(p => !userComparedPairs.Contains(NormalizePair(p.Item1.PhotoId, p.Item2.PhotoId)))
@@ -709,7 +702,7 @@ namespace MomentRank.Services
         {
             rating.Uncertainty = Math.Max(50, rating.Uncertainty * 0.9);
 
-            var kDecay = Math.Max(0, (rating.ComparisonCount - BootstrapComparisonCount)) * 2;
+            var kDecay = Math.Max(0, rating.ComparisonCount - BootstrapComparisonCount) * 2;
             rating.KFactor = Math.Max(MinKFactor, InitialKFactor - kDecay);
 
             if (rating.ComparisonCount >= BootstrapComparisonCount)

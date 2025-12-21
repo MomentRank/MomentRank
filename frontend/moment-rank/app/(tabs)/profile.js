@@ -91,15 +91,13 @@ export default function ProfileScreen() {
                 ? rawItems.items
                 : (Array.isArray(rawItems) ? rawItems : []);
 
-            const currentDate = new Date();
-
             const userArchivedEvents = eventsData.filter(event => {
-                const endsAtDate = new Date(event.endsAt);
-                const isArchived = event.isArchived;
-                const isOwner = event.ownerId === currentUserId;
-                const isMember = event.memberIds && Array.isArray(event.memberIds) && event.memberIds.includes(currentUserId);
+                const isOwner = Number(event.ownerId) === Number(currentUserId);
+                const isMember = Array.isArray(event.memberIds) && event.memberIds.some(id => Number(id) === Number(currentUserId));
+                const isArchivedStatus = event.status === 5 || event.isArchived === true;
+                const isEndedStatus = event.status === 3; // include ended events so none disappear
 
-                return (hasEnded && (isMember || isOwner)) || isOwner;
+                return (isArchivedStatus || isEndedStatus) && (isOwner || isMember);
             });
 
             if (append) {
@@ -532,77 +530,87 @@ export default function ProfileScreen() {
 
                         <View style={styles.lineContainer}>
                             <View style={styles.line} />
-                            <Text style={styles.lineText}>My Events ({events.length})</Text>
+                            <Text style={styles.lineText}>Archive ({events.length})</Text>
                             <View style={styles.line} />
                         </View>
                     </View>
                     {events.length > 0 ? (
-                        <FlatList
-                            data={events}
-                            keyExtractor={(item) => item.id.toString()}
-                            numColumns={2}
-                            scrollEnabled={false}
-                            onEndReached={loadMoreEvents}
-                            onEndReachedThreshold={0.5}
-                            ListFooterComponent={() => (
-                                loadingMore && <ActivityIndicator style={{ marginVertical: 20 }} size="small" color="#007bff" />
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 5 }}>
+                            {events.map((item) => {
+                                const source = item.coverPhoto
+                                    ? { uri: `${API_URL}/${item.coverPhoto}` }
+                                    : (item.imageSource ? { uri: item.imageSource } : require("../../assets/event_default.jpg"));
+
+                                const endedLabel = item.endsAt ? new Date(item.endsAt).toLocaleDateString() : "Ended";
+                                const roleLabel = Number(item.ownerId) === Number(userId) ? "Owner" : "Member";
+                                const accessLabel = item.public ? "Public" : "Private";
+
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        onPress={() => openEventAlbum(item)}
+                                        style={[
+                                            styles.contentCard,
+                                            {
+                                                marginBottom: 16,
+                                                width: '48%',
+                                            },
+                                        ]}
+                                    >
+                                        <Image
+                                            source={source}
+                                            style={[styles.stockImage, { height: 140 }]}
+                                            resizeMode="cover"
+                                        />
+
+                                        <View style={{
+                                            flexDirection: 'row',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            paddingHorizontal: 16,
+                                            paddingTop: 12,
+                                            paddingBottom: 6,
+                                        }}>
+                                            <Text style={[styles.descriptionLabel, { flex: 1 }]} numberOfLines={1}>
+                                                {item.name}
+                                            </Text>
+                                        </View>
+
+                                        <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+                                            <Text style={[styles.descriptionText, { marginBottom: 4 }]}>
+                                                Ended: {endedLabel}
+                                            </Text>
+                                            <Text style={[styles.descriptionText, { marginBottom: 0 }]}>
+                                                {roleLabel} · {accessLabel}
+                                            </Text>
+                                        </View>
+
+                                        <View style={[styles.openButtonContainer, { paddingBottom: 12 }]}>
+                                            <TouchableOpacity
+                                                onPress={() => openEventAlbum(item)}
+                                                style={[styles.openButton, { marginHorizontal: 16, marginBottom: 0 }]}
+                                            >
+                                                <Text style={styles.openButtonText}>View</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+
+                            {loadingMore && (
+                                <ActivityIndicator style={{ marginVertical: 12 }} size="small" color="#007bff" />
                             )}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    onPress={() => openEventAlbum(item)}
-                                    style={{
-                                        flex: 1,
-                                        margin: 5,
-                                        backgroundColor: "#f9f9f9",
-                                        borderRadius: 8,
-                                        borderWidth: 1,
-                                        borderColor: "#eee",
-                                        maxWidth: (windowWidth - 30) / 2,
-                                    }}
-                                >
-                                    <Image
-                                        source={
-                                            item.coverPhoto
-                                                ? { uri: `${API_URL}/${item.coverPhoto}` }
-                                                : (item.imageSource ? { uri: item.imageSource } : require("../../assets/event_default.jpg"))
-                                        }
-                                        style={{
-                                            width: '100%',
-                                            height: 120,
-                                            borderTopLeftRadius: 8,
-                                            borderTopRightRadius: 8,
-                                        }}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={{ padding: 10 }}>
-                                        <Text style={[styles.h3, { fontSize: 14, marginBottom: 5 }]} numberOfLines={1}>
-                                            {item.name}
-                                        </Text>
-                                        <Text style={[styles.text, { color: "#666", fontSize: 11 }]}>
-                                            Ended: {new Date(item.endsAt).toLocaleDateString()}
-                                        </Text>
-                                        <Text style={[styles.text, { color: "#666", fontSize: 11 }]}>
-                                            {item.ownerId === userId ? "Owner" : "Member"}
-                                        </Text>
-                                        <Text style={[styles.text, { color: item.public ? "#4CAF50" : "#FF9500", fontSize: 11 }]}>
-                                            {item.public ? "Public" : "Private"}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
+
+                            {!hasMoreData && !loadingMore && (
+                                <View style={{ alignItems: 'center', marginVertical: 12 }}>
+                                    <Text style={[styles.text, { color: '#666' }]}>End of events.</Text>
+                                </View>
                             )}
-                        />
+                        </View>
                     ) : (
                         <Text style={[styles.text, { textAlign: "center", color: "#999", marginVertical: 20 }]}>
                             No events found.
                         </Text>
-                    )}
-
-                    {!hasMoreData && events.length > 0 && !loadingMore && (
-                        <View style={{ alignItems: 'center', marginVertical: 20 }}>
-                            <Text style={[styles.text, { color: '#666' }]}>
-                                End of events.
-                            </Text>
-                        </View>
                     )}
 
                     <View style={{ height: 50 }} />

@@ -337,15 +337,18 @@ export default function HomeScreen() {
                 };
             });
 
+            // Hide archived events (status === 5)
+            const nonArchivedItems = structuredItems.filter(item => item.status !== 5);
+
             if (append) {
 
                 setCardData(prevData => {
                     const existingIds = new Set(prevData.map(item => item.id));
-                    const uniqueNewItems = structuredItems.filter(item => !existingIds.has(item.id));
+                    const uniqueNewItems = nonArchivedItems.filter(item => !existingIds.has(item.id));
                     return [...prevData, ...uniqueNewItems];
                 });
             } else {
-                setCardData(structuredItems);
+                setCardData(nonArchivedItems);
             }
 
 

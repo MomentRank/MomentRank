@@ -1,16 +1,23 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-// Helper to get the current date/time or the existing endsAt date
+// Helper to get the current date/time or the existing endsAt date (with fallback)
 const getInitialDate = (endsAt) => {
-    return endsAt ? new Date(endsAt) : new Date();
+  if (!endsAt) return new Date();
+  if (endsAt instanceof Date) return new Date(endsAt.getTime());
+  const parsed = new Date(endsAt);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
+const clampToNow = (date) => {
+  const now = new Date();
+  return date < now ? now : date;
 };
 
 export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) { 
   const [showPicker, setShowPicker] = useState(false);
   const [mode, setMode] = useState("date"); 
-  // ...
 
   const showMode = (currentMode) => {
     // Reset tempDate to reflect current endsAt before opening the picker
@@ -24,49 +31,53 @@ export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
     setShowPicker(true);
   };
   // Use endsAt as the initial value for the picker's temporary date
-  const [tempDate, setTempDate] = useState(getInitialDate(endsAt)); 
+  const [tempDate, setTempDate] = useState(getInitialDate(endsAt));
+
+  // Keep the temporary date in sync if the parent updates endsAt (e.g., start vote)
+  useEffect(() => {
+    setTempDate(getInitialDate(endsAt));
+  }, [endsAt]);
 
   const onChange = (event, selectedDate) => {
-    // 🛑 SOLUTION: Always hide the picker after selection or dismissal
-    // We check for 'dismissed' for iOS where the picker is a popover/modal
-    if (Platform.OS === "android" || event.type === 'dismissed' || event.type === 'set') {
-        setShowPicker(false);
-    }
-    
-    if (selectedDate) {
-      let newDate = new Date(selectedDate);
-      
-      const existingDate = getInitialDate(endsAt);
+    const isSet = event?.type === 'set' || Platform.OS === 'android';
+    const isDismissed = event?.type === 'dismissed';
 
-      // Logic to combine the newly picked value with the existing value
-      if (mode === "time") {
-        // If picking TIME, use the existing DATE and apply the new TIME
-        newDate.setFullYear(
-          existingDate.getFullYear(),
-          existingDate.getMonth(),
-          existingDate.getDate()
-        );
-      } else if (mode === "date") {
-        // If picking DATE, use the existing TIME and apply the new DATE
-        newDate.setHours(
-          existingDate.getHours(),
-          existingDate.getMinutes(),
-          0,
-          0
-        );
-      }
-      
-      setTempDate(newDate);
-      // Convert local time to UTC ISO string for backend
-      setEndsAt(newDate.toISOString()); 
-
-    } else if (Platform.OS === "ios" && event.type === 'dismissed') {
-        // If it was explicitly dismissed on iOS (e.g., user hits cancel)
-        setShowPicker(false);
+    // Close picker on any Android response or explicit iOS set/dismiss
+    if (Platform.OS === 'android' || isSet || isDismissed) {
+      setShowPicker(false);
     }
+
+    // Only process when a value is actually set
+    if (!selectedDate) return;
+
+    let newDate = new Date(selectedDate);
+
+    // Use the most recent tempDate as the base (avoids stale endsAt during a session)
+    const baseDate = tempDate || getInitialDate(endsAt);
+
+    if (mode === "time") {
+      newDate.setFullYear(
+        baseDate.getFullYear(),
+        baseDate.getMonth(),
+        baseDate.getDate()
+      );
+    } else if (mode === "date") {
+      newDate.setHours(
+        baseDate.getHours(),
+        baseDate.getMinutes(),
+        0,
+        0
+      );
+    }
+
+    // Enforce now-or-future
+    const clamped = clampToNow(newDate);
+
+    setTempDate(clamped);
+    setEndsAt(clamped);
 };
 
-  const selectedDateObject = getInitialDate(endsAt);
+  const selectedDateObject = tempDate || getInitialDate(endsAt);
 
   return (
     <View style={{ marginTop: 20 }}>
@@ -114,10 +125,11 @@ export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
       {/* Picker */}
       {showPicker && (
         <DateTimePicker
-          value={tempDate} // Use the local state here
+          value={selectedDateObject} // Keep aligned with latest selection
           mode={mode}
           display={Platform.OS === "ios" ? "spinner" : "default"} 
-          minimumDate={new Date()}
+          // Only block past dates; time mode has no minimum so future-day morning times remain selectable
+          minimumDate={mode === "date" ? new Date() : undefined}
           onChange={onChange}
         />
       )}

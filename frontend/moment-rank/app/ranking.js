@@ -18,15 +18,15 @@ export default function RankingScreen() {
     const [photoB, setPhotoB] = useState(null);
     const [comparing, setComparing] = useState(false);
     const [remainingComparisons, setRemainingComparisons] = useState(null);
-    
+
     // Swipe gesture state
     const pan = useRef(new Animated.Value(0)).current;
-    
+
     const handlePanGesture = (gestureState) => {
         const clampedDx = Math.max(-60, Math.min(60, gestureState.dx * 0.4));
         pan.setValue(clampedDx);
     };
-    
+
     const handlePanRelease = (gestureState) => {
         // Snap to nearest lock point: -60 (left), 0 (center), 60 (right)
         let snapPoint = 0;
@@ -35,13 +35,13 @@ export default function RankingScreen() {
         } else if (gestureState.dx < -90) {
             snapPoint = -60; // Lock left
         }
-        
+
         Animated.spring(pan, {
             toValue: snapPoint,
             useNativeDriver: false,
         }).start();
     };
-    
+
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => !comparing,
@@ -50,7 +50,7 @@ export default function RankingScreen() {
             onPanResponderRelease: (_, gestureState) => handlePanRelease(gestureState),
         })
     ).current;
-    
+
     const sliderPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => !comparing,
@@ -82,7 +82,7 @@ export default function RankingScreen() {
                 } else if (currentValue < -30) {
                     snapPoint = -60;
                 }
-                
+
                 Animated.spring(pan, {
                     toValue: snapPoint,
                     useNativeDriver: false,
@@ -163,7 +163,7 @@ export default function RankingScreen() {
     const loadNextMatchup = async () => {
         try {
             setLoading(true);
-            
+
             const token = await AsyncStorage.getItem('token');
             if (!token) {
                 Alert.alert('Error', 'Please login first');
@@ -189,7 +189,7 @@ export default function RankingScreen() {
                     setPhotoB(null);
                     return;
                 }
-                
+
                 // Valid matchup data
                 if (response.data.photoA && response.data.photoB) {
                     setMatchup(response.data);
@@ -242,7 +242,7 @@ export default function RankingScreen() {
     const handleVote = async (winnerPhotoId, loserPhotoId) => {
         try {
             setComparing(true);
-            
+
             const token = await AsyncStorage.getItem('token');
             if (!token) {
                 Alert.alert('Error', 'Please login first');
@@ -265,7 +265,7 @@ export default function RankingScreen() {
             // Update remaining comparisons from response
             if (compareResponse.data && compareResponse.data.remainingInSession !== undefined) {
                 setRemainingComparisons(compareResponse.data.remainingInSession);
-                
+
                 // Navigate to leaderboard if no votes remaining
                 if (compareResponse.data.remainingInSession === 0) {
                     router.push({
@@ -316,7 +316,7 @@ export default function RankingScreen() {
             // Update remaining comparisons from response
             if (skipResponse.data && skipResponse.data.remainingInSession !== undefined) {
                 setRemainingComparisons(skipResponse.data.remainingInSession);
-                
+
                 // Navigate to leaderboard if no votes remaining
                 if (skipResponse.data.remainingInSession === 0) {
                     router.push({
@@ -391,20 +391,16 @@ export default function RankingScreen() {
                 <Text style={[styles.h2, { fontSize: 18, marginBottom: 5 }]}>
                     {matchup?.prompt || 'Which photo is better?'}
                 </Text>
-                {remainingComparisons !== null && (
-                    <Text style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
-                        Remaining votes: {remainingComparisons}
-                    </Text>
-                )}
+
             </View>
 
             <View style={{ flex: 1, flexDirection: 'column', backgroundColor: '#fff' }}>
                 <View style={{ flex: 1, flexDirection: 'row' }} {...panResponder.panHandlers}>
-                    <Animated.View 
-                        style={{ 
-                            flex: leftFlex, 
-                            justifyContent: 'center', 
-                            alignItems: 'center', 
+                    <Animated.View
+                        style={{
+                            flex: leftFlex,
+                            justifyContent: 'center',
+                            alignItems: 'center',
                             padding: 10,
                             paddingRight: 15,
                             marginLeft: leftMargin,
@@ -412,18 +408,18 @@ export default function RankingScreen() {
                             transform: [{ scale: leftScale }, { translateX: leftTranslateX }]
                         }}
                     >
-                        <View style={{ width: '100%', aspectRatio: 3/4, position: 'relative' }}>
-                            <Image 
+                        <View style={{ width: '100%', aspectRatio: 3 / 4, position: 'relative' }}>
+                            <Image
                                 source={{ uri: `${API_URL}/${photoA.filePath}` }}
                                 style={{ width: '100%', height: '100%', borderRadius: 10 }}
                                 resizeMode="cover"
                             />
                             {comparing && (
-                                <View style={{ 
-                                    position: 'absolute', 
-                                    top: 0, 
-                                    left: 0, 
-                                    right: 0, 
+                                <View style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
                                     bottom: 0,
                                     backgroundColor: 'rgba(0,0,0,0.3)',
                                     borderRadius: 10
@@ -434,11 +430,11 @@ export default function RankingScreen() {
 
                     <View style={{ width: 1, backgroundColor: 'transparent' }} />
 
-                    <Animated.View 
-                        style={{ 
-                            flex: rightFlex, 
-                            justifyContent: 'center', 
-                            alignItems: 'center', 
+                    <Animated.View
+                        style={{
+                            flex: rightFlex,
+                            justifyContent: 'center',
+                            alignItems: 'center',
                             padding: 10,
                             paddingLeft: 15,
                             marginRight: rightMargin,
@@ -446,18 +442,18 @@ export default function RankingScreen() {
                             transform: [{ scale: rightScale }, { translateX: rightTranslateX }]
                         }}
                     >
-                        <View style={{ width: '100%', aspectRatio: 3/4, position: 'relative' }}>
-                            <Image 
+                        <View style={{ width: '100%', aspectRatio: 3 / 4, position: 'relative' }}>
+                            <Image
                                 source={{ uri: `${API_URL}/${photoB.filePath}` }}
                                 style={{ width: '100%', height: '100%', borderRadius: 10 }}
                                 resizeMode="cover"
                             />
                             {comparing && (
-                                <View style={{ 
-                                    position: 'absolute', 
-                                    top: 0, 
-                                    left: 0, 
-                                    right: 0, 
+                                <View style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
                                     bottom: 0,
                                     backgroundColor: 'rgba(0,0,0,0.3)',
                                     borderRadius: 10
@@ -469,14 +465,14 @@ export default function RankingScreen() {
 
                 {/* Vote buttons */}
                 <View style={{ flexDirection: 'row', paddingHorizontal: 15, paddingVertical: 10, gap: 10 }}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.openButton, { flex: 1, backgroundColor: '#FF9500' }]}
                         onPress={() => !comparing && handleVote(photoA.id, photoB.id)}
                         disabled={comparing}
                     >
                         <Text style={styles.openButtonText}>Vote Left</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.openButton, { flex: 1, backgroundColor: '#FF9500' }]}
                         onPress={() => !comparing && handleVote(photoB.id, photoA.id)}
                         disabled={comparing}
@@ -489,14 +485,14 @@ export default function RankingScreen() {
             {/* Slider indicator */}
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 20 }}>
                 <View style={{ alignItems: 'center' }}>
-                    <View 
+                    <View
                         style={{ width: '90%' }}
                         {...sliderPanResponder.panHandlers}
                     >
                         <Text style={{ fontSize: 12, color: '#999', marginBottom: 8, textAlign: 'center', pointerEvents: 'none' }}>Swipe to view better</Text>
                         <View style={{ paddingVertical: 15, pointerEvents: 'none' }}>
                             <View style={{ width: '100%', height: 8, backgroundColor: '#e0e0e0', borderRadius: 4, position: 'relative' }}>
-                                <Animated.View 
+                                <Animated.View
                                     style={{
                                         position: 'absolute',
                                         top: -4,
@@ -526,7 +522,7 @@ export default function RankingScreen() {
             </View>
 
             <View style={{ backgroundColor: '#fff', padding: 15, borderTopWidth: 1, borderTopColor: '#e0e0e0' }}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[styles.openButton, { backgroundColor: '#dc3545' }]}
                     onPress={handleSkip}
                     disabled={comparing}

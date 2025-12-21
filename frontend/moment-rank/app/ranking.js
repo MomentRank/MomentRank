@@ -17,8 +17,6 @@ export default function RankingScreen() {
     const [photoA, setPhotoA] = useState(null);
     const [photoB, setPhotoB] = useState(null);
     const [comparing, setComparing] = useState(false);
-    const [remainingComparisons, setRemainingComparisons] = useState(null);
-
     // Swipe gesture state
     const pan = useRef(new Animated.Value(0)).current;
 
@@ -157,7 +155,6 @@ export default function RankingScreen() {
 
     useEffect(() => {
         loadNextMatchup();
-        loadRemainingComparisons();
     }, []);
 
     const loadNextMatchup = async () => {
@@ -195,10 +192,6 @@ export default function RankingScreen() {
                     setMatchup(response.data);
                     setPhotoA(response.data.photoA);
                     setPhotoB(response.data.photoB);
-                    // Update remaining comparisons from matchup response
-                    if (response.data.remainingInSession !== undefined) {
-                        setRemainingComparisons(response.data.remainingInSession);
-                    }
                 } else {
                     // Invalid data, show leaderboard view
                     setPhotoA(null);
@@ -217,27 +210,7 @@ export default function RankingScreen() {
         }
     };
 
-    const loadRemainingComparisons = async () => {
-        try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) return;
 
-            const response = await axios.post(`${API_URL}/ranking/session/remaining`, {
-                eventId: parseInt(eventId)
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (response.data && response.data.remainingComparisons !== undefined) {
-                setRemainingComparisons(response.data.remainingComparisons);
-            }
-        } catch (error) {
-            console.error('Load remaining comparisons error:', error);
-        }
-    };
 
     const handleVote = async (winnerPhotoId, loserPhotoId) => {
         try {
@@ -261,20 +234,6 @@ export default function RankingScreen() {
                     'Content-Type': 'application/json',
                 }
             });
-
-            // Update remaining comparisons from response
-            if (compareResponse.data && compareResponse.data.remainingInSession !== undefined) {
-                setRemainingComparisons(compareResponse.data.remainingInSession);
-
-                // Navigate to leaderboard if no votes remaining
-                if (compareResponse.data.remainingInSession === 0) {
-                    router.push({
-                        pathname: '/leaderboard',
-                        params: { eventId: eventId.toString(), eventName: eventName }
-                    });
-                    return;
-                }
-            }
 
             // Check if more matchups are available
             if (compareResponse.data && compareResponse.data.moreMatchupsAvailable === false) {
@@ -312,20 +271,6 @@ export default function RankingScreen() {
                     'Content-Type': 'application/json',
                 }
             });
-
-            // Update remaining comparisons from response
-            if (skipResponse.data && skipResponse.data.remainingInSession !== undefined) {
-                setRemainingComparisons(skipResponse.data.remainingInSession);
-
-                // Navigate to leaderboard if no votes remaining
-                if (skipResponse.data.remainingInSession === 0) {
-                    router.push({
-                        pathname: '/leaderboard',
-                        params: { eventId: eventId.toString(), eventName: eventName }
-                    });
-                    return;
-                }
-            }
 
             // Check if more matchups are available
             if (skipResponse.data && skipResponse.data.moreMatchupsAvailable === false) {

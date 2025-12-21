@@ -24,5 +24,8 @@ namespace MomentRank.Services
         // Invite link methods
         Task<GenerateInviteLinkResponse?> GenerateInviteLinkAsync(User user, GenerateInviteLinkRequest request);
         Task<Event?> JoinEventViaInviteCodeAsync(User user, string inviteCode);
+
+        // Update event method
+        Task<Event?> UpdateEventAsync(User user, UpdateEventRequest request);
     }
 }

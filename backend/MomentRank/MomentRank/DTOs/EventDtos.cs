@@ -93,4 +93,14 @@ namespace MomentRank.DTOs
     {
         public required string InviteCode { get; init; }
     }
+
+    public record UpdateEventRequest
+    {
+        public required int Id { get; init; }
+        public string? Name { get; init; }
+        public DateTime? EndsAt { get; init; }
+        public bool? Public { get; init; }
+        public bool? IsArchived { get; init; }
+        public bool? IsCancelled { get; init; }
+    }
 }

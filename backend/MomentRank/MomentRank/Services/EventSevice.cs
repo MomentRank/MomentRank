@@ -551,5 +551,65 @@ namespace MomentRank.Services
             var relativePath = $"uploads/qrcodes/{fileName}";
             return relativePath;
         }
+
+        public async Task<Event?> UpdateEventAsync(User user, UpdateEventRequest request)
+        {
+            try
+            {
+                // Check if event exists and if the user is the owner
+                var existingEvent = await _context.Events
+                    .FirstOrDefaultAsync(e => e.Id == request.Id &&
+                                            e.OwnerId == user.Id);
+
+                if (existingEvent == null)
+                {
+                    return null; // Event doesn't exist or user is not the owner
+                }
+
+                // Update Name if provided
+                if (!string.IsNullOrEmpty(request.Name))
+                {
+                    existingEvent.Name = request.Name.Trim();
+                }
+
+                // Update EndsAt if provided and is valid
+                if (request.EndsAt.HasValue && request.EndsAt > DateTime.UtcNow)
+                {
+                    existingEvent.EndsAt = request.EndsAt.Value;
+                }
+
+                // Update Public if provided
+                if (request.Public.HasValue)
+                {
+                    existingEvent.Public = request.Public.Value;
+                }
+
+                // Update IsArchived if provided
+                if (request.IsArchived.HasValue)
+                {
+                    if (request.IsArchived.Value)
+                    {
+                        existingEvent.Archive();
+                    }
+                }
+
+                // Update IsCancelled if provided
+                if (request.IsCancelled.HasValue)
+                {
+                    if (request.IsCancelled.Value)
+                    {
+                        existingEvent.Cancel();
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                return existingEvent;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }

@@ -124,6 +124,29 @@ namespace MomentRank.Controllers
             return Ok(updated);
         }
 
+        [HttpPost("update")]
+        public async Task<IActionResult> Update([FromBody] UpdateEventRequest request)
+        {
+            if (request.Id <= 0)
+            {
+                return BadRequest("Invalid event ID");
+            }
+
+            var user = await this.GetCurrentUserAsync(_context);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var updated = await _eventService.UpdateEventAsync(user, request);
+            if (updated == null)
+            {
+                return NotFound("Event not found or user is not the owner");
+            }
+
+            return Ok(updated);
+        }
+
         [HttpPost("list")]
         public async Task<IActionResult> List([FromBody] ListEventsRequest request)
         {

@@ -37,6 +37,8 @@ namespace MomentRank.UnitTests.Services
             _service = new PhotoService(_context, _mockEnvironment.Object, _mockConfiguration.Object);
         }
 
+        #region UploadEventPhotoBase64Async Tests
+
         [Fact]
         public async Task UploadPhotoBase64Async_ShouldUploadPhoto_WhenValid()
         {
@@ -49,14 +51,15 @@ namespace MomentRank.UnitTests.Services
                 Name = "Event",
                 OwnerId = user.Id,
                 Public = true,
+                MemberIds = new List<int> { user.Id },
                 CreatedAt = DateTime.UtcNow
             };
             _context.Events.Add(eventObj);
             await _context.SaveChangesAsync();
 
-            // Small 1x1 white pixel JPEG base64
+            // Small 1x1 white pixel PNG base64
             var base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-            
+
             var request = new Base64UploadRequest
             {
                 EventId = eventObj.Id,
@@ -71,10 +74,10 @@ namespace MomentRank.UnitTests.Services
             result.Should().NotBeNull();
             result!.FileName.Should().Be("test.png");
             result.Caption.Should().Be("Test Caption");
-            
+
             var photoInDb = await _context.Photos.FirstOrDefaultAsync();
             photoInDb.Should().NotBeNull();
-            
+
             // Verify file exists
             var filePath = Path.Combine(_tempPath, photoInDb!.FilePath.Replace("/", "\\"));
             File.Exists(filePath).Should().BeTrue();
@@ -113,6 +116,30 @@ namespace MomentRank.UnitTests.Services
         }
 
         [Fact]
+        public async Task UploadPhotoBase64Async_ShouldReturnNull_WhenEventNotFound()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            var request = new Base64UploadRequest
+            {
+                EventId = 999,
+                FileData = "base64data",
+                FileName = "test.png",
+                ContentType = "image/png"
+            };
+
+            var result = await _service.UploadEventPhotoBase64Async(user, request);
+
+            result.Should().BeNull();
+        }
+
+        #endregion
+
+        #region DeletePhotoAsync Tests
+
+        [Fact]
         public async Task DeletePhotoAsync_ShouldDeletePhoto_WhenOwner()
         {
             var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
@@ -147,6 +174,49 @@ namespace MomentRank.UnitTests.Services
         }
 
         [Fact]
+        public async Task DeletePhotoAsync_ShouldReturnFalse_WhenPhotoNotFound()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.DeletePhotoAsync(user, 999);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task DeletePhotoAsync_ShouldReturnFalse_WhenNotOwner()
+        {
+            var owner = new User { Id = 1, Username = "Owner", Email = "owner@test.com", PasswordHash = "hash" };
+            var user = new User { Id = 2, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.AddRange(owner, user);
+
+            var eventObj = new Event { Id = 1, Name = "Event", OwnerId = owner.Id, Public = true, CreatedAt = DateTime.UtcNow };
+            _context.Events.Add(eventObj);
+
+            var photo = new Photo
+            {
+                Id = 1,
+                EventId = eventObj.Id,
+                UploadedById = owner.Id,
+                FileName = "test.png",
+                FilePath = "uploads/photos/test.png",
+                ContentType = "image/png"
+            };
+            _context.Photos.Add(photo);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.DeletePhotoAsync(user, photo.Id);
+
+            result.Should().BeFalse();
+        }
+
+        #endregion
+
+        #region ListPhotosAsync Tests
+
+        [Fact]
         public async Task ListPhotosAsync_ShouldReturnPhotos()
         {
             var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
@@ -172,5 +242,136 @@ namespace MomentRank.UnitTests.Services
             result.Should().NotBeNull();
             result.Should().HaveCount(1);
         }
+
+        [Fact]
+        public async Task ListPhotosAsync_ShouldReturnEmpty_WhenNoPhotos()
+        {
+            var result = await _service.ListPhotosAsync(999);
+
+            result.Should().BeEmpty();
+        }
+
+        #endregion
+
+        #region IsUserEventMemberAsync Tests
+
+        [Fact]
+        public async Task IsUserEventMemberAsync_ShouldReturnTrue_WhenMember()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+
+            var eventObj = new Event
+            {
+                Id = 1,
+                Name = "Event",
+                OwnerId = 99,
+                MemberIds = new List<int> { user.Id },
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Events.Add(eventObj);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.IsUserEventMemberAsync(user, eventObj.Id);
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task IsUserEventMemberAsync_ShouldReturnFalse_WhenNotMember()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+
+            var eventObj = new Event
+            {
+                Id = 1,
+                Name = "Event",
+                OwnerId = 99,
+                MemberIds = new List<int>(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Events.Add(eventObj);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.IsUserEventMemberAsync(user, eventObj.Id);
+
+            result.Should().BeFalse();
+        }
+
+        #endregion
+
+        #region CanUserViewEventPhotosAsync Tests
+
+        [Fact]
+        public async Task CanUserViewEventPhotosAsync_ShouldReturnTrue_WhenPublicEvent()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+
+            var eventObj = new Event
+            {
+                Id = 1,
+                Name = "Public Event",
+                OwnerId = 99,
+                Public = true,
+                MemberIds = new List<int>(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Events.Add(eventObj);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.CanUserViewEventPhotosAsync(user, eventObj.Id);
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task CanUserViewEventPhotosAsync_ShouldReturnFalse_WhenPrivateNonMember()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+
+            var eventObj = new Event
+            {
+                Id = 1,
+                Name = "Private Event",
+                OwnerId = 99,
+                Public = false,
+                MemberIds = new List<int>(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Events.Add(eventObj);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.CanUserViewEventPhotosAsync(user, eventObj.Id);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task CanUserViewEventPhotosAsync_ShouldReturnTrue_WhenPrivateMember()
+        {
+            var user = new User { Id = 1, Username = "User", Email = "user@test.com", PasswordHash = "hash" };
+            _context.Users.Add(user);
+
+            var eventObj = new Event
+            {
+                Id = 1,
+                Name = "Private Event",
+                OwnerId = 99,
+                Public = false,
+                MemberIds = new List<int> { user.Id },
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Events.Add(eventObj);
+            await _context.SaveChangesAsync();
+
+            var result = await _service.CanUserViewEventPhotosAsync(user, eventObj.Id);
+
+            result.Should().BeTrue();
+        }
+
+        #endregion
     }
 }

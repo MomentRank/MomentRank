@@ -219,25 +219,5 @@ namespace MomentRank.Controllers
             return Ok(history);
         }
 
-        [HttpPost("session/remaining")]
-        public async Task<IActionResult> GetRemainingInSession([FromBody] GetNextMatchupRequest request)
-        {
-            if (request.EventId <= 0)
-            {
-                return BadRequest("Invalid event ID");
-            }
-
-            var user = await this.GetCurrentUserAsync(_context);
-            if (user == null)
-            {
-                return Unauthorized();
-            }
-
-            var remaining = await _rankingService.GetRemainingComparisonsInSessionAsync(
-                user,
-                request.EventId);
-
-            return Ok(new { remainingComparisons = remaining });
-        }
     }
 }

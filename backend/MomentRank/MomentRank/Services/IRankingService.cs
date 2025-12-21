@@ -8,7 +8,7 @@ namespace MomentRank.Services
     {
         // Matchup Selection
         Task<MatchupResponse?> GetNextMatchupAsync(User user, GetNextMatchupRequest request);
-        Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId);
+
 
         // Voting/Comparison Submission
         Task<ComparisonResultResponse?> SubmitComparisonAsync(User user, SubmitComparisonRequest request);

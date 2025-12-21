@@ -11,7 +11,6 @@ namespace MomentRank.Services
         private readonly ApplicationDbContext _context;
         private readonly Random _random = new();
 
-        private const int ComparisonsPerSession = 5;
         private const int BootstrapComparisonCount = 5;
         private const int MaxComparisonCount = 12;
         private const double UncertaintyThreshold = 100.0;
@@ -19,7 +18,12 @@ namespace MomentRank.Services
         private const double InitialUncertainty = 350.0;
         private const double InitialKFactor = 40.0;
         private const double MinKFactor = 16.0;
-        private const double ExplorationRate = 0.3;
+
+        // Hybrid budget-based matching constants
+        private const int TargetComparisonsPerPhoto = 4;
+        private const int MaxComparisonsPerUserPerCategory = 15;
+        private const double ConfidenceMultiplier = 2.0;
+        private const double MinOverlapForMatchup = 50.0;
 
         private static readonly Dictionary<RankingCategory, string> CategoryPrompts = new()
         {
@@ -56,33 +60,31 @@ namespace MomentRank.Services
 
             var (photoA, photoB) = matchup.Value;
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
 
             return new MatchupResponse
             {
                 PhotoA = await MapToPhotoForComparisonDto(photoA),
                 PhotoB = await MapToPhotoForComparisonDto(photoB),
                 Category = category.Value,
-                Prompt = CategoryPrompts.GetValueOrDefault(category.Value, "Which photo do you prefer?"),
-                RemainingInSession = remaining
+                Prompt = CategoryPrompts.GetValueOrDefault(category.Value, "Which photo do you prefer?")
             };
         }
 
-        public async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId)
+        private async Task<int> GetRemainingComparisonsInSessionAsync(User user, int eventId)
         {
             var eligiblePhotos = await GetEligiblePhotosForMatchupAsync(user, eventId);
 
             if (eligiblePhotos.Count < 2)
                 return 0;
 
-            var uniquePairs = eligiblePhotos.Count * (eligiblePhotos.Count - 1) / 2;
+            var targetPerCategory = Math.Min(eligiblePhotos.Count * TargetComparisonsPerPhoto / 2, MaxComparisonsPerUserPerCategory);
             var categoryCount = Enum.GetValues<RankingCategory>().Length;
-            var totalPossibleMatchups = uniquePairs * categoryCount;
+            var totalBudget = targetPerCategory * categoryCount;
 
-            var completedComparisons = await _context.PhotoComparisons
+            var completedByUser = await _context.PhotoComparisons
                 .CountAsync(pc => pc.VoterId == user.Id && pc.EventId == eventId);
 
-            return Math.Max(0, totalPossibleMatchups - completedComparisons);
+            return Math.Max(0, totalBudget - completedByUser);
         }
 
         public async Task<ComparisonResultResponse?> SubmitComparisonAsync(User user, SubmitComparisonRequest request)
@@ -125,14 +127,12 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
             {
                 ComparisonId = comparison.Id,
                 Recorded = true,
-                RemainingInSession = remaining,
                 MoreMatchupsAvailable = moreAvailable
             };
         }
@@ -170,14 +170,12 @@ namespace MomentRank.Services
             _context.PhotoComparisons.Add(comparison);
             await _context.SaveChangesAsync();
 
-            var remaining = await GetRemainingComparisonsInSessionAsync(user, request.EventId);
             var moreAvailable = await HasMoreMatchupsAvailableAsync(user, request.EventId, request.Category);
 
             return new ComparisonResultResponse
             {
                 ComparisonId = comparison.Id,
                 Recorded = true,
-                RemainingInSession = remaining,
                 MoreMatchupsAvailable = moreAvailable
             };
         }
@@ -485,6 +483,7 @@ namespace MomentRank.Services
             if (eligiblePhotos.Count < 2)
                 return null;
 
+            // Ensure all photos have ratings initialized
             var ratings = await _context.PhotoRatings
                 .Where(pr => pr.EventId == eventId
                     && pr.Category == category
@@ -502,31 +501,13 @@ namespace MomentRank.Services
                 }
             }
 
-            var recentComparisons = await GetRecentComparisonPairsAsync(user, eventId, category);
+            // Check if user has exhausted their budget
+            var remaining = await GetRemainingComparisonsInSessionAsync(user, eventId);
+            if (remaining <= 0)
+                return null;
 
-            var nonBootstrappedPhotos = eligiblePhotos
-                .Where(p => ratings.TryGetValue(p.Id, out var r) && !r.IsBootstrapped)
-                .ToList();
-
-            if (nonBootstrappedPhotos.Any())
-            {
-                var photoA = nonBootstrappedPhotos[_random.Next(nonBootstrappedPhotos.Count)];
-                var photoB = SelectBootstrapOpponent(photoA, eligiblePhotos, ratings, recentComparisons, category);
-
-                if (photoB != null)
-                    return (photoA, photoB);
-            }
-
-            var useExploration = _random.NextDouble() < ExplorationRate;
-
-            if (useExploration)
-            {
-                return SelectExploratoryMatchup(eligiblePhotos, ratings, recentComparisons);
-            }
-            else
-            {
-                return SelectUncertaintyBasedMatchup(eligiblePhotos, ratings, recentComparisons);
-            }
+            // Try information-gain based selection
+            return await SelectMostInformativeMatchupAsync(user, eventId, category, eligiblePhotos, ratings);
         }
 
         private async Task<List<Photo>> GetEligiblePhotosForMatchupAsync(User user, int eventId)
@@ -540,157 +521,128 @@ namespace MomentRank.Services
             return photos;
         }
 
-        private async Task<HashSet<(int, int)>> GetRecentComparisonPairsAsync(User user, int eventId, RankingCategory category)
-        {
-            var recentTime = DateTime.UtcNow.AddHours(-24);
-            var pairs = await _context.PhotoComparisons
-                .Where(pc => pc.EventId == eventId
-                    && pc.Category == category
-                    && pc.VoterId == user.Id
-                    && pc.CreatedAt >= recentTime)
-                .Select(pc => new { pc.PhotoAId, pc.PhotoBId })
-                .ToListAsync();
-
-            return pairs
-                .Select(p => (Math.Min(p.PhotoAId, p.PhotoBId), Math.Max(p.PhotoAId, p.PhotoBId)))
-                .ToHashSet();
-        }
-
-        private Photo? SelectBootstrapOpponent(
-            Photo photoA,
+        private async Task<(Photo, Photo)?> SelectMostInformativeMatchupAsync(
+            User user,
+            int eventId,
+            RankingCategory category,
             List<Photo> eligiblePhotos,
-            Dictionary<int, PhotoRating> ratings,
-            HashSet<(int, int)> recentComparisons,
-            RankingCategory category)
+            Dictionary<int, PhotoRating> ratings)
         {
-            var candidates = eligiblePhotos
-                .Where(p => p.Id != photoA.Id /* && p.UploadedById != photoA.UploadedById */)
-                .Where(p => !recentComparisons.Contains(NormalizePair(photoA.Id, p.Id)))
+            // Get pairs with overlapping confidence bounds (uncertain rankings)
+            var overlappingPairs = GetPairsWithOverlappingBounds(ratings.Values.ToList());
+            if (!overlappingPairs.Any())
+            {
+                // All rankings are stable, no more matchups needed
+                return null;
+            }
+
+            var userComparedPairs = await GetUserComparedPairsAsync(user, eventId, category);
+            var globalVoteCounts = await GetGlobalVoteCountsAsync(eventId, category);
+
+            // Score each pair by: TotalUncertainty / (1 + GlobalVoteCount)
+            // This prioritizes uncertain pairs that haven't been voted on much globally
+            var scoredPairs = overlappingPairs
+                .Where(p => !userComparedPairs.Contains(NormalizePair(p.Item1.PhotoId, p.Item2.PhotoId)))
+                .Where(p => eligiblePhotos.Any(ph => ph.Id == p.Item1.PhotoId) &&
+                           eligiblePhotos.Any(ph => ph.Id == p.Item2.PhotoId))
+                .Select(p => new
+                {
+                    Pair = p,
+                    Score = (p.Item1.Uncertainty + p.Item2.Uncertainty) /
+                            (1 + globalVoteCounts.GetValueOrDefault(NormalizePair(p.Item1.PhotoId, p.Item2.PhotoId), 0))
+                })
+                .OrderByDescending(x => x.Score)
+                .Take(5)
                 .ToList();
 
-            if (!candidates.Any())
+            if (!scoredPairs.Any())
+            {
+                // Fallback: find any pair user hasn't compared
+                return await SelectFallbackMatchupAsync(user, eventId, category, eligiblePhotos, ratings);
+            }
+
+            // Pick randomly from top 5 for variety
+            var selected = scoredPairs[_random.Next(scoredPairs.Count)].Pair;
+            var photoA = eligiblePhotos.FirstOrDefault(p => p.Id == selected.Item1.PhotoId);
+            var photoB = eligiblePhotos.FirstOrDefault(p => p.Id == selected.Item2.PhotoId);
+
+            if (photoA == null || photoB == null)
                 return null;
 
-            var ratingA = ratings.GetValueOrDefault(photoA.Id);
-            var comparisonCount = ratingA?.ComparisonCount ?? 0;
-
-            if (comparisonCount == 0)
-            {
-                return candidates[_random.Next(candidates.Count)];
-            }
-            else if (comparisonCount <= 2)
-            {
-                var midRanked = candidates
-                    .Where(c => ratings.TryGetValue(c.Id, out var r) && r.IsBootstrapped)
-                    .OrderBy(c => Math.Abs((ratings.GetValueOrDefault(c.Id)?.EloScore ?? InitialElo) - InitialElo))
-                    .Take(5)
-                    .ToList();
-
-                return midRanked.Any()
-                    ? midRanked[_random.Next(midRanked.Count)]
-                    : candidates[_random.Next(candidates.Count)];
-            }
-            else
-            {
-                var topRanked = candidates
-                    .Where(c => ratings.TryGetValue(c.Id, out var r) && r.IsBootstrapped)
-                    .OrderByDescending(c => ratings.GetValueOrDefault(c.Id)?.EloScore ?? InitialElo)
-                    .Take(3)
-                    .ToList();
-
-                return topRanked.Any()
-                    ? topRanked[_random.Next(topRanked.Count)]
-                    : candidates[_random.Next(candidates.Count)];
-            }
+            return (photoA, photoB);
         }
 
-        private (Photo, Photo)? SelectUncertaintyBasedMatchup(
-            List<Photo> eligiblePhotos,
-            Dictionary<int, PhotoRating> ratings,
-            HashSet<(int, int)> recentComparisons)
+        private List<(PhotoRating, PhotoRating)> GetPairsWithOverlappingBounds(List<PhotoRating> ratings)
         {
-            var sortedByUncertainty = eligiblePhotos
-                .Where(p => ratings.ContainsKey(p.Id))
-                .OrderByDescending(p => ratings[p.Id].Uncertainty)
-                .ToList();
+            var overlappingPairs = new List<(PhotoRating, PhotoRating)>();
 
-            foreach (var photoA in sortedByUncertainty.Take(5))
+            for (int i = 0; i < ratings.Count; i++)
             {
-                var ratingA = ratings[photoA.Id];
-
-                var candidates = eligiblePhotos
-                    .Where(p => p.Id != photoA.Id /* && p.UploadedById != photoA.UploadedById */)
-                    .Where(p => !recentComparisons.Contains(NormalizePair(photoA.Id, p.Id)))
-                    .Where(p => ratings.ContainsKey(p.Id))
-                    .OrderBy(p => Math.Abs(ratings[p.Id].EloScore - ratingA.EloScore))
-                    .ThenByDescending(p => ratings[p.Id].Uncertainty)
-                    .Take(10)
-                    .ToList();
-
-                if (candidates.Any())
+                for (int j = i + 1; j < ratings.Count; j++)
                 {
-                    var selected = candidates[_random.Next(Math.Min(3, candidates.Count))];
-                    return (photoA, selected);
-                }
-            }
+                    var ratingA = ratings[i];
+                    var ratingB = ratings[j];
 
-            return SelectRandomMatchup(eligiblePhotos, recentComparisons);
-        }
+                    // Check if confidence bounds overlap
+                    var upperA = ratingA.EloScore + (ConfidenceMultiplier * ratingA.Uncertainty);
+                    var lowerA = ratingA.EloScore - (ConfidenceMultiplier * ratingA.Uncertainty);
+                    var upperB = ratingB.EloScore + (ConfidenceMultiplier * ratingB.Uncertainty);
+                    var lowerB = ratingB.EloScore - (ConfidenceMultiplier * ratingB.Uncertainty);
 
-        private (Photo, Photo)? SelectExploratoryMatchup(
-            List<Photo> eligiblePhotos,
-            Dictionary<int, PhotoRating> ratings,
-            HashSet<(int, int)> recentComparisons)
-        {
-            var topPhotos = eligiblePhotos
-                .Where(p => ratings.ContainsKey(p.Id))
-                .OrderByDescending(p => ratings[p.Id].EloScore)
-                .Take(eligiblePhotos.Count / 5 + 1)
-                .ToList();
-
-            var midPhotos = eligiblePhotos
-                .Where(p => ratings.ContainsKey(p.Id))
-                .OrderBy(p => ratings[p.Id].EloScore)
-                .Skip(eligiblePhotos.Count / 3)
-                .Take(eligiblePhotos.Count / 3)
-                .ToList();
-
-            if (topPhotos.Any() && midPhotos.Any())
-            {
-                var shuffledTop = topPhotos.OrderBy(_ => _random.Next()).ToList();
-                var shuffledMid = midPhotos.OrderBy(_ => _random.Next()).ToList();
-
-                foreach (var top in shuffledTop)
-                {
-                    foreach (var mid in shuffledMid)
+                    // Overlap exists if one's lower bound is below the other's upper bound
+                    var overlap = Math.Min(upperA, upperB) - Math.Max(lowerA, lowerB);
+                    if (overlap > MinOverlapForMatchup)
                     {
-                        if (/* top.UploadedById != mid.UploadedById && */
-                            !recentComparisons.Contains(NormalizePair(top.Id, mid.Id)))
-                        {
-                            return (top, mid);
-                        }
+                        overlappingPairs.Add((ratingA, ratingB));
                     }
                 }
             }
 
-            return SelectRandomMatchup(eligiblePhotos, recentComparisons);
+            return overlappingPairs;
         }
 
-        private (Photo, Photo)? SelectRandomMatchup(
-            List<Photo> eligiblePhotos,
-            HashSet<(int, int)> recentComparisons)
+        private async Task<Dictionary<(int, int), int>> GetGlobalVoteCountsAsync(int eventId, RankingCategory category)
         {
-            var shuffled = eligiblePhotos.OrderBy(_ => _random.Next()).ToList();
+            var comparisons = await _context.PhotoComparisons
+                .Where(pc => pc.EventId == eventId && pc.Category == category && !pc.WasSkipped)
+                .Select(pc => new { pc.PhotoAId, pc.PhotoBId })
+                .ToListAsync();
 
-            for (int i = 0; i < shuffled.Count; i++)
+            return comparisons
+                .GroupBy(c => NormalizePair(c.PhotoAId, c.PhotoBId))
+                .ToDictionary(g => g.Key, g => g.Count());
+        }
+
+        private async Task<HashSet<(int, int)>> GetUserComparedPairsAsync(User user, int eventId, RankingCategory category)
+        {
+            var pairs = await _context.PhotoComparisons
+                .Where(pc => pc.EventId == eventId && pc.Category == category && pc.VoterId == user.Id)
+                .Select(pc => new { pc.PhotoAId, pc.PhotoBId })
+                .ToListAsync();
+
+            return pairs.Select(p => NormalizePair(p.PhotoAId, p.PhotoBId)).ToHashSet();
+        }
+
+        private async Task<(Photo, Photo)?> SelectFallbackMatchupAsync(
+            User user,
+            int eventId,
+            RankingCategory category,
+            List<Photo> eligiblePhotos,
+            Dictionary<int, PhotoRating> ratings)
+        {
+            var userComparedPairs = await GetUserComparedPairsAsync(user, eventId, category);
+
+            // Find any pair user hasn't compared, prioritizing high uncertainty photos
+            var sortedPhotos = eligiblePhotos
+                .Where(p => ratings.ContainsKey(p.Id))
+                .OrderByDescending(p => ratings[p.Id].Uncertainty)
+                .ToList();
+
+            foreach (var photoA in sortedPhotos)
             {
-                for (int j = i + 1; j < shuffled.Count; j++)
+                foreach (var photoB in sortedPhotos.Where(p => p.Id != photoA.Id))
                 {
-                    var photoA = shuffled[i];
-                    var photoB = shuffled[j];
-
-                    if (/* photoA.UploadedById != photoB.UploadedById && */
-                        !recentComparisons.Contains(NormalizePair(photoA.Id, photoB.Id)))
+                    if (!userComparedPairs.Contains(NormalizePair(photoA.Id, photoB.Id)))
                     {
                         return (photoA, photoB);
                     }
@@ -750,7 +702,7 @@ namespace MomentRank.Services
         {
             rating.Uncertainty = Math.Max(50, rating.Uncertainty * 0.9);
 
-            var kDecay = Math.Max(0, (rating.ComparisonCount - BootstrapComparisonCount)) * 2;
+            var kDecay = Math.Max(0, rating.ComparisonCount - BootstrapComparisonCount) * 2;
             rating.KFactor = Math.Max(MinKFactor, InitialKFactor - kDecay);
 
             if (rating.ComparisonCount >= BootstrapComparisonCount)

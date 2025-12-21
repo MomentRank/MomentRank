@@ -51,7 +51,7 @@ namespace MomentRank.DTOs
         public required PhotoForComparisonDto PhotoB { get; init; }
         public required RankingCategory Category { get; init; }
         public required string Prompt { get; init; }
-        public int RemainingInSession { get; init; }
+        // public int RemainingInSession { get; init; }
     }
 
     public record PhotoForComparisonDto
@@ -67,7 +67,7 @@ namespace MomentRank.DTOs
     {
         public required int ComparisonId { get; init; }
         public required bool Recorded { get; init; }
-        public int RemainingInSession { get; init; }
+        // public int RemainingInSession { get; init; }
         public bool MoreMatchupsAvailable { get; init; }
     }
 

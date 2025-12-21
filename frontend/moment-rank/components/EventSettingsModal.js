@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     View,
     Text,
@@ -33,6 +33,14 @@ export default function EventSettingsModal({ visible, onClose, event, onUpdate }
 
     const wasVisible = useRef(false);
 
+    // Memoized ref for draftEndsAt to avoid stale closures in useCallback
+    const draftEndsAtRef = useRef(draftEndsAt);
+    useEffect(() => {
+        draftEndsAtRef.current = draftEndsAt;
+    }, [draftEndsAt]);
+
+    const updateEventRef = useRef(null);
+
     const updateEvent = async (changes = {}) => {
         const trimmedName = name?.trim() ?? "";
         const finalName = trimmedName || event?.name || "";
@@ -63,6 +71,24 @@ export default function EventSettingsModal({ visible, onClose, event, onUpdate }
             setUpdating(false);
         }
     };
+
+    // Keep the ref updated with latest updateEvent
+    updateEventRef.current = updateEvent;
+
+    const handleEndsAtChange = useCallback(async (value) => {
+        setDraftEndsAt(value);
+
+        // Avoid redundant calls if nothing changed
+        const currentDraft = draftEndsAtRef.current;
+        if (
+            (currentDraft === null && value === null) ||
+            (currentDraft && value && currentDraft.getTime() === value.getTime())
+        ) {
+            return;
+        }
+
+        await updateEventRef.current({ endsAt: value ? value.toISOString() : null });
+    }, []);
 
     const handleDeleteEvent = async () => {
         try {
@@ -347,19 +373,7 @@ export default function EventSettingsModal({ visible, onClose, event, onUpdate }
                         {(event?.status === 1 || event?.status === 0) && (
                             <DurationPicker
                                 duration={duration}
-                                setEndsAt={async (value) => {
-                                    setDraftEndsAt(value);
-
-                                    // Avoid redundant calls if nothing changed
-                                    if (
-                                        (draftEndsAt === null && value === null) ||
-                                        (draftEndsAt && value && draftEndsAt.getTime() === value.getTime())
-                                    ) {
-                                        return;
-                                    }
-
-                                    await updateEvent({ endsAt: value ? value.toISOString() : null });
-                                }}
+                                setEndsAt={handleEndsAtChange}
                                 endsAt={draftEndsAt}
                             />
                         )}

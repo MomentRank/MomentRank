@@ -15,19 +15,19 @@ const clampToNow = (date) => {
   return date < now ? now : date;
 };
 
-export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) { 
+function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
   const [showPicker, setShowPicker] = useState(false);
-  const [mode, setMode] = useState("date"); 
+  const [mode, setMode] = useState("date");
 
   const showMode = (currentMode) => {
     // Reset tempDate to reflect current endsAt before opening the picker
-    setTempDate(getInitialDate(endsAt)); 
+    setTempDate(getInitialDate(endsAt));
     setMode(currentMode);
-    
+
     if (onOpenPicker) {
-        onOpenPicker();
+      onOpenPicker();
     }
-    
+
     setShowPicker(true);
   };
   // Use endsAt as the initial value for the picker's temporary date
@@ -75,7 +75,7 @@ export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
 
     setTempDate(clamped);
     setEndsAt(clamped);
-};
+  };
 
   const selectedDateObject = tempDate || getInitialDate(endsAt);
 
@@ -127,7 +127,7 @@ export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
         <DateTimePicker
           value={selectedDateObject} // Keep aligned with latest selection
           mode={mode}
-          display={Platform.OS === "ios" ? "spinner" : "default"} 
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           // Only block past dates; time mode has no minimum so future-day morning times remain selectable
           minimumDate={mode === "date" ? new Date() : undefined}
           onChange={onChange}
@@ -136,3 +136,5 @@ export default function DurationPicker({ endsAt, setEndsAt, onOpenPicker }) {
     </View>
   );
 }
+
+export default React.memo(DurationPicker);

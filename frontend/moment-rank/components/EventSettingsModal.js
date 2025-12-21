@@ -95,13 +95,11 @@ export default function EventSettingsModal({ visible, onClose, event, onUpdate }
                                 return;
                             }
 
-                            await axios.post(
-                                `${API_URL}/event/delete`,
-                                { id: event.id },
+                            await axios.delete(
+                                `${API_URL}/event/${event.id}`,
                                 {
                                     headers: {
                                         Authorization: `Bearer ${token}`,
-                                        "Content-Type": "application/json",
                                     },
                                 }
                             );

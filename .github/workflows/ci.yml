@@ -48,6 +48,16 @@ jobs:
       - name: Build Docker image
         run: docker build -t momentrank-backend:${{ github.sha }} .
 
+      - name: Save Docker image
+        run: docker save -o momentrank-backend.tar momentrank-backend:${{ github.sha }}
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: backend/MomentRank/momentrank-backend.tar
+          retention-days: 1
+
   frontend:
     name: Frontend - EAS Build (APK)
     runs-on: ubuntu-latest

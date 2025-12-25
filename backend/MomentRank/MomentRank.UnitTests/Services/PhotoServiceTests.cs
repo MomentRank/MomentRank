@@ -78,8 +78,9 @@ namespace MomentRank.UnitTests.Services
             var photoInDb = await _context.Photos.FirstOrDefaultAsync();
             photoInDb.Should().NotBeNull();
 
-            // Verify file exists
-            var filePath = Path.Combine(_tempPath, photoInDb!.FilePath.Replace("/", "\\"));
+            // Verify file exists - use Path.Combine with segments for cross-platform compatibility
+            var pathSegments = photoInDb!.FilePath.Split('/');
+            var filePath = Path.Combine(new[] { _tempPath }.Concat(pathSegments).ToArray());
             File.Exists(filePath).Should().BeTrue();
         }
 

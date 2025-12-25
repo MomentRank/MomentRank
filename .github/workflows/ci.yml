@@ -37,14 +37,7 @@ jobs:
 
       - name: Publish application
         run: dotnet publish MomentRank/MomentRank.csproj -c Release -o ./publish --no-build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-build
-          path: backend/MomentRank/publish
-          retention-days: 30
-
+        
       - name: Build Docker image
         run: docker build -t momentrank-backend:${{ github.sha }} .
 

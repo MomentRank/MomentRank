@@ -2,9 +2,9 @@ import { withLayoutContext } from 'expo-router';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const { Navigator } = createMaterialTopTabNavigator();
+const TopTabs = createMaterialTopTabNavigator();
 
-export const MaterialTopTabs = withLayoutContext(Navigator);
+export const MaterialTopTabs = withLayoutContext(TopTabs.Navigator);
 
 export default function TabsLayout() {
   return (

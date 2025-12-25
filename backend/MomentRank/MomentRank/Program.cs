@@ -112,11 +112,14 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// DB init
-using (var scope = app.Services.CreateScope())
+// DB init (skip migrations for testing - tests use EnsureCreated with in-memory SQLite)
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate();
+    }
 }
 
 app.Run();

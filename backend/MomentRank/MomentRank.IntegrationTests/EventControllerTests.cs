@@ -26,7 +26,8 @@ public class EventControllerTests : IClassFixture<CustomWebApplicationFactory>
             Email = $"user_{Guid.NewGuid()}@example.com",
             Password = "Password123!"
         };
-        await _client.PostAsJsonAsync("/auth/register", registerRequest);
+        var registerResponse = await _client.PostAsJsonAsync("/auth/register", registerRequest);
+        registerResponse.EnsureSuccessStatusCode();
 
         var loginRequest = new LoginRequest
         {
@@ -35,6 +36,7 @@ public class EventControllerTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         var response = await _client.PostAsJsonAsync("/auth/login", loginRequest);
+        response.EnsureSuccessStatusCode();
         var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
         return loginResponse!.Access_token;
     }

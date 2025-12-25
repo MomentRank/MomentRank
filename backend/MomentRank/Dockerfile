@@ -14,7 +14,7 @@ RUN dotnet restore
 COPY . .
 
 # Build the application
-RUN dotnet build -c Release --no-restore
+RUN dotnet build -c Release
 
 # Publish the application
 RUN dotnet publish MomentRank/MomentRank.csproj -c Release -o /app/publish --no-build

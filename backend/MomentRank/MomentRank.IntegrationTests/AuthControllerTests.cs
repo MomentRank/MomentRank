@@ -15,12 +15,6 @@ public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory>
     public AuthControllerTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
-        
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            db.Database.EnsureCreated();
-        }
     }
 
     [Fact]

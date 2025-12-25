@@ -16,12 +16,6 @@ public class EventControllerTests : IClassFixture<CustomWebApplicationFactory>
     public EventControllerTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
-        
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            db.Database.EnsureCreated();
-        }
     }
 
     private async Task<string> AuthenticateAsync()

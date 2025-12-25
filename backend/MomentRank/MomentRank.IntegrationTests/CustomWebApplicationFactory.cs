@@ -36,6 +36,14 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 var connection = container.GetRequiredService<DbConnection>();
                 options.UseSqlite(connection);
             });
+
+            // Build the service provider and ensure the database is created
+            var sp = services.BuildServiceProvider();
+            using (var scope = sp.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.Database.EnsureCreated();
+            }
         });
     }
 }
